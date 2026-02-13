@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -14,6 +15,7 @@ class Product extends Model
         'category_id',
         'name',
         'sku',
+        'slug',
         'description',
         'brand',
         'model',
@@ -24,6 +26,7 @@ class Product extends Model
         'has_expiry',
         'has_warranty',
         'warranty_months',
+        'image_path',
         'is_active',
     ];
 
@@ -98,6 +101,18 @@ class Product extends Model
     {
         return Attribute::make(
             get: fn() => $this->inventory()->sum('quantity')
+        );
+    }
+
+    /**
+     * Get full URL for product image
+     */
+    public function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->image_path 
+                ? \Storage::url($this->image_path) 
+                : null
         );
     }
 }

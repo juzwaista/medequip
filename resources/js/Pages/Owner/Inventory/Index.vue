@@ -158,7 +158,7 @@
                         <!-- Actions -->
                         <div class="flex gap-2">
                             <Link 
-                                :href="`/owner/inventory/${product.id}/edit`"
+                                :href="`/owner/inventory/${product.inventory[0]?.id}/edit`"
                                 class="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
                             >
                                 <svg class="h-4 w-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -41,6 +41,26 @@
                             <p v-if="form.errors.category_id" class="text-red-500 text-sm mt-1">{{ form.errors.category_id }}</p>
                         </div>
 
+                        <!-- Brand -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Brand</label>
+                            <input 
+                                v-model="form.brand"
+                                type="text"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <!-- Model -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
+                            <input 
+                                v-model="form.model"
+                                type="text"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
                         <!-- Description -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
@@ -156,6 +176,8 @@ const props = defineProps({
 const form = useForm({
     name: props.product.name,
     category_id: props.product.category_id,
+    brand: props.product.brand || '',
+    model: props.product.model || '',
     description: props.product.description,
     price: props.product.price,
     wholesale_price: props.product.wholesale_price || '',

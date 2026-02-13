@@ -50,7 +50,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = Category::select('id', 'name')->get();
+        $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
 
         return Inertia::render('Owner/Products/Create', [
             'categories' => $categories,
@@ -83,10 +83,12 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
+            'brand' => 'nullable|string|max:100',
+            'model' => 'nullable|string|max:100',
             'price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_quantity' => 'nullable|integer|min:1',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'required|image|max:2048', // Made mandatory
         ]);
 
         \Log::info('[ProductController] Validation passed', [
@@ -108,6 +110,8 @@ class ProductController extends Controller
                 'slug' => Str::slug($validated['name']) . '-' . Str::random(6),
                 'description' => $validated['description'],
                 'category_id' => $validated['category_id'],
+                'brand' => $validated['brand'] ?? null,
+                'model' => $validated['model'] ?? null,
                 'base_price' => $validated['price'],
                 'wholesale_price' => $validated['wholesale_price'] ?? null,
                 'wholesale_min_qty' => $validated['wholesale_min_quantity'] ?? null,
@@ -121,7 +125,7 @@ class ProductController extends Controller
                 'sku' => $product->sku
             ]);
 
-            return redirect('/owner/products')
+            return redirect()->route('inventory.index')
                 ->with('success', 'Product created successfully.');
         } catch (\Exception $e) {
             \Log::error('[ProductController] Product creation failed', [
@@ -146,7 +150,7 @@ class ProductController extends Controller
             ->with('category')
             ->findOrFail($id);
 
-        $categories = Category::select('id', 'name')->get();
+        $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
 
         return Inertia::render('Owner/Products/Edit', [
             'product' => $product,
@@ -168,6 +172,8 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
+            'brand' => 'nullable|string|max:100',
+            'model' => 'nullable|string|max:100',
             'price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_quantity' => 'nullable|integer|min:1',

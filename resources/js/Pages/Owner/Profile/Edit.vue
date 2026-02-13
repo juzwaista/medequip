@@ -20,10 +20,12 @@
                                         <input 
                                             v-model="form.company_name"
                                             type="text"
-                                            required
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            disabled
+                                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-600 shadow-sm cursor-not-allowed"
                                         />
-                                        <p v-if="form.errors.company_name" class="text-red-500 text-xs mt-1">{{ form.errors.company_name }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Company name cannot be changed as it's verified against business permits. Contact support to request changes.
+                                        </p>
                                     </div>
 
                                     <div>

@@ -112,6 +112,32 @@
                             />
                         </div>
 
+                        <!-- Brand -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Brand <span class="text-gray-400 text-xs">(Optional)</span>
+                            </label>
+                            <input 
+                                v-model="form.brand"
+                                type="text"
+                                placeholder="e.g., Omron, Philips"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <!-- Model -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Model <span class="text-gray-400 text-xs">(Optional)</span>
+                            </label>
+                            <input 
+                                v-model="form.model"
+                                type="text"
+                                placeholder="e.g., HEM-7120, Series 3"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
                         <!-- Description -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -225,6 +251,8 @@ const form = ref({
     name: '',
     description: '',
     category_id: '',
+    brand: '',
+    model: '',
     base_price: '',
     wholesale_price: '',
     wholesale_min_qty: '',

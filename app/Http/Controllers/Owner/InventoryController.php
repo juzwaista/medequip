@@ -96,7 +96,7 @@ class InventoryController extends Controller
         });
 
         // Get categories for filter
-        $categories = Category::select('id', 'name')->get();
+        $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
 
         return Inertia::render('Owner/Inventory/Index', [
             'products' => $products,
@@ -116,7 +116,7 @@ class InventoryController extends Controller
             return redirect('/owner/dashboard');
         }
 
-        $categories = Category::select('id', 'name')->get();
+        $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
 
         return Inertia::render('Owner/Inventory/Create', [
             'categories' => $categories,
@@ -206,28 +206,23 @@ class InventoryController extends Controller
     }
 
     /**
-     * Show form to edit product details and manage stock
+     * Show form to edit product details
      */
     public function edit($id)
     {
         $distributor = auth()->user()->distributor;
 
-        $product = Product::where('distributor_id', $distributor->id)
-            ->with(['category', 'inventory'])
+        $inventory = Inventory::with(['product.category'])
+            ->whereHas('product', function($query) use ($distributor) {
+                $query->where('distributor_id', $distributor->id);
+            })
             ->findOrFail($id);
 
-        $categories = Category::select('id', 'name')->get();
-
-        // Calculate totals
-        $totalStock = $product->inventory->sum('quantity');
-        $totalReserved = $product->inventory->sum('reserved_quantity');
+        $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
 
         return Inertia::render('Owner/Inventory/Edit', [
-            'product' => $product,
+            'inventory' => $inventory,
             'categories' => $categories,
-            'totalStock' => $totalStock,
-            'totalReserved' => $totalReserved,
-            'availableStock' => $totalStock - $totalReserved,
         ]);
     }
 

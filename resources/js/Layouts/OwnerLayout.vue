@@ -6,7 +6,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <!-- Logo -->
-                    <a href="/products" class="flex items-center space-x-3 group">
+                    <a href="/owner/dashboard" class="flex items-center space-x-3 group">
                         <div class="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition">
                             <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -17,32 +17,28 @@
                         </span>
                     </a>
 
+                    <!-- Navigation Links -->
+                    <nav class="hidden md:flex space-x-6">
+                        <Link href="/owner/dashboard" class="text-gray-700 hover:text-blue-600 font-medium transition">
+                            Dashboard
+                        </Link>
+                        <Link href="/owner/inventory" class="text-gray-700 hover:text-blue-600 font-medium transition">
+                            Inventory
+                        </Link>
+                        <Link href="/owner/orders" class="text-gray-700 hover:text-blue-600 font-medium transition">
+                            Orders
+                        </Link>
+                    </nav>
+
                     <!-- User Menu -->
                     <div class="flex items-center space-x-4">
-                        <Link href="/cart" class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition relative">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                                {{ cartCount }}
-                            </span>
-                        </Link>
-                        
                         <AccountMenu 
                             v-if="$page.props.auth.user"
                             :userName="$page.props.auth.user.name"
                             :userEmail="$page.props.auth.user.email"
-                            :userRole="$page.props.auth.user.role || 'customer'"
+                            :userRole="$page.props.auth.user.role || 'distributor'"
                             :csrfToken="csrfToken"
                         />
-                        <div v-else class="flex items-center space-x-3">
-                            <a href="/login" class="text-gray-700 hover:text-blue-600 font-medium transition">
-                                Login
-                            </a>
-                            <a href="/register" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-                                Register
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -72,17 +68,19 @@
                         </ul>
                     </div>
                     <div>
-                        <h4 class="text-white font-semibold mb-4">Categories</h4>
+                        <h4 class="text-white font-semibold mb-4">For Distributors</h4>
                         <ul class="space-y-2 text-sm">
-                            <li><a href="#" class="hover:text-white transition">Medical Equipment</a></li>
-                            <li><a href="#" class="hover:text-white transition">Surgical Instruments</a></li>
-                            <li><a href="#" class="hover:text-white transition">PPE</a></li>
+                            <li><Link href="/owner/dashboard" class="hover:text-white transition">Dashboard</Link></li>
+                            <li><Link href="/owner/inventory" class="hover:text-white transition">Inventory</Link></li>
+                            <li><Link href="/owner/orders" class="hover:text-white transition">Orders</Link></li>
                         </ul>
                     </div>
                     <div>
-                        <h4 class="text-white font-semibold mb-4">Contact</h4>
-                        <p class="text-sm text-gray-400">Cavite, Philippines</p>
-                        <p class="text-sm text-gray-400">support@medequip.com</p>
+                        <h4 class="text-white font-semibold mb-4">Legal</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
+                            <li><a href="#" class="hover:text-white transition">Terms of Service</a></li>
+                        </ul>
                     </div>
                 </div>
                 <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
@@ -90,53 +88,19 @@
                 </div>
             </div>
         </footer>
-
-        <!-- Global Toast Notifications -->
-        <Toast />
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import Toast from '@/Components/Toast.vue';
 import AccountMenu from '@/Components/AccountMenu.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
 
 const page = usePage();
 
-// Get CSRF token from meta tag if not in props
 const csrfToken = computed(() => {
-    return page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.content;
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    return metaTag ? metaTag.getAttribute('content') : '';
 });
-const cartCount = ref(0);
-
-const updateCartCount = async () => {
-    try {
-        const response = await fetch('/cart/count');
-        const data = await response.json();
-        cartCount.value = data.count || 0;
-    } catch (error) {
-        console.error('Failed to fetch cart count', error);
-    }
-};
-
-onMounted(() => {
-    updateCartCount();
-    // Update cart count every 2 seconds (or on page navigation)
-    setInterval(updateCartCount, 2000);
-});
-
-const getDashboardRoute = () => {
-    const role = page.props.auth?.user?.role || 'customer';
-    switch (role) {
-        case 'admin':
-            return '/admin/dashboard';
-        case 'distributor':
-            return '/owner/dashboard';
-        default:
-            return '/dashboard';
-    }
-};
 </script>
-

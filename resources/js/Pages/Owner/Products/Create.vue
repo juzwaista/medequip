@@ -37,6 +37,26 @@
                             <p v-if="form.errors.category_id" class="text-red-500 text-sm mt-1">{{ form.errors.category_id }}</p>
                         </div>
 
+                        <!-- Brand -->  
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Brand</label>
+                            <input 
+                                v-model="form.brand"
+                                type="text"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <!-- Model -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
+                            <input 
+                                v-model="form.model"
+                                type="text"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
                         <!-- Description -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
@@ -96,14 +116,15 @@
 
                         <!-- Product Image -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image *</label>
                             <input 
                                 type="file"
                                 @change="e => form.image = e.target.files[0]"
                                 accept="image/*"
+                                required
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            <p class="text-xs text-gray-500 mt-1">Recommended: Square image, max 2MB</p>
+                            <p class="text-xs text-gray-500 mt-1">Required for product creation</p>
                             <p v-if="form.errors.image" class="text-red-500 text-sm mt-1">{{ form.errors.image }}</p>
                         </div>
                     </div>
@@ -140,6 +161,8 @@ const props = defineProps({
 const form = useForm({
     name: '',
     category_id: '',
+    brand: '',
+    model: '',
     description: '',
     price: '',
     wholesale_price: '',
