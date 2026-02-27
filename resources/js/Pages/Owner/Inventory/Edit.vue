@@ -176,6 +176,7 @@ const props = defineProps({
 const product = props.inventory.product;
 
 const form = useForm({
+    _method: 'put',
     name: product.name,
     category_id: product.category_id,
     brand: product.brand || '',
@@ -190,7 +191,6 @@ const form = useForm({
 
 const submit = () => {
     form.post(`/owner/products/${product.id}`, {
-        _method: 'put',
         forceFormData: true,
     });
 };

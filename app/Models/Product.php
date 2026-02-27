@@ -38,6 +38,8 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['image_url'];
+
     /**
      * Get the distributor that owns this product
      */
@@ -110,9 +112,9 @@ class Product extends Model
     public function imageUrl(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->image_path 
-                ? \Storage::url($this->image_path) 
-                : null
+            get: fn() => $this->image_path
+            ? \Storage::url($this->image_path)
+            : null
         );
     }
 }
