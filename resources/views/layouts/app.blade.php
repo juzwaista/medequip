@@ -28,7 +28,7 @@
                     @if(auth()->user()->role === 'distributor')
                         <a href="{{ route('owner.dashboard') }}" class="hover:text-blue-700">Seller Dashboard</a>
                         <a href="{{ route('owner.distributors.index') }}" class="hover:text-blue-700">Business Profile</a>
-                    @elseif(auth()->user()->role === 'admin')
+                    @elseif(in_array(auth()->user()->role, ['admin', 'super_admin']))
                         <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">
                             Admin Dashboard
                         </a>

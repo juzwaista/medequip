@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-8 flex justify-between items-center">
@@ -92,7 +92,7 @@
                                     <h3 class="font-semibold text-gray-900">{{ item.product.name }}</h3>
                                     <p class="text-sm text-gray-600">{{ item.product.brand || 'Generic' }}</p>
                                     <p class="text-sm text-gray-500 mt-1">
-                                        Branch: {{ item.inventory.branch.location }}
+                                        Branch: {{ item.inventory?.branch?.location ?? 'Main Warehouse' }}
                                     </p>
                                     <div class="flex items-center gap-4 mt-2">
                                         <span class="text-sm text-gray-600">Qty: {{ item.quantity }}</span>
@@ -103,7 +103,7 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-bold text-gray-900">₱{{ Number(item.subtotal).toLocaleString() }}</p>
+                                    <p class="font-bold text-gray-900">₱{{ Number(item.total_price).toLocaleString() }}</p>
                                 </div>
                             </div>
                         </div>
@@ -150,13 +150,14 @@
                                 v-model="statusForm.status"
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
                             >
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="packed">Packed</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option :value="order.status" disabled>{{ order.status }} (current)</option>
+                                <option
+                                    v-for="next in validNextStatuses"
+                                    :key="next"
+                                    :value="next"
+                                >
+                                    {{ next.charAt(0).toUpperCase() + next.slice(1) }}
+                                </option>
                             </select>
                             <button 
                                 type="submit"
@@ -178,13 +179,23 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Carrier</p>
-                                <p class="font-semibold text-gray-900">{{ order.delivery.carrier }}</p>
+                                <p class="font-semibold text-gray-900">{{ order.delivery.carrier ?? 'N/A' }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Status</p>
                                 <span class="inline-block bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-semibold capitalize">
                                     {{ order.delivery.status.replace('_', ' ') }}
                                 </span>
+                            </div>
+                            <div v-if="order.delivery.proof_of_delivery_path" class="pt-3 border-t mt-2">
+                                <p class="text-sm text-gray-600 mb-2">Proof of Delivery</p>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 inline-block">
+                                    <img 
+                                        :src="`/storage/${order.delivery.proof_of_delivery_path}`" 
+                                        alt="Proof of Delivery Photo" 
+                                        class="max-w-[200px] rounded shadow-sm"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -193,8 +204,9 @@
                     <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-md p-6 text-white">
                         <h3 class="font-bold mb-4">Quick Actions</h3>
                         <div class="space-y-3">
-                            <button class="w-full bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-lg font-medium text-left">
-                                Print Invoice
+                            <button @click="showWaybill = true" class="w-full bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-lg font-medium text-left flex justify-between items-center">
+                                Print Waybill
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             </button>
                             <button class="w-full bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-lg font-medium text-left">
                                 Contact Customer
@@ -210,13 +222,64 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+
+        <!-- Waybill Modal -->
+        <Teleport to="body">
+            <div v-if="showWaybill" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+                    <div class="px-4 py-3 border-b flex justify-between items-center bg-gray-50 print:hidden">
+                        <h3 class="font-bold text-gray-900">Delivery Waybill</h3>
+                        <div class="flex gap-2">
+                            <button @click="printWaybill" class="text-blue-600 hover:text-blue-800 font-bold px-3 py-1 rounded-lg bg-blue-50">
+                                Print
+                            </button>
+                            <button @click="showWaybill = false" class="text-gray-400 hover:text-gray-600 p-1">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="waybill-content" class="p-8 bg-white print:p-0">
+                        <div class="text-center mb-6 border-b-2 border-dashed border-gray-300 pb-6">
+                            <h2 class="text-2xl font-black tracking-tighter uppercase mb-1">MedEquip Express</h2>
+                            <p class="font-mono text-sm text-gray-500">{{ order.order_number }}</p>
+                        </div>
+                        
+                        <div class="flex justify-center mb-8">
+                            <div class="p-2 border-4 border-black rounded-xl">
+                                <qrcode-vue :value="order.order_number" :size="200" level="H" />
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Recipient</p>
+                                <p class="text-lg font-bold text-gray-900 leading-tight">{{ order.customer.name }}</p>
+                                <p class="text-gray-900">{{ order.contact_number }}</p>
+                            </div>
+                            
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Delivery Address</p>
+                                <p class="text-gray-900 font-medium leading-relaxed">{{ order.delivery_address }}</p>
+                            </div>
+
+                            <div v-if="order.notes" class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Customer Notes</p>
+                                <p class="text-sm font-bold text-gray-900 italic">"{{ order.notes }}"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+    </OwnerLayout>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
+import QrcodeVue from 'qrcode.vue';
 
 const props = defineProps({
     order: Object,
@@ -224,11 +287,29 @@ const props = defineProps({
 
 const page = usePage();
 
+// Valid status transitions (mirrors server-side state machine)
+const transitionMap = {
+    pending:   ['approved', 'rejected', 'cancelled'],
+    approved:  ['packed', 'cancelled'],
+    packed:    [],
+    shipped:   [],
+    delivered: [],
+    cancelled: [],
+    rejected:  [],
+};
+
+const validNextStatuses = computed(() => transitionMap[props.order.status] ?? []);
+
 const statusForm = reactive({
-    status: props.order.status,
+    status: validNextStatuses.value[0] ?? props.order.status,
 });
 
 const updating = ref(false);
+const showWaybill = ref(false);
+
+const printWaybill = () => {
+    window.print();
+};
 
 onMounted(() => {
     console.log('[OwnerOrderShow] Component mounted', {

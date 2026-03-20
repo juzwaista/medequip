@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'paymongo' => [
+        'secret_key'     => env('PAYMONGO_SECRET_KEY'),
+        'public_key'     => env('PAYMONGO_PUBLIC_KEY'),
+        'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
+    ],
+
+    'platform' => [
+        'fee_rate' => env('PLATFORM_FEE_RATE', 0.05), // 5% default
+    ],
+
 ];

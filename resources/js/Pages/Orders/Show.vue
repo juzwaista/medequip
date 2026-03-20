@@ -157,6 +157,18 @@
                                     <DateFormat :date="order.delivery.actual_delivery_at" format="datetime" />
                                 </p>
                             </div>
+                            
+                            <!-- Proof of Delivery Image -->
+                            <div v-if="order.delivery.proof_of_delivery_path" class="md:col-span-2 pt-4 border-t mt-2">
+                                <p class="text-sm font-bold text-gray-700 uppercase tracking-widest mb-3">Proof of Delivery</p>
+                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-2 inline-block">
+                                    <img 
+                                        :src="`/storage/${order.delivery.proof_of_delivery_path}`" 
+                                        alt="Proof of Delivery Photo" 
+                                        class="max-w-xs md:max-w-md rounded-lg shadow-sm"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

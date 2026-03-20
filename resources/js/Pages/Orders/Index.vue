@@ -7,15 +7,7 @@
                 <p class="text-gray-600 mt-2">Track and manage your orders</p>
             </div>
 
-            <!-- Success/Error Messages -->
-            <div v-if="$page.props.flash?.success" class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
-                <div class="flex items-start">
-                    <svg class="h-5 w-5 text-green-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <p class="text-sm text-green-800 font-medium">{{ $page.props.flash.success }}</p>
-                </div>
-            </div>
+
 
             <!-- Filters & Search -->
             <div class="bg-white rounded-xl shadow-md p-6 mb-6">
@@ -160,6 +152,16 @@
                                 View Details
                             </Link>
                             <button 
+                                v-if="order.status === 'delivered' && !order.received_at"
+                                @click="confirmReceived(order)"
+                                class="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition font-medium text-sm flex items-center gap-1.5"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Confirm Received
+                            </button>
+                            <button 
                                 v-if="order.status === 'shipped'"
                                 class="px-5 py-2.5 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium text-sm"
                             >
@@ -293,6 +295,19 @@ const confirmCancel = (order) => {
             },
             onError: (errors) => {
                 console.error('[OrdersIndex] Cancel failed', errors);
+            }
+        });
+    }
+};
+
+const confirmReceived = (order) => {
+    if (confirm(`Confirm that you received order ${order.order_number}? This will release the payment to the seller.`)) {
+        router.post(`/orders/${order.id}/confirm-received`, {}, {
+            onSuccess: () => {
+                console.log('[OrdersIndex] Order receipt confirmed');
+            },
+            onError: (errors) => {
+                console.error('[OrdersIndex] Confirm received failed', errors);
             }
         });
     }

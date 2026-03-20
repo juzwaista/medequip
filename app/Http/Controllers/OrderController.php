@@ -6,15 +6,20 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Inventory;
+use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class OrderController extends Controller
 {
+    public function __construct(private PayMongoService $paymongo) {}
+
     /**
-     * Show checkout page
+     * Show checkout page.
      */
     public function checkout()
     {
@@ -28,73 +33,51 @@ class OrderController extends Controller
         $subtotal = $this->calculateSubtotal($cartItems);
 
         return Inertia::render('Checkout/Index', [
-            'cartItems' => $cartItems,
-            'subtotal' => $subtotal,
-            'cities' => config('cavite.cities'),
-            'barangays' => config('cavite.barangays'),
+            'cartItems'      => $cartItems,
+            'subtotal'       => $subtotal,
+            'cities'         => config('cavite.cities'),
+            'barangays'      => config('cavite.barangays'),
             'savedAddresses' => auth()->user()->addresses()->latest()->get(),
         ]);
     }
 
     /**
-     * Place order
+     * Place order with payment.
+     *
+     * Flow:
+     *   PayMongo methods → create order + invoice + Payment record → redirect to PayMongo checkout
+     *   Bank transfer    → create order + invoice + pending Payment → redirect to confirmation
      */
     public function placeOrder(Request $request)
     {
-        \Log::info('Order placement started', [
-            'user_id' => auth()->id(),
-            'request_data' => $request->all()
+        $validated = $request->validate([
+            'customer_name'    => 'required|string|min:2|max:100',
+            'delivery_address' => 'required|string|max:500|min:5',
+            'contact_number'   => 'required|string|min:7|max:20',
+            'notes'            => 'nullable|string|max:1000',
+            'payment_method'   => 'required|in:card,gcash,paymaya',
+        ], [
+            'customer_name.required'    => 'Please provide the recipient name',
+            'delivery_address.required' => 'Please provide a delivery address',
+            'contact_number.required'   => 'Contact number is required for delivery',
+            'payment_method.required'   => 'Please choose a payment method',
         ]);
 
-        // Validate OUTSIDE try-catch so validation exceptions propagate to Inertia
-        try {
-            $validated = $request->validate([
-                'customer_name' => 'required|string|min:2|max:100',
-                'delivery_address' => 'required|string|max:500|min:5',
-                'contact_number' => 'required|string|min:7|max:20',
-                'notes' => 'nullable|string|max:1000',
-            ], [
-                'customer_name.required' => 'Please provide the recipient name',
-                'customer_name.min' => 'Name must be at least 2 characters.',
-                'delivery_address.required' => 'Please provide a delivery address',
-                'delivery_address.min' => 'Delivery address must be at least 5 characters.',
-                'contact_number.required' => 'Contact number is required for delivery',
-                'contact_number.min' => 'Contact number must be at least 7 digits',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::warning('Validation failed', ['errors' => $e->errors()]);
-            throw $e; // Re-throw for Inertia to handle
-        }
-
-        \Log::info('Validation passed', ['validated' => $validated]);
-
         $cart = session()->get('cart', []);
-
-        \Log::info('Cart retrieved', ['cart_count' => count($cart)]);
-
         if (empty($cart)) {
-            \Log::warning('Cart is empty');
             return back()->withErrors(['cart' => 'Your cart is empty'])->withInput();
         }
 
+        $isPaymongo = in_array($validated['payment_method'], Payment::paymongoMethods());
+
         try {
             DB::beginTransaction();
-            \Log::info('Transaction started');
 
             // Group cart items by distributor
             $ordersByDistributor = [];
 
             foreach ($cart as $productId => $cartItem) {
-                \Log::info('Processing cart item', ['product_id' => $productId, 'quantity' => $cartItem['quantity']]);
-
                 $product = Product::with('inventory')->findOrFail($productId);
-
-                \Log::info('Product loaded', [
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'inventory_count' => $product->inventory->count()
-                ]);
-
                 $distributorId = $product->distributor_id;
 
                 if (!isset($ordersByDistributor[$distributorId])) {
@@ -105,45 +88,38 @@ class OrderController extends Controller
                 }
 
                 $ordersByDistributor[$distributorId]['items'][] = [
-                    'product' => $product,
+                    'product'  => $product,
                     'quantity' => $cartItem['quantity'],
                 ];
             }
 
-            \Log::info('Orders grouped by distributor', ['distributor_count' => count($ordersByDistributor)]);
-
-            // Create separate order for each distributor
             $createdOrders = [];
+            $totalInvoiceForPaymongo = null;
 
             foreach ($ordersByDistributor as $distributorData) {
-                \Log::info('Creating order for distributor', ['distributor_id' => $distributorData['distributor_id']]);
-
                 $order = Order::create([
-                    'customer_id' => auth()->id(),
-                    'distributor_id' => $distributorData['distributor_id'],
-                    'order_number' => 'ORD-' . date('Ymd') . '-' . strtoupper(uniqid()),
-                    'status' => 'pending',
-                    'subtotal' => 0,
-                    'total_amount' => 0, // Will calculate
+                    'customer_id'      => auth()->id(),
+                    'distributor_id'   => $distributorData['distributor_id'],
+                    'order_number'     => Order::generateOrderNumber(),
+                    'status'           => 'pending',
+                    'subtotal'         => 0,
+                    'total_amount'     => 0,
                     'delivery_address' => $validated['delivery_address'],
-                    'contact_number' => $validated['contact_number'],
-                    'notes' => $validated['notes'] ?? null,
+                    'contact_number'   => $validated['contact_number'],
+                    'notes'            => $validated['notes'] ?? null,
+                    'payment_method'   => $validated['payment_method'],
                 ]);
-
-                \Log::info('Order created', ['order_id' => $order->id, 'order_number' => $order->order_number]);
 
                 $totalAmount = 0;
 
-                // Create order items and reserve inventory
                 foreach ($distributorData['items'] as $item) {
-                    $product = $item['product'];
+                    $product  = $item['product'];
                     $quantity = $item['quantity'];
 
-                    // Determine price (wholesale if applicable)
                     $isWholesale = $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
-                    $unitPrice = $isWholesale ? $product->wholesale_price : $product->base_price;
+                    $unitPrice   = $isWholesale ? $product->wholesale_price : $product->base_price;
 
-                    // Reserve inventory from first available branch
+                    // Reserve inventory
                     $inventory = $product->inventory()
                         ->whereRaw('(quantity - reserved_quantity) >= ?', [$quantity])
                         ->first();
@@ -152,92 +128,116 @@ class OrderController extends Controller
                         throw new \Exception("Insufficient stock for {$product->name}");
                     }
 
-                    // Use the reserve method from Inventory model
                     if (!$inventory->reserve($quantity)) {
                         throw new \Exception("Unable to reserve stock for {$product->name}");
                     }
 
-                    // Create order item with all required fields
                     $order->items()->create([
-                        'product_id' => $product->id,
+                        'product_id'   => $product->id,
                         'inventory_id' => $inventory->id,
-                        'quantity' => $quantity,
-                        'unit_price' => $unitPrice,
-                        'total_price' => $unitPrice * $quantity,
+                        'quantity'     => $quantity,
+                        'unit_price'   => $unitPrice,
+                        'total_price'  => $unitPrice * $quantity,
                         'is_wholesale' => $isWholesale,
                     ]);
-
 
                     $totalAmount += $unitPrice * $quantity;
                 }
 
-                // Update order totals
                 $order->update([
-                    'subtotal' => $totalAmount,
+                    'subtotal'     => $totalAmount,
                     'total_amount' => $totalAmount,
                 ]);
 
-                // Create invoice (match actual schema)
-                Invoice::create([
-                    'order_id' => $order->id,
-                    'invoice_number' => 'INV-' . date('Ymd') . '-' . strtoupper(uniqid()),
-                    'subtotal' => $totalAmount,
-                    'tax' => 0,
-                    'discount' => 0,
-                    'total_amount' => $totalAmount,
-                    'status' => 'unpaid',
-                    'due_date' => now()->addDays(7),
+                // Create invoice
+                $invoice = Invoice::create([
+                    'order_id'       => $order->id,
+                    'invoice_number' => Invoice::generateInvoiceNumber(),
+                    'subtotal'       => $totalAmount,
+                    'tax'            => 0,
+                    'discount'       => 0,
+                    'total_amount'   => $totalAmount,
+                    'status'         => 'unpaid',
+                    'due_date'       => now()->addDays(7),
                 ]);
 
-                \Log::info('Invoice created', ['order_id' => $order->id]);
+                // Create payment record
+                $fees = Payment::calculateFees($totalAmount);
+
+                // PayMongo — create payment record, session created below
+                $payment = Payment::create([
+                    'invoice_id'          => $invoice->id,
+                    'payment_method'      => 'paymongo',
+                    'amount'              => $totalAmount,
+                    'status'              => 'pending',
+                    'escrow_status'       => 'held',
+                    'platform_fee_rate'   => $fees['platform_fee_rate'],
+                    'platform_fee_amount' => $fees['platform_fee_amount'],
+                    'net_seller_amount'   => $fees['net_seller_amount'],
+                ]);
+
+                $totalInvoiceForPaymongo = $invoice;
 
                 $createdOrders[] = $order;
             }
 
             // Clear cart
             session()->forget('cart');
-            \Log::info('Cart cleared');
 
             DB::commit();
-            \Log::info('Transaction committed', ['orders_created' => count($createdOrders)]);
 
-            // Redirect to first order confirmation
-            if (count($createdOrders) === 1) {
-                \Log::info('Redirecting to confirmation', ['order_id' => $createdOrders[0]->id]);
-                return redirect()->route('orders.confirmation', ['order' => $createdOrders[0]->id])
-                    ->with('success', 'Order placed successfully!');
-            } else {
-                \Log::info('Multiple orders created, redirecting to order list');
-                return redirect()->route('orders.index')
-                    ->with('success', count($createdOrders) . ' orders placed successfully!');
+            // For PayMongo — redirect to checkout session
+            if ($isPaymongo && $totalInvoiceForPaymongo) {
+                try {
+                    $session = $this->paymongo->createCheckoutSession(
+                        $totalInvoiceForPaymongo,
+                        route('orders.confirmation', $createdOrders[0]),
+                        route('orders.confirmation', $createdOrders[0])
+                    );
+
+                    // Link session to payment
+                    Payment::where('invoice_id', $totalInvoiceForPaymongo->id)
+                        ->where('status', 'pending')
+                        ->update([
+                            'paymongo_session_id' => $session['session_id'],
+                            'paymongo_status'     => 'active',
+                        ]);
+
+                    return Inertia::location($session['checkout_url']);
+                } catch (\Exception $e) {
+                    Log::error('[OrderController] PayMongo session failed', [
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Fallback: redirect to confirmation, payment can be retried
+                    return redirect()->route('orders.confirmation', $createdOrders[0])
+                        ->with('warning', 'Order placed, but payment initiation failed. Please try again from your orders page.');
+                }
             }
+
+            // Bank transfer — go to confirmation
+            return redirect()->route('orders.confirmation', $createdOrders[0])
+                ->with('success', 'Order placed! Your bank transfer is pending verification.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            \Log::error('Order placement failed', [
+            Log::error('[OrderController] Order placement failed', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-
-            return back()
-                ->withErrors(['order' => 'Failed to place order: ' . $e->getMessage()])
-                ->withInput();
+            return back()->withErrors(['order' => 'Failed to place order: ' . $e->getMessage()])->withInput();
         }
     }
 
     /**
-     * Order confirmation page
+     * Order confirmation page.
      */
     public function confirmation(Order $order)
     {
-        // Ensure user owns this order
         if ($order->customer_id !== auth()->id()) {
             abort(403);
         }
 
-        $order->load(['items.product', 'distributor', 'invoice']);
+        $order->load(['items.product', 'distributor', 'invoice.payments']);
 
         return Inertia::render('Orders/Confirmation', [
             'order' => $order,
@@ -245,62 +245,64 @@ class OrderController extends Controller
     }
 
     /**
-     * My orders page
+     * Buyer confirms receipt of delivered order → releases escrow.
      */
-    public function myOrders()
+    public function confirmReceived(Order $order)
     {
-        $orders = Order::with(['items.product', 'distributor', 'invoice'])
-            ->where('customer_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-        return Inertia::render('Orders/Index', [
-            'orders' => $orders,
-        ]);
-    }
-
-    /**
-     * Order detail page
-     */
-    public function show(Order $order)
-    {
-        // Ensure user owns this order
         if ($order->customer_id !== auth()->id()) {
             abort(403);
         }
 
-        $order->load(['items.product.images', 'distributor', 'invoice.payments', 'delivery']);
+        if (!$order->canBeConfirmedReceived()) {
+            return back()->with('error', 'This order cannot be confirmed yet.');
+        }
 
-        return Inertia::render('Orders/Show', [
-            'order' => $order,
-        ]);
+        DB::transaction(function () use ($order) {
+            // Mark order as received
+            $order->update([
+                'received_at' => now(),
+                'status'      => 'completed',
+            ]);
+
+            // Release escrow for all verified payments on this order's invoice
+            if ($order->invoice) {
+                $order->invoice->payments()
+                    ->where('status', 'verified')
+                    ->where('escrow_status', 'held')
+                    ->each(function ($payment) {
+                        $payment->releaseEscrow();
+                    });
+            }
+
+            Log::info('[OrderController] Buyer confirmed receipt, escrow released', [
+                'order_id' => $order->id,
+            ]);
+        });
+
+        return back()->with('success', 'Delivery confirmed! Thank you for your order.');
     }
 
     /**
-     * Enrich cart items with product data
+     * Enrich cart items with product data.
      */
     private function enrichCartItems($cart)
     {
         $items = [];
 
         foreach ($cart as $productId => $cartItem) {
-            $product = Product::with(['distributor', 'images', 'inventory'])
-                ->find($productId);
+            $product = Product::with(['distributor', 'images', 'inventory'])->find($productId);
+            if (!$product) continue;
 
-            if (!$product) {
-                continue;
-            }
-
-            $quantity = $cartItem['quantity'];
+            $quantity    = $cartItem['quantity'];
             $isWholesale = $product->hasWholesalePricing() && $quantity >= $product->wholesale_min_qty;
-            $unitPrice = $isWholesale ? $product->wholesale_price : $product->base_price;
+            $unitPrice   = $isWholesale ? $product->wholesale_price : $product->base_price;
 
             $items[] = [
-                'product' => $product,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
+                'product'      => $product,
+                'quantity'     => $quantity,
+                'unit_price'   => $unitPrice,
                 'is_wholesale' => $isWholesale,
-                'subtotal' => $unitPrice * $quantity,
+                'subtotal'     => $unitPrice * $quantity,
             ];
         }
 
@@ -308,7 +310,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Calculate cart subtotal
+     * Calculate cart subtotal.
      */
     private function calculateSubtotal($cartItems)
     {

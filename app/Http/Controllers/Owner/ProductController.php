@@ -80,15 +80,15 @@ class ProductController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'brand' => 'nullable|string|max:100',
-            'model' => 'nullable|string|max:100',
-            'price' => 'required|numeric|min:0',
-            'wholesale_price' => 'nullable|numeric|min:0',
-            'wholesale_min_quantity' => 'nullable|integer|min:1',
-            'image' => 'required|image|max:2048', // Made mandatory
+            'name'               => 'required|string|max:255',
+            'description'        => 'required|string',
+            'category_id'        => 'required|exists:categories,id',
+            'brand'              => 'nullable|string|max:100',
+            'model'              => 'nullable|string|max:100',
+            'base_price'         => 'required|numeric|min:0',
+            'wholesale_price'    => 'nullable|numeric|min:0',
+            'wholesale_min_qty'  => 'nullable|integer|min:1',
+            'image'              => 'required|image|max:2048',
         ]);
 
         \Log::info('[ProductController] Validation passed', [
@@ -104,19 +104,19 @@ class ProductController extends Controller
 
         try {
             $product = Product::create([
-                'distributor_id' => $distributor->id,
-                'name' => $validated['name'],
-                'sku' => 'PRD-' . strtoupper(Str::random(8)),
-                'slug' => Str::slug($validated['name']) . '-' . Str::random(6),
-                'description' => $validated['description'],
-                'category_id' => $validated['category_id'],
-                'brand' => $validated['brand'] ?? null,
-                'model' => $validated['model'] ?? null,
-                'base_price' => $validated['price'],
-                'wholesale_price' => $validated['wholesale_price'] ?? null,
-                'wholesale_min_qty' => $validated['wholesale_min_quantity'] ?? null,
-                'image_path' => $imagePath,
-                'is_active' => true,
+                'distributor_id'    => $distributor->id,
+                'name'              => $validated['name'],
+                'sku'               => 'PRD-' . strtoupper(Str::random(8)),
+                'slug'              => Str::slug($validated['name']) . '-' . Str::random(6),
+                'description'       => $validated['description'],
+                'category_id'       => $validated['category_id'],
+                'brand'             => $validated['brand'] ?? null,
+                'model'             => $validated['model'] ?? null,
+                'base_price'        => $validated['base_price'],
+                'wholesale_price'   => $validated['wholesale_price'] ?? null,
+                'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
+                'image_path'        => $imagePath,
+                'is_active'         => true,
             ]);
 
             \Log::info('[ProductController] Product created successfully', [
@@ -125,7 +125,7 @@ class ProductController extends Controller
                 'sku' => $product->sku
             ]);
 
-            return redirect()->route('inventory.index')
+            return redirect()->route('owner.inventory.index')
                 ->with('success', 'Product created successfully.');
         } catch (\Exception $e) {
             \Log::error('[ProductController] Product creation failed', [
@@ -169,27 +169,40 @@ class ProductController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'brand' => 'nullable|string|max:100',
-            'model' => 'nullable|string|max:100',
-            'price' => 'required|numeric|min:0',
-            'wholesale_price' => 'nullable|numeric|min:0',
-            'wholesale_min_quantity' => 'nullable|integer|min:1',
-            'is_active' => 'boolean',
-            'image' => 'nullable|image|max:2048',
+            'name'              => 'required|string|max:255',
+            'description'       => 'required|string',
+            'category_id'       => 'required|exists:categories,id',
+            'brand'             => 'nullable|string|max:100',
+            'model'             => 'nullable|string|max:100',
+            'base_price'        => 'required|numeric|min:0',
+            'wholesale_price'   => 'nullable|numeric|min:0',
+            'wholesale_min_qty' => 'nullable|integer|min:1',
+            'is_active'         => 'boolean',
+            'image'             => 'nullable|image|max:2048',
         ]);
+
+        // Build explicit update array (prevents stale/wrong field names leaking into DB)
+        $updateData = [
+            'name'              => $validated['name'],
+            'description'       => $validated['description'],
+            'category_id'       => $validated['category_id'],
+            'brand'             => $validated['brand'] ?? null,
+            'model'             => $validated['model'] ?? null,
+            'base_price'        => $validated['base_price'],
+            'wholesale_price'   => $validated['wholesale_price'] ?? null,
+            'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
+            'is_active'         => $validated['is_active'] ?? $product->is_active,
+        ];
 
         if ($request->hasFile('image')) {
             // Delete old image
             if ($product->image_path) {
                 \Storage::disk('public')->delete($product->image_path);
             }
-            $validated['image_path'] = $request->file('image')->store('products', 'public');
+            $updateData['image_path'] = $request->file('image')->store('products', 'public');
         }
 
-        $product->update($validated);
+        $product->update($updateData);
 
         return redirect()->route('owner.products.index')
             ->with('success', 'Product updated successfully.');

@@ -234,16 +234,80 @@
                             </div>
                         </div>
 
-                        <!-- Payment Info -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <!-- Payment Method Selection -->
+                        <div class="mb-6">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Payment Method *</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <!-- GCash -->
+                                <label :class="[
+                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
+                                    form.payment_method === 'gcash'
+                                        ? 'border-blue-500 bg-blue-50 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ]">
+                                    <input type="radio" v-model="form.payment_method" value="gcash" class="sr-only" />
+                                    <!-- GCash logo -->
+                                    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="100" height="100" rx="20" fill="#007DFE"/>
+                                        <path d="M73 50c0 12.703-10.297 23-23 23S27 62.703 27 50s10.297-23 23-23c6.364 0 12.12 2.578 16.3 6.75l-6.6 6.6A13 13 0 0050 37c-7.18 0-13 5.82-13 13s5.82 13 13 13c5.89 0 10.86-3.92 12.4-9.32H50V47h23v3z" fill="white"/>
+                                    </svg>
+                                    <span class="text-sm font-semibold" :class="form.payment_method === 'gcash' ? 'text-blue-700' : 'text-gray-700'">GCash</span>
+                                    <svg v-if="form.payment_method === 'gcash'" class="h-4 w-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </label>
+
+                                <!-- Maya -->
+                                <label :class="[
+                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
+                                    form.payment_method === 'paymaya'
+                                        ? 'border-green-500 bg-green-50 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ]">
+                                    <input type="radio" v-model="form.payment_method" value="paymaya" class="sr-only" />
+                                    <!-- Maya logo -->
+                                    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="100" height="100" rx="20" fill="#2CC84D"/>
+                                        <text x="50" y="68" font-family="Arial" font-weight="bold" font-size="40" text-anchor="middle" fill="white">M</text>
+                                    </svg>
+                                    <span class="text-sm font-semibold" :class="form.payment_method === 'paymaya' ? 'text-green-700' : 'text-gray-700'">Maya</span>
+                                    <svg v-if="form.payment_method === 'paymaya'" class="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </label>
+
+                                <!-- Credit/Debit Card -->
+                                <label :class="[
+                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
+                                    form.payment_method === 'card'
+                                        ? 'border-purple-500 bg-purple-50 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ]">
+                                    <input type="radio" v-model="form.payment_method" value="card" class="sr-only" />
+                                    <!-- Card icon -->
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="24" height="24" rx="4" fill="#7C3AED"/>
+                                        <rect x="2" y="7" width="20" height="10" rx="1.5" fill="white" fill-opacity="0.2"/>
+                                        <rect x="2" y="10" width="20" height="3" fill="white" fill-opacity="0.6"/>
+                                        <rect x="4" y="14" width="5" height="1.5" rx="0.75" fill="white"/>
+                                    </svg>
+                                    <span class="text-sm font-semibold" :class="form.payment_method === 'card' ? 'text-purple-700' : 'text-gray-700'">Card</span>
+                                    <svg v-if="form.payment_method === 'card'" class="h-4 w-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Escrow Info -->
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
                             <div class="flex items-start">
-                                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                <svg class="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                                 </svg>
-                                <div class="text-sm text-blue-800">
-                                    <p class="font-semibold mb-1">Payment on Delivery</p>
-                                    <p>You can pay when you receive your order</p>
-                                </div>
+                                <p class="text-xs text-green-800">
+                                    <strong>Buyer Protection:</strong> Your payment is held securely until you confirm receipt of your order.
+                                </p>
                             </div>
                         </div>
 
@@ -256,7 +320,7 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            {{ form.processing ? 'Processing Order...' : 'Place Order' }}
+                            {{ form.processing ? 'Processing...' : `Pay ₱${Number(subtotal).toLocaleString()} & Place Order` }}
                         </button>
 
                         <a 
@@ -329,13 +393,23 @@ watch(selectedSavedAddress, (newId) => {
     }
 });
 
-// Form data
+// Form data — now includes payment_method
 const form = useForm({
     customer_name: '',
     delivery_address: '',
     contact_number: '',
     notes: '',
+    payment_method: 'gcash',
+    reference_number: '',
+    proof: null,
 });
+
+// Payment method options — compact pill style, no external icon URLs
+const paymentMethods = [
+    { value: 'gcash',   label: 'GCash' },
+    { value: 'paymaya', label: 'Maya' },
+    { value: 'card',    label: 'Card' },
+];
 
 // Get available barangays for selected city
 const availableBarangays = computed(() => {
@@ -407,7 +481,10 @@ const isFormValid = computed(() => {
         'isValid': hasName && hasCity && hasBarangay && hasStreetAddress && hasContactNumber
     });
     
-    return hasName && hasCity && hasBarangay && hasStreetAddress && hasContactNumber;
+    const hasPaymentMethod = !!form.payment_method;
+    const hasBankRef = form.payment_method !== 'bank_transfer' || (form.reference_number && form.reference_number.length >= 3);
+    
+    return hasName && hasCity && hasBarangay && hasStreetAddress && hasContactNumber && hasPaymentMethod && hasBankRef;
 });
 
 const submitOrder = () => {

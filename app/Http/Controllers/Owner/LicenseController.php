@@ -6,12 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Distributor;
 use App\Models\License;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class LicenseController extends Controller
 {
     public function create(Distributor $distributor)
     {
-        return view('owner.license.create', compact('distributor'));
+        // Ensure the authenticated user owns this distributor
+        if ($distributor->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return Inertia::render('Owner/License/Create', [
+            'distributor' => $distributor,
+        ]);
     }
 
     public function store(Request $request, Distributor $distributor)

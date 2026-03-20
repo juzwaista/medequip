@@ -27,6 +27,7 @@ class Product extends Model
         'has_warranty',
         'warranty_months',
         'image_path',
+        'barcode',
         'is_active',
     ];
 

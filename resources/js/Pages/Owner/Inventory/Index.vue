@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="flex justify-between items-center mb-6">
@@ -18,15 +18,7 @@
                 </Link>
             </div>
 
-            <!-- Success Message -->
-            <div v-if="$page.props.flash?.success" class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
-                <div class="flex items-start">
-                    <svg class="h-5 w-5 text-green-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <p class="text-sm text-green-800 font-medium">{{ $page.props.flash.success }}</p>
-                </div>
-            </div>
+
 
             <!-- Filters -->
             <div class="bg-white rounded-xl shadow-md p-6 mb-6">
@@ -158,7 +150,7 @@
                         <!-- Actions -->
                         <div class="flex gap-2">
                             <Link 
-                                :href="`/owner/inventory/${product.inventory[0]?.id}/edit`"
+                                :href="`/owner/inventory/${product.id}/edit`"
                                 class="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
                             >
                                 <svg class="h-4 w-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,13 +299,13 @@
                 </div>
             </div>
         </Teleport>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
 const props = defineProps({
     products: Object,

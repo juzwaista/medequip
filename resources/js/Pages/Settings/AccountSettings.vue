@@ -7,15 +7,7 @@
                 <p class="text-gray-600 mt-2">Manage your account preferences and security</p>
             </div>
 
-            <!-- Success Message -->
-            <div v-if="$page.props.flash?.success" class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
-                <div class="flex items-start">
-                    <svg class="h-5 w-5 text-green-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <p class="text-sm text-green-800 font-medium">{{ $page.props.flash.success }}</p>
-                </div>
-            </div>
+
 
             <!-- Error Messages -->
             <div v-if="$page.props.errors && Object.keys($page.props.errors).length > 0" class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">

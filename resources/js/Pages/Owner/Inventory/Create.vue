@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-6">
@@ -48,6 +48,23 @@
                                 placeholder="e.g., Digital Blood Pressure Monitor"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
+                        </div>
+
+                        <!-- Barcode -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Barcode <span class="text-gray-400 text-xs">(Optional — scan or type product barcode)</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="form.barcode"
+                                    type="text"
+                                    placeholder="e.g., 4901234567890"
+                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                                />
+                                <BarcodeScannerModal @scanned="code => form.barcode = code" />
+                            </div>
+                            <p v-if="errors.barcode" class="text-red-500 text-sm mt-1">{{ errors.barcode }}</p>
                         </div>
 
                         <!-- Category -->
@@ -232,13 +249,14 @@
                 </div>
             </form>
         </div>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
+import BarcodeScannerModal from '@/Components/BarcodeScannerModal.vue';
 
 const props = defineProps({
     categories: Array,
@@ -253,6 +271,7 @@ const form = ref({
     category_id: '',
     brand: '',
     model: '',
+    barcode: '',
     base_price: '',
     wholesale_price: '',
     wholesale_min_qty: '',

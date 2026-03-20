@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex justify-between items-center mb-8">
                 <div>
@@ -44,10 +44,10 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 </script>

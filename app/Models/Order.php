@@ -18,17 +18,23 @@ class Order extends Model
         'discount',
         'total_amount',
         'delivery_address',
+        'contact_number',
         'notes',
+        'payment_method',
         'approved_at',
         'cancelled_at',
+        'delivered_at',
+        'received_at',
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'discount' => 'decimal:2',
+        'subtotal'     => 'decimal:2',
+        'discount'     => 'decimal:2',
         'total_amount' => 'decimal:2',
-        'approved_at' => 'datetime',
+        'approved_at'  => 'datetime',
         'cancelled_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'received_at'  => 'datetime',
     ];
 
     /**
@@ -85,6 +91,14 @@ class Order extends Model
     public function canBeCancelled(): bool
     {
         return in_array($this->status, ['pending', 'approved']);
+    }
+
+    /**
+     * Check if buyer can confirm receipt
+     */
+    public function canBeConfirmedReceived(): bool
+    {
+        return $this->status === 'delivered' && is_null($this->received_at);
     }
 
     /**

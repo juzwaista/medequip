@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-8">
@@ -40,7 +40,7 @@
                 </div>
 
                 <!-- Total Revenue -->
-                <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+                <div v-if="$page.props.auth.user.role !== 'staff'" class="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-sm text-gray-600 mb-1">Total Revenue</p>
@@ -259,12 +259,12 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import { Head } from '@inertiajs/vue3';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
 const props = defineProps({
     distributor: Object,

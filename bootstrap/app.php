@@ -11,8 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
+        // Exempt PayMongo webhook from CSRF — PayMongo POSTs without a session token
+        $middleware->validateCsrfTokens(except: [
+            'payments/webhook',
         ]);
 
         $middleware->alias([
@@ -22,3 +30,4 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
+

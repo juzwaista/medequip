@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="flex justify-between items-center mb-6">
@@ -107,13 +107,13 @@
                 </template>
             </div>
         </div>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
 const props = defineProps({
     products: Object,

@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Delivery extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'order_id',
+        'courier_id',
         'tracking_number',
         'delivery_address',
         'scheduled_date',
@@ -16,41 +20,33 @@ class Delivery extends Model
         'driver_name',
         'driver_contact',
         'proof_of_delivery_path',
-        'status',
+        'status', // pending, scheduled, in_transit, delivered, failed
         'notes',
     ];
 
     protected $casts = [
-        'scheduled_date' => 'date',
+        'scheduled_date'     => 'date',
         'actual_delivery_at' => 'datetime',
     ];
 
-    /**
-     * Get the order
-     */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    /**
-     * Get the full URL for proof of delivery
-     */
-    public function getProofUrlAttribute(): ?string
+    public function courier(): BelongsTo
     {
-        return $this->proof_of_delivery_path
-            ? asset('storage/' . $this->proof_of_delivery_path)
-            : null;
+        return $this->belongsTo(Courier::class);
     }
 
     /**
-     * Generate unique tracking number
+     * Generate a unique tracking number for a delivery.
      */
     public static function generateTrackingNumber(): string
     {
         do {
-            $number = 'TRK-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
-        } while (self::where('tracking_number', $number)->exists());
+            $number = 'TRK-' . strtoupper(\Illuminate\Support\Str::random(3)) . '-' . now()->format('ymd') . '-' . rand(1000, 9999);
+        } while (static::where('tracking_number', $number)->exists());
 
         return $number;
     }

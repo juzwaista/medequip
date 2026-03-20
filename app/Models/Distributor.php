@@ -45,6 +45,14 @@ class Distributor extends Model
     }
 
     /**
+     * Get staff users employed by this distributor
+     */
+    public function staff()
+    {
+        return $this->hasMany(User::class, 'distributor_id');
+    }
+
+    /**
      * Get licenses
      */
     public function licenses()

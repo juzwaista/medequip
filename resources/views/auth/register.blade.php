@@ -40,7 +40,7 @@
             <label class="block text-sm font-medium mb-2">I am a...</label>
             <div class="space-y-2">
                 <label class="flex items-center">
-                    <input type="radio" name="role" value="buyer" checked
+                    <input type="radio" name="role" value="customer" checked
                         class="mr-2 text-blue-600 focus:ring-blue-500">
                     <span>Customer</span>
                     <span class="text-xs text-gray-500 ml-2">(Purchase medical equipment)</span>

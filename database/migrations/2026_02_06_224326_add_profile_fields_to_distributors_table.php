@@ -12,14 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('distributors', function (Blueprint $table) {
-            // Only add columns that don't already exist
-            // description and logo_path already exist, so skip them
-            $table->string('slug')->unique()->nullable()->after('company_name');
-            $table->string('cover_photo_path')->nullable()->after('description');
-            $table->string('phone')->nullable()->after('cover_photo_path');
-            $table->string('website')->nullable()->after('phone');
-            $table->json('business_hours')->nullable()->after('website');
-            $table->json('social_links')->nullable()->after('business_hours');
+            if (!Schema::hasColumn('distributors', 'slug')) {
+                $table->string('slug')->unique()->nullable()->after('company_name');
+            }
+            if (!Schema::hasColumn('distributors', 'cover_photo_path')) {
+                $table->string('cover_photo_path')->nullable()->after('description');
+            }
+            if (!Schema::hasColumn('distributors', 'phone')) {
+                $table->string('phone')->nullable()->after('cover_photo_path');
+            }
+            if (!Schema::hasColumn('distributors', 'website')) {
+                $table->string('website')->nullable()->after('phone');
+            }
+            if (!Schema::hasColumn('distributors', 'business_hours')) {
+                $table->json('business_hours')->nullable()->after('website');
+            }
+            if (!Schema::hasColumn('distributors', 'social_links')) {
+                $table->json('social_links')->nullable()->after('business_hours');
+            }
         });
     }
 

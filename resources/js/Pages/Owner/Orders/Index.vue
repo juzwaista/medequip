@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-8 flex justify-between items-center">
@@ -134,13 +134,13 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
 import { reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import DateFormat from '@/Components/DateFormat.vue';
 

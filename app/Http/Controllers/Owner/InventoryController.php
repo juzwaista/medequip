@@ -48,15 +48,19 @@ class InventoryController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        // Filter by stock status
+        // Filter by stock status — use a subquery approach to avoid invalid havingRaw inside whereHas
         if ($request->stock_status) {
-            $query->whereHas('inventory', function ($q) use ($request) {
+            $query->whereIn('id', function ($sub) use ($request) {
+                $sub->select('product_id')
+                    ->from('inventory')
+                    ->groupBy('product_id');
+
                 if ($request->stock_status === 'out') {
-                    $q->havingRaw('SUM(quantity) = 0');
+                    $sub->havingRaw('SUM(quantity) = 0');
                 } elseif ($request->stock_status === 'low') {
-                    $q->havingRaw('SUM(quantity) > 0 AND SUM(quantity) < 10');
+                    $sub->havingRaw('SUM(quantity) > 0 AND SUM(quantity) < 10');
                 } elseif ($request->stock_status === 'in_stock') {
-                    $q->havingRaw('SUM(quantity) >= 10');
+                    $sub->havingRaw('SUM(quantity) >= 10');
                 }
             });
         }
@@ -148,9 +152,12 @@ class InventoryController extends Controller
             'base_price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_qty' => 'nullable|integer|min:1',
+            'barcode' => 'nullable|string|max:100|unique:products,barcode',
             'image' => 'nullable|image|max:2048',
             'initial_quantity' => 'required|integer|min:0',
-            'reorder_level' => 'required|integer|min:0',
+            'reorder_level'    => 'required|integer|min:0',
+            'expiry_date'      => 'nullable|date|after:today',
+            'batch_number'     => 'nullable|string|max:100',
         ]);
 
         try {
@@ -172,17 +179,19 @@ class InventoryController extends Controller
                 'base_price' => $validated['base_price'],
                 'wholesale_price' => $validated['wholesale_price'] ?? null,
                 'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
+                'barcode' => $validated['barcode'] ?? null,
                 'image_path' => $imagePath,
                 'is_active' => true,
             ]);
 
-            // Create initial inventory record
             Inventory::create([
-                'product_id' => $product->id,
-                'branch_id' => null,
-                'quantity' => $validated['initial_quantity'],
-                'reorder_level' => $validated['reorder_level'],
+                'product_id'        => $product->id,
+                'branch_id'         => null,
+                'quantity'          => $validated['initial_quantity'],
+                'reorder_level'     => $validated['reorder_level'],
                 'reserved_quantity' => 0,
+                'expiry_date'       => $validated['expiry_date'] ?? null,
+                'batch_number'      => $validated['batch_number'] ?? null,
             ]);
 
             Log::info('[InventoryController] Product and inventory created', [
@@ -206,22 +215,22 @@ class InventoryController extends Controller
     }
 
     /**
-     * Show form to edit product details
+     * Show form to edit product details (looked up by product ID)
      */
     public function edit($id)
     {
         $distributor = auth()->user()->distributor;
 
-        $inventory = Inventory::with(['product.category'])
-            ->whereHas('product', function($query) use ($distributor) {
-                $query->where('distributor_id', $distributor->id);
-            })
+        // Bug 7 fix: look up by product ID (consistent with update())
+        $product = Product::where('distributor_id', $distributor->id)
+            ->with(['category', 'inventory'])
             ->findOrFail($id);
 
         $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
 
         return Inertia::render('Owner/Inventory/Edit', [
-            'inventory' => $inventory,
+            'product'    => $product,
+            'inventory'  => $product->inventory->first(),
             'categories' => $categories,
         ]);
     }
@@ -243,19 +252,31 @@ class InventoryController extends Controller
             'base_price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_qty' => 'nullable|integer|min:1',
+            'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $id,
             'is_active' => 'boolean',
             'image' => 'nullable|image|max:2048',
         ]);
+
+        $updateData = [
+            'name'              => $validated['name'],
+            'description'       => $validated['description'],
+            'category_id'       => $validated['category_id'],
+            'base_price'        => $validated['base_price'],
+            'wholesale_price'   => $validated['wholesale_price'] ?? null,
+            'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
+            'barcode'           => $validated['barcode'] ?? null,
+            'is_active'         => $validated['is_active'] ?? $product->is_active,
+        ];
 
         if ($request->hasFile('image')) {
             // Delete old image
             if ($product->image_path) {
                 \Storage::disk('public')->delete($product->image_path);
             }
-            $validated['image_path'] = $request->file('image')->store('products', 'public');
+            $updateData['image_path'] = $request->file('image')->store('products', 'public');
         }
 
-        $product->update($validated);
+        $product->update($updateData);
 
         Log::info('[InventoryController] Product updated', [
             'product_id' => $product->id,

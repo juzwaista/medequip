@@ -21,7 +21,7 @@ class CustomerOrderController extends Controller
             'filters' => $request->only(['status', 'search', 'date_from', 'date_to'])
         ]);
 
-        $query = Order::with(['distributor', 'items.product'])
+        $query = Order::with(['distributor', 'items.product', 'invoice.payments'])
             ->where('customer_id', $user->id);
 
         // Search by order number or product name
@@ -139,29 +139,39 @@ class CustomerOrderController extends Controller
         }
 
         try {
-            // Release reserved stock
+            // Bug 12 fix: differentiate stock handling based on prior status
             foreach ($order->items as $item) {
-                $item->inventory->releaseReservation($item->quantity);
+                if ($order->status === 'pending') {
+                    // Stock was reserved but NOT physically deducted — release reservation
+                    $item->inventory->releaseReservation($item->quantity);
+                } elseif ($order->status === 'approved') {
+                    // Stock was physically deducted at approval — restore it
+                    $item->inventory->increment('quantity', $item->quantity);
+                    $item->inventory->update([
+                        'reserved_quantity' => max(0, $item->inventory->reserved_quantity - $item->quantity),
+                    ]);
+                }
             }
 
             $order->update([
-                'status' => 'cancelled',
+                'status'       => 'cancelled',
                 'cancelled_at' => now(),
             ]);
 
             Log::info('[CustomerOrderController] Order cancelled successfully', [
-                'user_id' => $user->id,
-                'order_id' => $order->id,
-                'order_number' => $order->order_number
+                'user_id'      => $user->id,
+                'order_id'     => $order->id,
+                'order_number' => $order->order_number,
+                'prior_status' => $order->getOriginal('status'),
             ]);
 
             return back()->with('success', 'Order cancelled successfully');
         } catch (\Exception $e) {
             Log::error('[CustomerOrderController] Order cancellation failed', [
                 'order_id' => $order->id,
-                'error' => $e->getMessage()
+                'error'    => $e->getMessage()
             ]);
-            
+
             return back()->with('error', 'Failed to cancel order. Please try again.');
         }
     }

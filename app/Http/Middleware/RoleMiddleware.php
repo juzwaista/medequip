@@ -8,9 +8,22 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!auth()->check() || auth()->user()->role !== $role) {
+        if (!\Illuminate\Support\Facades\Auth::check()) {
+            abort(403);
+        }
+
+        /** @var \App\Models\User $user */
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        // If the role requires 'admin', then 'super_admin' naturally passes.
+        $allowedRoles = $roles;
+        if (in_array('admin', $roles) && !in_array('super_admin', $roles)) {
+            $allowedRoles[] = 'super_admin';
+        }
+
+        if (!in_array($user->role, $allowedRoles)) {
             abort(403);
         }
 

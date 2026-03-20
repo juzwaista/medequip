@@ -96,17 +96,39 @@ class OrderController extends Controller
         }
 
         $request->validate([
-            'status' => 'required|in:pending,approved,rejected,packed,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,approved,rejected,packed,cancelled',
         ]);
 
         $oldStatus = $order->status;
         $newStatus = $request->status;
 
+        // Bug 14: Enforce valid state machine transitions
+        $validTransitions = [
+            'pending'   => ['approved', 'rejected', 'cancelled'],
+            'approved'  => ['packed', 'cancelled'],
+            'packed'    => [],          // Shipped/Delivered handled by Courier
+            'shipped'   => [],          // Terminal for owner
+            'delivered' => [],          // Terminal state
+            'cancelled' => [],          // Terminal state
+            'rejected'  => [],          // Terminal state
+        ];
+
+        if (!in_array($newStatus, $validTransitions[$oldStatus] ?? [])) {
+            \Log::warning('[OrderController] Invalid status transition attempted', [
+                'order_id'   => $order->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+            return back()->withErrors([
+                'error' => "Cannot transition order from '{$oldStatus}' to '{$newStatus}'.",
+            ]);
+        }
+
         \Log::info('[OrderController] Status update initiated', [
-            'order_id' => $order->id,
+            'order_id'     => $order->id,
             'order_number' => $order->order_number,
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus
+            'old_status'   => $oldStatus,
+            'new_status'   => $newStatus
         ]);
 
         // Prevent invalid status transitions
@@ -150,54 +172,75 @@ class OrderController extends Controller
             ]);
         }
 
-        // If rejecting/cancelling, release reserved inventory
+        // If rejecting/cancelling, handle inventory correctly based on prior status
         if (in_array($newStatus, ['rejected', 'cancelled'])) {
-            \Log::info('[OrderController] Releasing reserved inventory', [
-                'order_id' => $order->id,
-                'status' => $newStatus
+            \Log::info('[OrderController] Handling inventory for cancellation/rejection', [
+                'order_id'   => $order->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
             ]);
 
             try {
                 foreach ($order->items as $item) {
-                    $item->inventory->releaseReservation($item->quantity);
+                    if ($oldStatus === 'pending') {
+                        // Stock was reserved but NOT physically deducted — release reservation only
+                        $item->inventory->releaseReservation($item->quantity);
+                    } elseif ($oldStatus === 'approved') {
+                        // Stock was already physically deducted at approval — restore it
+                        $item->inventory->increment('quantity', $item->quantity);
+                        // Also zero out any residual reservation (should already be 0)
+                        $item->inventory->update([
+                            'reserved_quantity' => max(0, $item->inventory->reserved_quantity - $item->quantity),
+                        ]);
+                        \Log::info('[OrderController] Restored deducted stock for approved order', [
+                            'inventory_id' => $item->inventory->id,
+                            'restored_qty' => $item->quantity,
+                        ]);
+                    }
+                    // packed/shipped orders should not be cancellable — enforced by status machine
                 }
-                \Log::info('[OrderController] Reserved inventory released successfully');
+                \Log::info('[OrderController] Inventory handled successfully for cancellation');
             } catch (\Exception $e) {
-                \Log::error('[OrderController] Failed to release reserved inventory', [
-                    'error' => $e->getMessage(),
-                    'order_id' => $order->id
+                \Log::error('[OrderController] Failed to restore inventory during cancellation', [
+                    'error'    => $e->getMessage(),
+                    'order_id' => $order->id,
                 ]);
-                return back()->withErrors(['error' => 'Failed to release inventory: ' . $e->getMessage()]);
+                return back()->withErrors(['error' => 'Failed to restore inventory: ' . $e->getMessage()]);
             }
         }
 
-        // If shipped, create delivery record
-        if ($newStatus === 'shipped' && $oldStatus !== 'shipped') {
-            \Log::info('[OrderController] Creating delivery record');
-            
-            Delivery::create([
-                'order_id' => $order->id,
-                'tracking_number' => 'TRK-' . strtoupper(uniqid()),
-                'carrier' => $request->carrier ?? 'Standard Delivery',
-                'status' => 'in_transit',
-            ]);
+        // If packed, create delivery record for the Courier Dispatch pool
+        if ($newStatus === 'packed' && $oldStatus !== 'packed') {
+            \Log::info('[OrderController] Creating delivery record for dispatch pool');
+
+            $order->loadMissing([]);
+
+            Delivery::firstOrCreate(
+                ['order_id' => $order->id],
+                [
+                    'tracking_number'  => Delivery::generateTrackingNumber(),
+                    'delivery_address' => $order->delivery_address ?? 'No address provided',
+                    'status'           => 'pending',
+                ]
+            );
         }
 
-        // If delivered, mark delivery completion
+        // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).
+        // However, if the owner manually transitions it, we just let the state update.
         if ($newStatus === 'delivered') {
             \Log::info('[OrderController] Marking order as delivered');
-            
+
             $order->update(['delivered_at' => now()]);
             if ($order->delivery) {
                 $order->delivery->update([
-                    'status' => 'delivered',
-                    'delivered_at' => now(),
+                    'status'             => 'delivered',
+                    'actual_delivery_at' => now(),   // Bug 17 fix: correct column name
                 ]);
             }
 
             // No inventory change here - already deducted at approval
             \Log::info('[OrderController] Order delivered successfully', [
-                'order_id' => $order->id,
+                'order_id'     => $order->id,
                 'delivered_at' => now()
             ]);
         }

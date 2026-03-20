@@ -19,8 +19,6 @@ return [
         'Maragondon' => ['zip' => '4112'],
         'Mendez' => ['zip' => '4151'],
         'Naic' => ['zip' => '4110'],
-        'Noveleta' => ['zip' => '4105'],
-        'Rosario' => ['zip' => '4106'],
         'Silang' => ['zip' => '4118'],
         'Tagaytay' => ['zip' => '4120'],
         'Tanza' => ['zip' => '4108'],

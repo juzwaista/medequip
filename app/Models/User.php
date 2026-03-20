@@ -81,7 +81,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'super_admin']);
     }
 
     /**
@@ -99,4 +99,40 @@ class User extends Authenticatable
     {
         return $this->role === 'customer';
     }
+    /**
+     * Get the user's wallet
+     */
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    /**
+     * Get the user's courier profile
+     */
+    public function courier()
+    {
+        return $this->hasOne(Courier::class);
+    }
+
+    public function isCourier(): bool
+    {
+        return $this->role === 'courier';
+    }
+
+    /**
+     * Get the distributor this user works for (if role is staff)
+     */
+    public function employer()
+    {
+        return $this->belongsTo(Distributor::class, 'distributor_id');
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            $user->wallet()->create();
+        });
+    }
 }
+

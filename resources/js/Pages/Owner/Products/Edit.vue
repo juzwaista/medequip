@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <OwnerLayout>
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-6">
                 <h1 class="text-3xl font-bold text-gray-900">Edit Product</h1>
@@ -79,7 +79,7 @@
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₱</span>
                                 <input 
-                                    v-model="form.price"
+                                    v-model="form.base_price"
                                     type="number"
                                     step="0.01"
                                     min="0"
@@ -87,7 +87,7 @@
                                     class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
-                            <p v-if="form.errors.price" class="text-red-500 text-sm mt-1">{{ form.errors.price }}</p>
+                            <p v-if="form.errors.base_price" class="text-red-500 text-sm mt-1">{{ form.errors.base_price }}</p>
                         </div>
 
                         <!-- Wholesale Price (Optional) -->
@@ -110,12 +110,12 @@
                         <div v-if="form.wholesale_price">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum Wholesale Quantity</label>
                             <input 
-                                v-model="form.wholesale_min_quantity"
+                                v-model="form.wholesale_min_qty"
                                 type="number"
                                 min="1"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
-                            <p v-if="form.errors.wholesale_min_quantity" class="text-red-500 text-sm mt-1">{{ form.errors.wholesale_min_quantity }}</p>
+                            <p v-if="form.errors.wholesale_min_qty" class="text-red-500 text-sm mt-1">{{ form.errors.wholesale_min_qty }}</p>
                         </div>
 
                         <!-- Active Status -->
@@ -161,12 +161,12 @@
                 </form>
             </div>
         </div>
-    </MainLayout>
+    </OwnerLayout>
 </template>
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
 const props = defineProps({
     product: Object,
@@ -180,9 +180,9 @@ const form = useForm({
     brand: props.product.brand || '',
     model: props.product.model || '',
     description: props.product.description,
-    price: props.product.price,
+    base_price: props.product.base_price,
     wholesale_price: props.product.wholesale_price || '',
-    wholesale_min_quantity: props.product.wholesale_min_quantity || '',
+    wholesale_min_qty: props.product.wholesale_min_qty || '',
     is_active: props.product.is_active,
     image: null,
 });

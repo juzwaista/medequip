@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <AdminLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
@@ -40,7 +40,7 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <h3 class="font-bold text-lg text-gray-900">{{ distributor.company_name }}</h3>
-                                <p class="text-sm text-gray-600 mt-1">Owner: {{ distributor.user.name }} ({{ distributor.user.email }})</p>
+                                <p class="text-sm text-gray-600 mt-1">Owner: {{ distributor.owner?.name ?? '—' }} ({{ distributor.owner?.email ?? '' }})</p>
                                 <p class="text-sm text-gray-500 mt-1">Registered: {{ formatDate(distributor.created_at) }}</p>
                                 <div class="mt-2 grid grid-cols-2 gap-4 max-w-2xl">
                                     <div>
@@ -108,12 +108,12 @@
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { router } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     stats: Object,

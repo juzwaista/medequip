@@ -6,14 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Distributor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class DistributorController extends Controller
 {
     public function index()
     {
-        $distributors = Distributor::where('user_id', Auth::id())->get();
+        // One distributor per user
+        $distributor = Distributor::where('user_id', Auth::id())->first();
 
-        return view('owner.distributor.index', compact('distributors'));
+        if ($distributor) {
+            return redirect()->route('owner.profile.edit');
+        }
+
+        return redirect()->route('owner.distributor.create');
     }
 
     public function create()

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Distributor;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class BranchController extends Controller
 {
@@ -17,7 +18,10 @@ class BranchController extends Controller
         }
 
         $branches = $distributor->branches()->paginate(10);
-        return view('owner.branches.index', compact('distributor', 'branches'));
+        return Inertia::render('Owner/Branches/Index', [
+            'distributor' => $distributor,
+            'branches'    => $branches,
+        ]);
     }
 
     public function create(Distributor $distributor)
@@ -31,7 +35,9 @@ class BranchController extends Controller
                 ->with('error', 'You must be verified before you can add branches.');
         }
 
-        return view('owner.branches.create', compact('distributor'));
+        return Inertia::render('Owner/Branches/Create', [
+            'distributor' => $distributor,
+        ]);
     }
 
     public function store(Request $request, Distributor $distributor)
