@@ -19,7 +19,6 @@
                             ref="searchInput"
                         >
                     </div>
-                    <!-- Camera Scanner Button -->
                     <button
                         @click="openScanner"
                         title="Scan Barcode / QR Code"
@@ -97,6 +96,7 @@
                 </div>
 
                 <div class="border-t border-gray-100 p-4 bg-gray-50">
+                    <!-- Totals -->
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-gray-600 font-medium">Items</span>
                         <span class="font-semibold text-gray-900">{{ totalItems }}</span>
@@ -106,7 +106,29 @@
                         <span class="font-black text-blue-600">₱{{ cartTotal.toLocaleString() }}</span>
                     </div>
 
-                    <div class="mb-4">
+                    <!-- ── Payment Method Selector ── -->
+                    <div class="mb-3">
+                        <label class="block text-xs text-gray-500 font-medium mb-2">PAYMENT METHOD</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                v-for="method in paymentMethods"
+                                :key="method.value"
+                                @click="paymentMethod = method.value"
+                                :class="[
+                                    'flex flex-col items-center gap-1 py-2.5 px-3 rounded-xl border-2 text-sm font-semibold transition',
+                                    paymentMethod === method.value
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                                ]"
+                            >
+                                <span class="text-lg">{{ method.icon }}</span>
+                                <span>{{ method.label }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Cash Tendered (only for cash) ── -->
+                    <div v-if="paymentMethod === 'cash'" class="mb-4">
                         <label class="block text-xs text-gray-500 font-medium mb-1">CASH TENDERED</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₱</span>
@@ -123,16 +145,24 @@
                         </div>
                     </div>
 
+                    <!-- ── PayMongo note ── -->
+                    <div v-else class="mb-4 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-sm text-indigo-700">
+                        <div class="font-semibold mb-0.5">Online Payment via PayMongo</div>
+                        <div class="text-xs text-indigo-500">Customer will be redirected to a secure payment page (Card, GCash, or Maya).</div>
+                    </div>
+
+                    <!-- ── Complete Sale Button ── -->
                     <button 
-                         @click="checkout"
-                        :disabled="cart.length === 0 || amountPaid < cartTotal || form.processing"
+                        @click="checkout"
+                        :disabled="!canCheckout || form.processing"
                         class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-xl transition shadow-lg flex justify-center items-center gap-2"
                     >
                         <svg v-if="form.processing" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span v-else class="text-lg">Complete Sale</span>
+                        <span v-else-if="paymentMethod === 'cash'" class="text-lg">Complete Sale</span>
+                        <span v-else class="text-lg flex items-center gap-2">Pay Online <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></span>
                     </button>
                 </div>
             </div>
@@ -142,7 +172,6 @@
         <Teleport to="body">
             <div v-if="scannerOpen" class="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4" @click.self="closeScanner">
                 <div class="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl w-full max-w-sm">
-                    <!-- Header -->
                     <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
                         <div>
                             <h3 class="text-white font-bold text-lg">Scan Barcode / QR</h3>
@@ -152,11 +181,8 @@
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
-
-                    <!-- Video Feed -->
                     <div class="relative bg-black aspect-square">
                         <video ref="videoEl" class="w-full h-full object-cover" autoplay playsinline muted></video>
-                        <!-- Targeting Reticle -->
                         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div class="w-52 h-52 relative">
                                 <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-lg"></div>
@@ -166,15 +192,12 @@
                                 <div v-if="scanning" class="absolute top-0 left-0 right-0 h-0.5 bg-blue-400 opacity-75 animate-bounce"></div>
                             </div>
                         </div>
-                        <!-- Camera Error -->
                         <div v-if="cameraError" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-center p-6">
                             <svg class="h-12 w-12 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M3 8a2 2 0 00-2 2v4a2 2 0 002 2h8a2 2 0 002-2v-4a2 2 0 00-2-2H3z"/></svg>
                             <p class="text-white font-semibold mb-1">Camera Error</p>
                             <p class="text-gray-400 text-sm">{{ cameraError }}</p>
                         </div>
                     </div>
-
-                    <!-- Status / Last Scan -->
                     <div class="px-5 py-4">
                         <div v-if="lastScanned" class="flex items-center gap-3 bg-green-900/50 border border-green-700 text-green-300 rounded-lg px-4 py-3 mb-3">
                             <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -184,7 +207,6 @@
                             <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                             Scanning for barcode...
                         </div>
-                        <!-- Camera selector -->
                         <select v-if="cameras.length > 1" v-model="selectedCamera" @change="switchCamera" class="w-full mt-3 bg-gray-800 text-gray-200 text-sm rounded-lg border border-gray-600 px-3 py-2">
                             <option v-for="cam in cameras" :key="cam.deviceId" :value="cam.deviceId">{{ cam.label || `Camera ${cam.deviceId.slice(0,6)}` }}</option>
                         </select>
@@ -212,10 +234,17 @@ const searchQuery = ref('');
 const searchInput = ref(null);
 const cart = ref([]);
 const amountPaid = ref('');
+const paymentMethod = ref('cash');
+
+const paymentMethods = [
+    { value: 'cash',      label: 'Cash',    icon: '' },
+    { value: 'paymongo',  label: 'Online',  icon: '' },
+];
 
 const form = useForm({
     items: [],
-    amount_paid: 0
+    amount_paid: 0,
+    payment_method: 'cash',
 });
 
 // --- Barcode Scanner ---
@@ -234,7 +263,6 @@ const openScanner = async () => {
     lastScanned.value = '';
     cameraError.value = '';
     scanning.value = false;
-    // wait for DOM
     await new Promise(r => setTimeout(r, 150));
     await startScanner();
 };
@@ -242,29 +270,15 @@ const openScanner = async () => {
 const startScanner = async () => {
     try {
         codeReader = new BrowserMultiFormatReader();
-        
-        // List cameras
         const devices = await BrowserMultiFormatReader.listVideoInputDevices();
         cameras.value = devices;
-        
-        if (devices.length === 0) {
-            cameraError.value = 'No camera found on this device.';
-            return;
-        }
-        
-        // Prefer back camera if available
+        if (devices.length === 0) { cameraError.value = 'No camera found on this device.'; return; }
         const backCam = devices.find(d => /back|rear|environment/i.test(d.label));
         selectedCamera.value = backCam ? backCam.deviceId : (selectedCamera.value || devices[0].deviceId);
-        
         scanning.value = true;
         scannerControls = await codeReader.decodeFromVideoDevice(
-            selectedCamera.value,
-            videoEl.value,
-            (result, err) => {
-                if (result) {
-                    handleScanResult(result.getText());
-                }
-            }
+            selectedCamera.value, videoEl.value,
+            (result) => { if (result) handleScanResult(result.getText()); }
         );
     } catch (e) {
         cameraError.value = e.message || 'Camera access denied. Please allow camera permissions.';
@@ -274,47 +288,32 @@ const startScanner = async () => {
 
 const handleScanResult = (code) => {
     const matched = props.products.find(p => p.barcode === code || p.sku === code);
-    if (matched) {
-        addToCart(matched);
-        lastScanned.value = `Added: ${matched.name}`;
-    } else {
-        lastScanned.value = `No product found for: ${code}`;
-    }
-    // Brief pause, then reset for next scan
+    if (matched) { addToCart(matched); lastScanned.value = `Added: ${matched.name}`; }
+    else          { lastScanned.value = `No product found for: ${code}`; }
     setTimeout(() => { lastScanned.value = ''; }, 2500);
 };
 
 const switchCamera = async () => {
-    if (scannerControls) {
-        scannerControls.stop();
-    }
+    if (scannerControls) scannerControls.stop();
     await startScanner();
 };
 
 const closeScanner = () => {
-    if (scannerControls) {
-        scannerControls.stop();
-        scannerControls = null;
-    }
+    if (scannerControls) { scannerControls.stop(); scannerControls = null; }
     scanning.value = false;
     scannerOpen.value = false;
     if (searchInput.value) searchInput.value.focus();
 };
 
-onBeforeUnmount(() => {
-    closeScanner();
-});
-
-onMounted(() => {
-    if (searchInput.value) searchInput.value.focus();
-});
+onBeforeUnmount(() => { closeScanner(); });
+onMounted(() => { if (searchInput.value) searchInput.value.focus(); });
 
 // --- Product search ---
 const filteredProducts = computed(() => {
     if (!searchQuery.value) return props.products;
     const q = searchQuery.value.toLowerCase();
-    return props.products.filter(p => 
-        p.name.toLowerCase().includes(q) || 
+    return props.products.filter(p =>
+        p.name.toLowerCase().includes(q) ||
         (p.sku && p.sku.toLowerCase().includes(q)) ||
         (p.barcode && p.barcode.includes(q))
     );
@@ -324,30 +323,21 @@ const handleBarcodeScan = () => {
     const q = searchQuery.value.trim();
     if (!q) return;
     const matchedProduct = props.products.find(p => p.barcode === q || p.sku === q);
-    if (matchedProduct) {
-        addToCart(matchedProduct);
-        searchQuery.value = '';
-    }
+    if (matchedProduct) { addToCart(matchedProduct); searchQuery.value = ''; }
 };
 
 // --- Cart logic ---
 const addToCart = (product) => {
     const existing = cart.value.find(item => item.product.id === product.id);
     if (existing) {
-        if (existing.quantity < product.stock) {
-            existing.quantity++;
-        }
+        if (existing.quantity < product.stock) existing.quantity++;
     } else {
-        if (product.stock > 0) {
-            cart.value.push({ product, quantity: 1 });
-        }
+        if (product.stock > 0) cart.value.push({ product, quantity: 1 });
     }
-    if (!amountPaid.value) amountPaid.value = cartTotal.value;
+    if (paymentMethod.value === 'cash' && !amountPaid.value) amountPaid.value = cartTotal.value;
 };
 
-const removeFromCart = (index) => {
-    cart.value.splice(index, 1);
-};
+const removeFromCart = (index) => { cart.value.splice(index, 1); };
 
 const updateQuantity = (index, newQty) => {
     if (newQty < 1) { removeFromCart(index); return; }
@@ -368,24 +358,34 @@ const clearCart = () => {
     }
 };
 
-const totalItems = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
-const cartTotal = computed(() => cart.value.reduce((sum, item) => sum + (item.product.base_price * item.quantity), 0));
+const totalItems  = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0));
+const cartTotal   = computed(() => cart.value.reduce((sum, item) => sum + (item.product.base_price * item.quantity), 0));
 const changeAmount = computed(() => Number(amountPaid.value) - cartTotal.value);
+
+const canCheckout = computed(() => {
+    if (cart.value.length === 0) return false;
+    if (paymentMethod.value === 'cash') return Number(amountPaid.value) >= cartTotal.value;
+    return true; // paymongo — no cash amount needed
+});
 
 const checkout = () => {
     form.items = cart.value.map(item => ({
         product_id: item.product.id,
-        quantity: item.quantity
+        quantity:   item.quantity,
     }));
-    form.amount_paid = amountPaid.value;
-    
+    form.amount_paid     = paymentMethod.value === 'cash' ? amountPaid.value : cartTotal.value;
+    form.payment_method  = paymentMethod.value;
+
     form.post('/owner/pos/checkout', {
         preserveScroll: true,
         onSuccess: () => {
-            cart.value = [];
-            amountPaid.value = '';
-            if (searchInput.value) searchInput.value.focus();
-        }
+            // Only reset cart for cash — for PayMongo we redirect away
+            if (paymentMethod.value === 'cash') {
+                cart.value = [];
+                amountPaid.value = '';
+                if (searchInput.value) searchInput.value.focus();
+            }
+        },
     });
 };
 </script>

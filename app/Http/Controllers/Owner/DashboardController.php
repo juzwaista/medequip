@@ -13,10 +13,14 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $distributor = auth()->user()->distributor;
+        $user = auth()->user();
+        $distributor = $user->role === 'staff' ? $user->employer : $user->distributor;
 
         if (!$distributor) {
-            return redirect()->route('distributors.create')
+            if ($user->role === 'staff') {
+                abort(403, 'Your staff account is not assigned to a distributor. Please contact your employer.');
+            }
+            return redirect()->route('owner.distributors.create')
                 ->with('info', 'Please create a distributor profile to access this dashboard.');
         }
 

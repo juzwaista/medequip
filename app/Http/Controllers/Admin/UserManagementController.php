@@ -18,15 +18,32 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
-        
-        $admins = User::where('role', 'admin')
-            ->orderBy('is_super_admin', 'desc')
+
+        $admins = User::whereIn('role', ['admin', 'super_admin'])
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $distributors = \App\Models\Distributor::with('owner')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($d) => [
+                'id'           => $d->id,
+                'company_name' => $d->company_name,
+                'owner_name'   => $d->owner?->name ?? '—',
+                'owner_email'  => $d->owner?->email ?? '—',
+                'status'       => $d->status,
+                'created_at'   => $d->created_at->toDateString(),
+            ]);
+
+        $platformUsers = User::whereIn('role', ['customer', 'courier'])
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'name', 'email', 'role', 'created_at']);
+
         return Inertia::render('Admin/UserManagement/Index', [
-            'admins' => $admins,
-            'isSuperAdmin' => $user->is_super_admin,
+            'admins'        => $admins,
+            'distributors'  => $distributors,
+            'platformUsers' => $platformUsers,
+            'isSuperAdmin'  => $user->role === 'super_admin',
         ]);
     }
 

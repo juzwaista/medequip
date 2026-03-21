@@ -6,7 +6,7 @@
                 <div class="flex justify-between h-16">
                     <div class="flex">
                         <div class="flex-shrink-0 flex items-center">
-                            <span class="text-2xl font-black text-white tracking-tight italic">MedEquip Express</span>
+                            <img :src="'/images/logo.png'" alt="MedEquip" class="h-24 w-auto scale-125 object-contain">
                         </div>
                     </div>
                     <div class="flex items-center space-x-4 text-white">

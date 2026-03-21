@@ -17,17 +17,22 @@ class EnsureDistributorVerified
     {
         $user = auth()->user();
 
-        if ($user && $user->role === 'owner') {
+        if ($user && $user->role === 'distributor') {
             $distributor = $user->distributor;
 
             // If no distributor application at all, redirect to create
             if (!$distributor) {
-                return redirect()->route('owner.distributor.create');
+                return redirect()->route('owner.distributors.create');
             }
 
-            // If pending or rejected, block access to owner dashboard and redirect to pending
-            // Except if the user is already on the pending route to avoid infinite loop
-            if (in_array($distributor->status, ['pending', 'rejected']) && !$request->routeIs('owner.distributor.pending')) {
+            // If pending or rejected, block access and redirect to the pending page
+            // Allow access to pending/create routes to avoid infinite loops
+            $allowedRoutes = ['owner.distributor.pending', 'owner.distributors.create', 'owner.distributors.store'];
+            if (in_array($distributor->status, ['pending', 'rejected', null]) && !$request->routeIs(...$allowedRoutes)) {
+                // null status = distributor was reset for re-application, send to create form
+                if (is_null($distributor->status)) {
+                    return redirect()->route('owner.distributors.create');
+                }
                 return redirect()->route('owner.distributor.pending');
             }
         }

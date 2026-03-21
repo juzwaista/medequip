@@ -34,12 +34,27 @@ class AuthenticatedSessionController extends Controller
             switch ($user->role) {
                 case 'super_admin':
                 case 'admin':
-                    return redirect()->intended(route('admin.dashboard', absolute: false));
+                    return redirect()->intended(route('admin.dashboard', absolute: false))
+                    ->with('success','Logged in successfully!');
                 case 'courier':
-                    return redirect()->intended(route('courier.dashboard', absolute: false));
+                    return redirect()->intended(route('courier.dashboard', absolute: false))
+                    ->with('success','Logged in successfully!');
                 case 'distributor':
                 case 'staff':
-                    return redirect()->intended(route('owner.dashboard', absolute: false));
+                    // Check if distributor application is pending/rejected
+                    if ($user->role === 'distributor') {
+                        $distributor = $user->distributor;
+                        if (!$distributor) {
+                            return redirect()->route('owner.distributors.create')
+                                ->with('info', 'Please complete your distributor registration.');
+                        }
+                        if (in_array($distributor->status, ['pending', 'rejected'])) {
+                            return redirect()->route('owner.distributor.pending')
+                                ->with('info', 'Your application is ' . $distributor->status . '.');
+                        }
+                    }
+                    return redirect()->intended(route('owner.dashboard', absolute: false))
+                        ->with('success', 'Logged in successfully!');
             }
         }
 
@@ -57,6 +72,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Redirect specifically to 'login' to see the message
+        return redirect()->route('login')
+            ->with('status', 'You have been successfully logged out of MedEquip.');
     }
 }

@@ -381,6 +381,7 @@ const resetSlider = () => {
 const submitPickup = () => {
     form.post('/courier/scan', {
         preserveScroll: true,
+        preserveState: true,
         forceFormData: true,
         onSuccess: () => {
             successMessage.value = 'Package Picked Up!';
@@ -413,6 +414,7 @@ const submitDelivery = () => {
     }
     form.post('/courier/scan', {
         preserveScroll: true,
+        preserveState: true,
         forceFormData: true,
         onSuccess: () => {
             successMessage.value = 'Delivery Confirmed!';

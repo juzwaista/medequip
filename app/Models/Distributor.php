@@ -24,6 +24,8 @@ class Distributor extends Model
         'contact_number',
         'email',
         'is_verified',
+        'status',           // pending | approved | rejected
+        'rejection_reason',
         'valid_id_path',
         'business_license_path',
         'auto_approve_orders',
@@ -39,6 +41,10 @@ class Distributor extends Model
     /**
      * Get the user/owner
      */
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id');
+}
     public function owner()
     {
         return $this->belongsTo(User::class, 'user_id');

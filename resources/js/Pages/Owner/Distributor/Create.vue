@@ -127,7 +127,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post('/owner/distributors', {
+    form.post('/owner/distributor/store', {
         forceFormData: true,
     });
 };

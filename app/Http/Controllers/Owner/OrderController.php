@@ -16,7 +16,7 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         if (!$distributor) {
             return redirect()->route('owner.dashboard')
@@ -59,7 +59,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         // Ensure distributor owns this order
         if ($order->distributor_id !== $distributor->id) {
@@ -84,7 +84,7 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, Order $order)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         if ($order->distributor_id !== $distributor->id) {
             \Log::warning('[OrderController] Unauthorized status update attempt', [
@@ -261,7 +261,7 @@ class OrderController extends Controller
      */
     public function addNote(Request $request, Order $order)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         if ($order->distributor_id !== $distributor->id) {
             abort(403);
@@ -282,3 +282,4 @@ class OrderController extends Controller
         return back()->with('success', 'Note added successfully');
     }
 }
+

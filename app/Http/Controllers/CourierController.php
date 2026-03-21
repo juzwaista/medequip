@@ -50,13 +50,19 @@ class CourierController extends Controller
      */
     public function lookupOrder(Request $request)
     {
-        $order = Order::where('order_number', $request->query('order_number'))
-            ->with(['customer:id,name', 'distributor:id,name'])
+        $scannedNumber = $request->query('order_number');
+        \Illuminate\Support\Facades\Log::info("Scanner lookup triggered for: '{$scannedNumber}'");
+
+        $order = Order::where('order_number', $scannedNumber)
+            ->with(['customer', 'distributor'])
             ->first();
 
         if (!$order) {
+            \Illuminate\Support\Facades\Log::warning("Scanner lookup failed. Order not found for: '{$scannedNumber}'");
             return response()->json(null, 404);
         }
+
+        \Illuminate\Support\Facades\Log::info("Scanner lookup success. Found order ID: {$order->id}");
 
         return response()->json([
             'id'               => $order->id,
@@ -76,12 +82,19 @@ class CourierController extends Controller
         $validated = $request->validate([
             'order_number' => 'required|string',
             'action' => 'required|in:pickup,deliver',
-            'photo' => 'required_if:action,deliver|image|max:10240'
+            'photo' => 'nullable|required_if:action,deliver|file|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:15360'
         ]);
 
         /** @var \App\Models\User $user */
         $user = auth()->user();
         $courier = $user->courier;
+
+        if (!$courier) {
+            $courier = $user->courier()->create([
+                'vehicle_type' => 'Motorcycle',
+                'status' => 'active'
+            ]);
+        }
 
         $order = Order::where('order_number', $validated['order_number'])->first();
 

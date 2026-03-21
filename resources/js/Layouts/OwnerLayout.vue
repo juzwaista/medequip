@@ -27,20 +27,11 @@
         >
             <!-- Sidebar Header / Logo -->
             <div class="h-16 flex items-center px-4 bg-gray-950/50 border-b border-gray-800 shrink-0 justify-between lg:justify-center">
-                <a href="/owner/dashboard" class="flex items-center space-x-3 group w-full">
-                    <div class="h-8 w-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <div class="flex flex-col truncate">
-                        <span class="text-lg font-bold text-white tracking-wide">
-                            MedEquip
-                        </span>
-                        <span class="text-[10px] uppercase tracking-widest text-blue-400 font-medium">
-                            {{ isOwner ? 'Owner Portal' : 'Staff Portal' }}
-                        </span>
-                    </div>
+                <a href="/owner/dashboard" class="flex items-center gap-3 group w-full">
+                    <img :src="'/images/logo.png'" alt="MedEquip" class="h-12 w-auto scale-125 object-contain">
+                    <span class="text-[10px] uppercase tracking-widest text-blue-400 font-medium">
+                        {{ isOwner ? 'Owner Portal' : 'Staff Portal' }}
+                    </span>
                 </a>
                 <button @click="mobileSidebarOpen = false" class="lg:hidden text-gray-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

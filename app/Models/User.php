@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'role',
         'phone_number',
+        'distributor_id',
         'social_provider',
         'social_id',
     ];
@@ -57,7 +58,7 @@ class User extends Authenticatable
      */
     public function distributor()
     {
-        return $this->hasOne(Distributor::class);
+        return $this->hasOne(Distributor::class, 'user_id');
     }
 
     /**

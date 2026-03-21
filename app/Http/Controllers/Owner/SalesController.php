@@ -18,7 +18,7 @@ class SalesController extends Controller
      */
     public function index(Request $request)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         // Base query: all orders for this distributor
         $query = Order::where('distributor_id', $distributor->id)
@@ -106,3 +106,4 @@ class SalesController extends Controller
         ]);
     }
 }
+

@@ -126,10 +126,30 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| DISTRIBUTOR ROUTES
+| DISTRIBUTOR SETUP ROUTES (No Verification Required Yet)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:distributor,staff'])
+// These are extracted from the verified middleware so new/pending users can access them!
+Route::middleware(['auth', 'role:distributor'])
+    ->prefix('owner')
+    ->name('owner.')
+    ->group(function () {
+        Route::get('/distributor/create', [\App\Http\Controllers\Owner\DistributorController::class, 'create'])
+            ->name('distributors.create');
+            
+        Route::post('/distributor/store', [\App\Http\Controllers\Owner\DistributorController::class, 'store'])
+            ->name('distributors.store');
+            
+        Route::get('/distributor/pending', [\App\Http\Controllers\Owner\DistributorController::class, 'pending'])
+            ->name('distributors.pending');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| STRICT SHOP OPERATIONS (Verified Owner & Staff Only)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\EnsureDistributorVerified::class])
     ->prefix('owner')
     ->name('owner.')
     ->group(function () {
@@ -147,6 +167,10 @@ Route::middleware(['auth', 'role:distributor,staff'])
             ->name('pos.index');
         Route::post('/pos/checkout', [\App\Http\Controllers\Owner\POSController::class, 'checkout'])
             ->name('pos.checkout');
+        Route::get('/pos/invoices/{invoice}/success', [\App\Http\Controllers\Owner\POSController::class, 'paymentSuccess'])
+            ->name('pos.success');
+        Route::get('/pos/invoices/{invoice}/cancel', [\App\Http\Controllers\Owner\POSController::class, 'paymentCancel'])
+            ->name('pos.cancel');
 
         // Orders
         Route::get('/orders', [\App\Http\Controllers\Owner\OrderController::class, 'index'])->name('orders.index');
@@ -192,13 +216,12 @@ Route::middleware(['auth', 'role:distributor,staff'])
             // Distributor Profile & Licensing
             Route::get('/distributors', [\App\Http\Controllers\Owner\DistributorController::class, 'index'])
                 ->name('distributors.index');
-            Route::get('/distributor/create', [\App\Http\Controllers\Owner\DistributorController::class, 'create'])
-                ->name('distributors.create');
-            Route::post('/distributor/store', [\App\Http\Controllers\Owner\DistributorController::class, 'store'])
-                ->name('distributors.store');
                 
-            Route::get('/distributor/{distributor}/license/create', [\App\Http\Controllers\Owner\LicenseController::class, 'create'])->name('licenses.create');
-            Route::post('/distributor/{distributor}/license/store', [\App\Http\Controllers\Owner\LicenseController::class, 'store'])->name('licenses.store');
+            Route::get('/distributor/{distributor}/license/create', [\App\Http\Controllers\Owner\LicenseController::class, 'create'])
+                ->name('licenses.create');
+                
+            Route::post('/distributor/{distributor}/license/store', [\App\Http\Controllers\Owner\LicenseController::class, 'store'])
+                ->name('licenses.store');
 
             // Profile Management
             Route::get('/profile/edit', [\App\Http\Controllers\Owner\ProfileController::class, 'edit'])
@@ -289,14 +312,6 @@ Route::middleware(['auth', 'role:super_admin'])
         // Global Settings (Super Admin Only)
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
-
-        // TODO: Implement VerificationController for advanced features
-        // Route::get('/verifications', [VerificationController::class, 'index'])
-        //     ->name('verifications.index');
-        // Route::post('/verifications/{distributor}/approve', [VerificationController::class, 'approve'])
-        //     ->name('verifications.approve');
-        // Route::post('/verifications/{distributor}/reject', [VerificationController::class, 'reject'])
-        //     ->name('verifications.reject');
     });
 
 /*

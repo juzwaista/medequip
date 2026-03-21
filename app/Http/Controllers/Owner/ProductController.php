@@ -17,10 +17,14 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $distributor = auth()->user()->distributor;
+        $user = auth()->user();
+        $distributor = $user->role === 'staff' ? $user->employer : $user->distributor;
 
         if (!$distributor) {
-            return redirect()->route('distributors.create')
+            if ($user->role === 'staff') {
+                abort(403, 'Your staff account is not assigned to a distributor. Please contact your employer.');
+            }
+            return redirect()->route('owner.distributors.create')
                 ->with('error', 'Please create a distributor profile first.');
         }
 
@@ -144,7 +148,7 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         $product = Product::where('distributor_id', $distributor->id)
             ->with('category')
@@ -163,7 +167,7 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         $product = Product::where('distributor_id', $distributor->id)
             ->findOrFail($id);
@@ -213,7 +217,7 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         $product = Product::where('distributor_id', $distributor->id)
             ->findOrFail($id);
@@ -229,3 +233,4 @@ class ProductController extends Controller
             ->with('success', 'Product deleted successfully.');
     }
 }
+

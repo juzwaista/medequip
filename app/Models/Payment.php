@@ -115,11 +115,13 @@ class Payment extends Model
     }
 
     /**
-     * Allowed payment methods (no cash).
+     * Allowed payment methods.
+     * 'cash' is only used for in-store POS transactions.
+     * Online orders use PayMongo (card, gcash, paymaya, etc.)
      */
     public static function allowedMethods(): array
     {
-        return ['bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
+        return ['cash', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
     }
 
     /**

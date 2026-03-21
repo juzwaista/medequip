@@ -20,30 +20,30 @@ class DashboardController extends Controller
         // Pending distributor verifications
         $pendingDistributors = Distributor::where('status', 'pending')
             ->orderBy('created_at', 'desc')
-            ->with('user')
+            ->with('owner')
             ->get();
 
         // Platform stats
         $stats = [
-            'totalDistributors' => Distributor::where('status', 'approved')->count(),
+            'totalDistributors'  => Distributor::where('status', 'approved')->count(),
             'pendingDistributors' => Distributor::where('status', 'pending')->count(),
-            'totalProducts' => Product::count(),
-            'totalOrders' => Order::count(),
-            'totalUsers' => User::count(),
+            'totalProducts'      => Product::count(),
+            'totalOrders'        => Order::count(),
+            'totalUsers'         => User::count(),
         ];
 
         // Recent activity (last 10 distributor registrations)
         $recentActivity = Distributor::orderBy('created_at', 'desc')
-            ->with('user')
+            ->with('owner')
             ->limit(10)
             ->get()
             ->map(function ($dist) {
                 return [
-                    'id' => $dist->id,
+                    'id'           => $dist->id,
                     'company_name' => $dist->company_name,
-                    'user_name' => $dist->user->name,
-                    'status' => $dist->status,
-                    'created_at' => $dist->created_at->diffForHumans(),
+                    'user_name'    => $dist->owner?->name ?? '—',
+                    'status'       => $dist->status,
+                    'created_at'   => $dist->created_at->diffForHumans(),
                 ];
             });
 

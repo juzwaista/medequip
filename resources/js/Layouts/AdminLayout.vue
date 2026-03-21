@@ -27,13 +27,9 @@
         >
             <!-- Sidebar Header / Logo -->
             <div class="h-16 flex items-center px-4 bg-gray-950/50 border-b border-gray-800 shrink-0 justify-between lg:justify-center">
-                <a href="/admin/dashboard" class="flex items-center space-x-3 group w-full">
-                    <div class="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                        <span class="text-white font-bold text-sm">A</span>
-                    </div>
-                    <span class="text-lg font-bold text-white tracking-wide truncate">
-                        MedEquip <span class="text-blue-400 font-medium">Admin</span>
-                    </span>
+                <a href="/admin/dashboard" class="flex items-center gap-3 group w-full">
+                    <img :src="'/images/logo.png'" alt="MedEquip" class="h-12 w-auto scale-125 object-contain">
+                    <span class="text-[10px] uppercase tracking-widest text-blue-400 font-medium">Admin Panel</span>
                 </a>
                 <button @click="mobileSidebarOpen = false" class="lg:hidden text-gray-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

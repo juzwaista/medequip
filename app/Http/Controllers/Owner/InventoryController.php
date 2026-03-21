@@ -18,11 +18,10 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $distributor = $user->distributor;
+        $distributor = $this->getDistributor();
 
         Log::info('[InventoryController] Inventory page accessed', [
-            'user_id' => $user->id,
+            'user_id' => auth()->id(),
             'has_distributor' => !is_null($distributor)
         ]);
 
@@ -114,7 +113,7 @@ class InventoryController extends Controller
      */
     public function create()
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         if (!$distributor) {
             return redirect('/owner/dashboard');
@@ -219,7 +218,7 @@ class InventoryController extends Controller
      */
     public function edit($id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         // Bug 7 fix: look up by product ID (consistent with update())
         $product = Product::where('distributor_id', $distributor->id)
@@ -240,7 +239,7 @@ class InventoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         $product = Product::where('distributor_id', $distributor->id)
             ->findOrFail($id);
@@ -292,7 +291,7 @@ class InventoryController extends Controller
      */
     public function adjustStock(Request $request, $id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         $product = Product::where('distributor_id', $distributor->id)
             ->with('inventory')
@@ -339,7 +338,7 @@ class InventoryController extends Controller
      */
     public function destroy($id)
     {
-        $distributor = auth()->user()->distributor;
+        $distributor = $this->getDistributor();
 
         $product = Product::where('distributor_id', $distributor->id)
             ->with('inventory')
@@ -371,3 +370,4 @@ class InventoryController extends Controller
             ->with('success', 'Product removed from inventory.');
     }
 }
+
