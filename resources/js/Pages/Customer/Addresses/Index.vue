@@ -21,90 +21,126 @@
             <div v-if="showAddForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                     <h2 class="text-2xl font-bold text-gray-900 mb-6">{{ editingAddress ? 'Edit Address' : 'Add New Address' }}</h2>
+                    <div v-if="Object.keys(errors).length" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {{ Object.values(errors)[0] }}
+                    </div>
                     
                     <form @submit.prevent="saveAddress" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Label (Optional)</label>
-                            <input 
-                                v-model="form.label"
-                                type="text"
-                                placeholder="e.g., Home, Office"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Label (Optional)</label>
+                                <input 
+                                    v-model="form.label"
+                                    type="text"
+                                    placeholder="e.g., Home, Office"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <p v-if="errors.label" class="text-red-500 text-sm mt-1">{{ errors.label }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Recipient Name *</label>
+                                <input 
+                                    v-model="form.recipient_name"
+                                    type="text"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <p v-if="errors.recipient_name" class="text-red-500 text-sm mt-1">{{ errors.recipient_name }}</p>
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Recipient Name *</label>
-                            <input 
-                                v-model="form.recipient_name"
-                                type="text"
-                                required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Number *</label>
-                            <input 
-                                v-model="form.contact_number"
-                                type="tel"
-                                required
-                                placeholder="09XX XXX XXXX"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Full Address *</label>
-                            <textarea 
-                                v-model="form.address_line"
-                                rows="2"
-                                required
-                                placeholder="House number, street, subdivision"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            ></textarea>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">City/Municipality *</label>
+                                <select
+                                    v-model="selectedCity"
+                                    @change="onCityChange"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="">Select City</option>
+                                    <option v-for="(data, city) in cities" :key="city" :value="city">
+                                        {{ city }}
+                                    </option>
+                                </select>
+                                <p v-if="errors.city" class="text-red-500 text-sm mt-1">{{ errors.city }}</p>
+                            </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Barangay *</label>
-                                <input 
-                                    v-model="form.barangay"
+                                <select
+                                    v-if="availableBarangays.length > 0"
+                                    v-model="selectedBarangay"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                >
+                                    <option value="">Select Barangay</option>
+                                    <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">
+                                        {{ brgy }}
+                                    </option>
+                                    <option value="other">Other (type manually)</option>
+                                </select>
+                                <input
+                                    v-else
+                                    v-model="manualBarangay"
                                     type="text"
                                     required
+                                    placeholder="Enter barangay name"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">City *</label>
-                                <input 
-                                    v-model="form.city"
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                <p v-if="errors.barangay" class="text-red-500 text-sm mt-1">{{ errors.barangay }}</p>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Province *</label>
-                                <input 
-                                    v-model="form.province"
-                                    type="text"
-                                    required
-                                    value="Cavite"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
+                        <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Barangay Name *</label>
+                            <input
+                                v-model="manualBarangay"
+                                type="text"
+                                required
+                                placeholder="Type your barangay name"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Complete Address *</label>
+                            <input 
+                                v-model="form.address_line"
+                                type="text"
+                                required
+                                placeholder="e.g., Blk 5 Lot 10 Sampaguita St., Golden Meadows Subd."
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <p v-if="errors.address_line" class="text-red-500 text-sm mt-1">{{ errors.address_line }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Zip Code *</label>
-                                <input 
-                                    v-model="form.zip_code"
+                                <input
+                                    v-model="zipCode"
                                     type="text"
+                                    readonly
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                                    placeholder="Auto-filled"
+                                />
+                                <p v-if="errors.zip_code" class="text-red-500 text-sm mt-1">{{ errors.zip_code }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Number *</label>
+                                <input 
+                                    v-model="form.contact_number"
+                                    @input="sanitizeContactNumber"
+                                    type="tel"
                                     required
+                                    inputmode="numeric"
+                                    pattern="09[0-9]{9}"
+                                    maxlength="11"
+                                    placeholder="09XX XXX XXXX"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
+                                <p v-if="errors.contact_number" class="text-red-500 text-sm mt-1">{{ errors.contact_number }}</p>
                             </div>
                         </div>
 
@@ -205,16 +241,24 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { ref, reactive, computed, watch } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
     addresses: Array,
+    cities: Object,
+    barangays: Object,
 });
+const page = usePage();
+const errors = page.props.errors || {};
 
 const showAddForm = ref(false);
 const editingAddress = ref(null);
+const selectedCity = ref('');
+const selectedBarangay = ref('');
+const manualBarangay = ref('');
+const zipCode = ref('');
 
 const form = reactive({
     label: '',
@@ -238,6 +282,10 @@ const resetForm = () => {
     form.province = 'Cavite';
     form.zip_code = '';
     form.is_default = false;
+    selectedCity.value = '';
+    selectedBarangay.value = '';
+    manualBarangay.value = '';
+    zipCode.value = '';
     editingAddress.value = null;
 };
 
@@ -257,8 +305,51 @@ const editAddress = (address) => {
     form.province = address.province;
     form.zip_code = address.zip_code;
     form.is_default = address.is_default;
+    selectedCity.value = address.city || '';
+    zipCode.value = address.zip_code || '';
+
+    const cityBarangays = props.barangays?.[address.city] || [];
+    if (cityBarangays.includes(address.barangay)) {
+        selectedBarangay.value = address.barangay;
+        manualBarangay.value = '';
+    } else if (address.barangay) {
+        selectedBarangay.value = 'other';
+        manualBarangay.value = address.barangay;
+    } else {
+        selectedBarangay.value = '';
+        manualBarangay.value = '';
+    }
     showAddForm.value = true;
 };
+
+const availableBarangays = computed(() => {
+    if (!selectedCity.value || !props.barangays) return [];
+    return props.barangays[selectedCity.value] || [];
+});
+
+const onCityChange = () => {
+    selectedBarangay.value = '';
+    manualBarangay.value = '';
+    form.city = selectedCity.value || '';
+    if (selectedCity.value && props.cities[selectedCity.value]) {
+        zipCode.value = props.cities[selectedCity.value].zip;
+        form.zip_code = zipCode.value;
+        if (availableBarangays.value.length === 0) {
+            selectedBarangay.value = 'other';
+        }
+    } else {
+        zipCode.value = '';
+        form.zip_code = '';
+    }
+};
+
+watch([selectedCity, selectedBarangay, manualBarangay, zipCode], () => {
+    form.city = selectedCity.value || '';
+    form.zip_code = zipCode.value || '';
+    form.barangay = selectedBarangay.value === 'other'
+        ? (manualBarangay.value || '')
+        : (selectedBarangay.value || '');
+});
 
 const saveAddress = () => {
     if (editingAddress.value) {
@@ -286,5 +377,9 @@ const deleteAddress = (address) => {
     if (confirm('Are you sure you want to delete this address?')) {
         router.delete(`/addresses/${address.id}`);
     }
+};
+
+const sanitizeContactNumber = () => {
+    form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
 };
 </script>

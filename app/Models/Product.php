@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'distributor_id',
         'category_id',
@@ -29,6 +32,7 @@ class Product extends Model
         'image_path',
         'barcode',
         'is_active',
+        'requires_prescription',
     ];
 
     protected $casts = [
@@ -37,6 +41,7 @@ class Product extends Model
         'has_expiry' => 'boolean',
         'has_warranty' => 'boolean',
         'is_active' => 'boolean',
+        'requires_prescription' => 'boolean',
     ];
 
     protected $appends = ['image_url'];
@@ -62,7 +67,20 @@ class Product extends Model
      */
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class);
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Optional SKU-level options (e.g. Color: Blue).
+     */
+    public function variations(): HasMany
+    {
+        return $this->hasMany(ProductVariation::class)->orderBy('sort_order');
+    }
+
+    public function activeVariations(): HasMany
+    {
+        return $this->variations()->where('is_active', true);
     }
 
     /**
@@ -98,12 +116,56 @@ class Product extends Model
     }
 
     /**
-     * Get total stock across all branches
+     * Quantity + reserved totals for list views (no variations = base inventory rows only;
+     * active variations = sum of inventory rows for those variations only).
+     *
+     * @return array{quantity: int, reserved: int}
+     */
+    public function stockTotals(): array
+    {
+        $variationIds = $this->activeVariations()->pluck('id');
+
+        if ($variationIds->isNotEmpty()) {
+            // When a product has active variations, the "main" stock comes from variation rows.
+            // However, if the base inventory row still has reserved stock (pending orders that were placed
+            // before variations were introduced), we include the base row too so the owner sees reality.
+            $variationQ = $this->inventory()->whereIn('product_variation_id', $variationIds);
+            $variationQty = (int) $variationQ->sum('quantity');
+            $variationRes = (int) (clone $variationQ)->sum('reserved_quantity');
+
+            $baseReserved = (int) $this->inventory()->whereNull('product_variation_id')->sum('reserved_quantity');
+
+            if ($baseReserved > 0) {
+                return [
+                    'quantity' => $variationQty,
+                    'reserved' => (int) ($variationRes + $baseReserved),
+                ];
+            }
+
+            return [
+                'quantity' => $variationQty,
+                'reserved' => $variationRes,
+            ];
+        }
+
+        return [
+            'quantity' => (int) $this->inventory()->whereNull('product_variation_id')->sum('quantity'),
+            'reserved' => (int) $this->inventory()->whereNull('product_variation_id')->sum('reserved_quantity'),
+        ];
+    }
+
+    public function aggregateStockQuantity(): int
+    {
+        return $this->stockTotals()['quantity'];
+    }
+
+    /**
+     * Get total stock for display / POS (see stockTotals).
      */
     public function totalStock(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->inventory()->sum('quantity')
+            get: fn () => $this->aggregateStockQuantity()
         );
     }
 
@@ -113,9 +175,18 @@ class Product extends Model
     public function imageUrl(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->image_path
-            ? \Storage::url($this->image_path)
-            : null
+            get: function () {
+                if ($this->relationLoaded('images') && $this->images->isNotEmpty()) {
+                    $primary = $this->images->firstWhere('is_primary', true);
+                    $img = $primary ?? $this->images->first();
+
+                    return $img?->image_path ? \Storage::url($img->image_path) : null;
+                }
+
+                return $this->image_path
+                    ? \Storage::url($this->image_path)
+                    : null;
+            }
         );
     }
 }

@@ -53,7 +53,7 @@ return new class extends Migration {
         });
 
         // Convert existing 'cash' payments to 'bank_transfer' before altering enum
-        if (config('database.default') === 'mysql') {
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
             DB::table('payments')
                 ->where('payment_method', 'cash')
                 ->update(['payment_method' => 'bank_transfer']);
@@ -73,7 +73,7 @@ return new class extends Migration {
     public function down(): void
     {
         // Restore cash enum option first
-        if (config('database.default') === 'mysql') {
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM('cash','bank_transfer','gcash','paymaya','paymongo','card','grab_pay') NOT NULL");
         }
 

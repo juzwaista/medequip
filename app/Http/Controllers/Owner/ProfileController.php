@@ -41,10 +41,12 @@ class ProfileController extends Controller
             'company_name' => 'required|string|max:255',
             'slug' => 'required|alpha_dash|unique:distributors,slug,' . $distributor->id,
             'description' => 'nullable|string|max:2000',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'regex:/^09[0-9]{9}$/'],
             'website' => 'nullable|url',
             'logo' => 'nullable|image|max:2048', // 2MB
             'cover_photo' => 'nullable|image|max:5120', // 5MB
+        ], [
+            'phone.regex' => 'Phone number must be 11 digits, start with 09, and contain numbers only.',
         ]);
         
         // Handle logo upload

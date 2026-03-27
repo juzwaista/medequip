@@ -45,4 +45,9 @@ return [
         'fee_rate' => env('PLATFORM_FEE_RATE', 0.05), // 5% default
     ],
 
+    'shipping' => [
+        'flat_fee' => env('SHIPPING_FLAT_FEE', 50),
+        'courier_share_rate' => env('COURIER_SHARE_RATE', 0.80),
+    ],
+
 ];

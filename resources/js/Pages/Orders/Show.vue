@@ -15,6 +15,36 @@
                 </Link>
             </div>
 
+            <div
+                v-if="order.prescription_status === 'awaiting_upload'"
+                class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            >
+                <div>
+                    <p class="font-semibold text-amber-900">Prescription required</p>
+                    <p class="text-sm text-amber-800 mt-1">Upload a clear photo of your prescription. Payment is available after the distributor approves it.</p>
+                </div>
+                <Link
+                    :href="`/orders/${order.id}/prescription`"
+                    class="inline-flex justify-center px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"
+                >
+                    Upload prescription
+                </Link>
+            </div>
+            <div
+                v-else-if="order.prescription_status === 'pending_review'"
+                class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4"
+            >
+                <p class="font-semibold text-blue-900">Prescription under review</p>
+                <p class="text-sm text-blue-800 mt-1">The distributor is verifying your prescription. You can pay once it’s approved.</p>
+            </div>
+            <div
+                v-else-if="order.prescription_status === 'rejected'"
+                class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4"
+            >
+                <p class="font-semibold text-red-900">Prescription not accepted</p>
+                <p v-if="order.prescription_review_note" class="text-sm text-red-800 mt-1">{{ order.prescription_review_note }}</p>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Content -->
                 <div class="lg:col-span-2 space-y-6">
@@ -100,8 +130,9 @@
                                 <!-- Product Details -->
                                 <div class="flex-1">
                                     <h3 class="font-semibold text-gray-900 text-lg">{{ item.product.name }}</h3>
-                                    <p v-if="item.product.sku" class="text-sm text-gray-600 mt-1">SKU: {{ item.product.sku }}</p>
-                                    
+                                    <p v-if="item.product_variation" class="text-sm text-blue-700 font-medium mt-0.5">
+                                        {{ item.product_variation.display_label || `${item.product_variation.option_name}: ${item.product_variation.option_value}` }}
+                                    </p>
                                     <div class="flex flex-wrap items-center gap-3 mt-3">
                                         <span class="text-sm text-gray-600">Quantity: <span class="font-semibold">{{ item.quantity }}</span></span>
                                         <span class="text-gray-300">•</span>
@@ -126,11 +157,21 @@
                             </div>
                         </div>
 
-                        <!-- Total -->
+                        <!-- Totals -->
                         <div class="mt-6 pt-6 border-t-2 border-gray-200">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xl font-bold text-gray-900">Total Amount</span>
-                                <PriceDisplay :amount="order.total_amount" size="large" color="blue" />
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Items Subtotal</span>
+                                    <PriceDisplay :amount="orderSubtotal" />
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Shipping Fee</span>
+                                    <PriceDisplay :amount="orderShippingFee" />
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t">
+                                    <span class="text-xl font-bold text-gray-900">Total Amount</span>
+                                    <PriceDisplay :amount="orderGrandTotal" size="large" color="blue" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -189,8 +230,18 @@
                                 <p class="font-mono text-sm font-semibold text-gray-900">{{ order.invoice.invoice_number }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-600 mb-1">Status</p>
-                                <StatusBadge :status="order.invoice.status" type="invoice" />
+                                <p class="text-xs text-gray-600 mb-1">Payment Status</p>
+                                <span
+                                    :class="{
+                                        'bg-green-100 text-green-800': order.customer_payment_status?.state === 'paid',
+                                        'bg-amber-100 text-amber-800': order.customer_payment_status?.state === 'pending_verification',
+                                        'bg-red-100 text-red-800': order.customer_payment_status?.state === 'payment_failed',
+                                        'bg-yellow-100 text-yellow-800': !order.customer_payment_status || order.customer_payment_status?.state === 'unpaid',
+                                    }"
+                                    class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                                >
+                                    {{ order.customer_payment_status?.label || 'Unpaid' }}
+                                </span>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-600 mb-1">Due Date</p>
@@ -199,6 +250,25 @@
                                 </p>
                             </div>
                         </div>
+                    </div>
+
+                    <div
+                        v-else-if="!order.invoice && order.prescription_status && order.prescription_status !== 'not_required'"
+                        class="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-md p-6 border border-gray-100"
+                    >
+                        <h3 class="font-bold text-gray-900 mb-3">Payment</h3>
+                        <p class="text-xs text-gray-600 mb-2">Prescription workflow</p>
+                        <span
+                            :class="{
+                                'bg-amber-100 text-amber-900': order.customer_payment_status?.state === 'rx_upload',
+                                'bg-blue-100 text-blue-900': order.customer_payment_status?.state === 'rx_review',
+                                'bg-red-100 text-red-900': order.customer_payment_status?.state === 'rx_rejected',
+                            }"
+                            class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                        >
+                            {{ order.customer_payment_status?.label || 'Pending' }}
+                        </span>
+                        <p class="text-xs text-gray-500 mt-3">An invoice is created after your prescription is approved.</p>
                     </div>
 
                     <!-- Actions -->
@@ -214,6 +284,16 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                                 Cancel Order
+                            </button>
+                            <button
+                                v-if="canPayNow"
+                                @click="payNow"
+                                class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition px-4 py-3 rounded-lg font-medium text-left flex items-center"
+                            >
+                                <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2m-2 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2zm8 4h.01" />
+                                </svg>
+                                Pay Now
                             </button>
                             <button class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition px-4 py-3 rounded-lg font-medium text-left flex items-center">
                                 <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,6 +325,7 @@ import OrderTimeline from '@/Components/OrderTimeline.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import DateFormat from '@/Components/DateFormat.vue';
 import PriceDisplay from '@/Components/PriceDisplay.vue';
+import { computed } from 'vue';
 
 const props = defineProps({
     order: Object,
@@ -263,5 +344,21 @@ const cancelOrder = () => {
             }
         });
     }
+};
+
+const canPayNow = computed(() => {
+    return !!props.order?.can_pay_now;
+});
+
+const orderSubtotal = computed(() => Number(props.order?.subtotal || 0));
+const orderShippingFee = computed(() => Number(props.order?.shipping_fee || 0));
+const orderGrandTotal = computed(() => {
+    const total = Number(props.order?.total_amount || 0);
+    if (total > 0) return total;
+    return orderSubtotal.value + orderShippingFee.value;
+});
+
+const payNow = () => {
+    router.post(`/orders/${props.order.id}/pay-now`);
 };
 </script>

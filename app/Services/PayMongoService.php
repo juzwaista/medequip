@@ -41,16 +41,44 @@ class PayMongoService
     ): array {
         $order = $invoice->order()->with('items.product')->first();
 
-        // Build line items from order items
+        if (! $order) {
+            throw new \RuntimeException('Invoice has no order for PayMongo checkout.');
+        }
+
+        // Build line items from order items (subtotal lines)
         $lineItems = $order->items->map(function ($item) {
             return [
                 'currency'    => 'PHP',
-                'amount'      => (int) round($item->unit_price * 100), // PayMongo uses centavos
+                'amount'      => (int) round((float) $item->unit_price * 100), // unit price in centavos
                 'description' => $item->product->name,
                 'name'        => $item->product->name,
                 'quantity'    => $item->quantity,
             ];
         })->values()->toArray();
+
+        $shippingFee = (float) ($invoice->shipping_fee ?? 0);
+        if ($shippingFee > 0) {
+            $lineItems[] = [
+                'currency'    => 'PHP',
+                'amount'      => (int) round($shippingFee * 100),
+                'description' => 'Shipping for order '.$order->order_number,
+                'name'        => 'Shipping fee',
+                'quantity'    => 1,
+            ];
+        }
+
+        $lineTotalCentavos = 0;
+        foreach ($lineItems as $li) {
+            $lineTotalCentavos += (int) $li['amount'] * (int) $li['quantity'];
+        }
+        $expectedCentavos = (int) round((float) $invoice->total_amount * 100);
+        if ($lineTotalCentavos !== $expectedCentavos) {
+            Log::warning('[PayMongoService] Checkout line items total does not match invoice.total_amount', [
+                'invoice_id' => $invoice->id,
+                'line_total_centavos' => $lineTotalCentavos,
+                'invoice_total_centavos' => $expectedCentavos,
+            ]);
+        }
 
         $payload = [
             'data' => [

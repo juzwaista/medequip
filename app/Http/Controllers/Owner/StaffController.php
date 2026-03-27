@@ -90,6 +90,6 @@ class StaffController extends Controller
 
         $staff->delete();
 
-        return redirect()->back()->with('success', 'Staff account removed successfully.');
+        return redirect()->back()->with('success', 'Staff account archived successfully.');
     }
 }

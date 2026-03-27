@@ -14,15 +14,19 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        $driver = Schema::getConnection()->getDriverName();
+
         // MySQL does not support ALTER COLUMN on enums directly with Blueprint.
         // We use DB::statement to safely extend the enum.
-        DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM(
-            'cash',
-            'bank_transfer',
-            'gcash',
-            'paymaya',
-            'paymongo'
-        ) NOT NULL");
+        if ($driver === 'mysql') {
+            DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM(
+                'cash',
+                'bank_transfer',
+                'gcash',
+                'paymaya',
+                'paymongo'
+            ) NOT NULL");
+        }
 
         Schema::table('payments', function (Blueprint $table) {
             // PayMongo Checkout Session ID for webhook reconciliation
@@ -47,11 +51,13 @@ return new class extends Migration {
             $table->dropColumn(['paymongo_session_id', 'paymongo_status']);
         });
 
-        DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM(
-            'cash',
-            'bank_transfer',
-            'gcash',
-            'paymaya'
-        ) NOT NULL");
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM(
+                'cash',
+                'bank_transfer',
+                'gcash',
+                'paymaya'
+            ) NOT NULL");
+        }
     }
 };

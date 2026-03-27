@@ -19,6 +19,9 @@ class Delivery extends Model
         'actual_delivery_at',
         'driver_name',
         'driver_contact',
+        'courier_fee',
+        'courier_payout_status',
+        'courier_paid_at',
         'proof_of_delivery_path',
         'status', // pending, scheduled, in_transit, delivered, failed
         'notes',
@@ -27,6 +30,8 @@ class Delivery extends Model
     protected $casts = [
         'scheduled_date'     => 'date',
         'actual_delivery_at' => 'datetime',
+        'courier_fee'        => 'decimal:2',
+        'courier_paid_at'    => 'datetime',
     ];
 
     public function order(): BelongsTo

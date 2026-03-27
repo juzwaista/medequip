@@ -49,7 +49,7 @@
                             {{ form.processing ? 'Uploading...' : 'Upload License' }}
                         </button>
                         <Link
-                            :href="`/owner/distributors/${distributor.id}/licenses`"
+                            href="/owner/distributors"
                             class="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-700 hover:bg-gray-50 transition"
                         >
                             Cancel
@@ -75,7 +75,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(`/owner/distributors/${props.distributor.id}/licenses`, {
+    form.post(`/owner/distributor/${props.distributor.id}/license/store`, {
         forceFormData: true,
     });
 };

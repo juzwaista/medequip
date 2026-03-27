@@ -18,6 +18,8 @@ class ProductImage extends Model
         'is_primary' => 'boolean',
     ];
 
+    protected $appends = ['url'];
+
     /**
      * Get the product
      */

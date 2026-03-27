@@ -29,10 +29,12 @@ class CourierController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'phone_number' => 'nullable|string|max:20',
+            'phone_number' => ['nullable', 'regex:/^09[0-9]{9}$/'],
             'password' => ['required', Password::defaults()],
             'vehicle_type' => 'nullable|string|max:255',
             'plate_number' => 'nullable|string|max:255',
+        ], [
+            'phone_number.regex' => 'Phone number must be 11 digits, start with 09, and contain numbers only.',
         ]);
 
         $user = User::create([

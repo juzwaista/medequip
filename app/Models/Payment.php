@@ -21,6 +21,7 @@ class Payment extends Model
         'verified_at',
         'released_at',
         'refunded_at',
+        'seller_wallet_credited_at',
         'paymongo_session_id',
         'paymongo_status',      // active | paid | expired
     ];
@@ -33,6 +34,7 @@ class Payment extends Model
         'verified_at'         => 'datetime',
         'released_at'         => 'datetime',
         'refunded_at'         => 'datetime',
+        'seller_wallet_credited_at' => 'datetime',
     ];
 
     /**
@@ -63,9 +65,36 @@ class Payment extends Model
         ]));
     }
 
-    /**
-     * Release escrow funds (after buyer confirms receipt).
-     */
+    public function creditSellerWalletOnVerification(): void
+    {
+        $this->refresh();
+
+        if ($this->seller_wallet_credited_at !== null || $this->status !== 'verified') {
+            return;
+        }
+
+        if ((float) $this->net_seller_amount <= 0) {
+            return;
+        }
+
+        $superAdmin = \App\Models\User::whereIn('role', ['super_admin', 'superadmin', 'admin'])->first();
+        $superAdminWallet = $superAdmin?->wallet;
+
+        if (! $superAdminWallet) {
+            return;
+        }
+
+        $superAdminWallet->credit(
+            (float) $this->net_seller_amount,
+            'escrow_held',
+            (string) $this->id,
+            "Payment held in escrow (Invoice #{$this->invoice_id})"
+        );
+
+        // Intentionally DO NOT update seller_wallet_credited_at
+        // This marks that the seller has not received it yet.
+    }
+
     public function releaseEscrow(): void
     {
         $this->update([
@@ -73,16 +102,37 @@ class Payment extends Model
             'released_at'   => now(),
         ]);
 
-        // Credit the seller's wallet
-        $sellerWallet = $this->invoice->order->distributor->owner?->wallet;
-        if ($sellerWallet && $this->net_seller_amount > 0) {
+        $this->refresh();
+
+        if ($this->seller_wallet_credited_at !== null) {
+            return;
+        }
+
+        $this->loadMissing('invoice.order.distributor.owner.wallet');
+        $invoice = $this->invoice;
+        $sellerWallet = $invoice?->order?->distributor?->owner?->wallet;
+        $superAdmin = \App\Models\User::whereIn('role', ['super_admin', 'superadmin', 'admin'])->first();
+        $superAdminWallet = $superAdmin?->wallet;
+
+        if ($sellerWallet && (float) $this->net_seller_amount > 0) {
+            if ($superAdminWallet && $superAdminWallet->balance >= (float) $this->net_seller_amount) {
+                $superAdminWallet->debit(
+                    (float) $this->net_seller_amount,
+                    'escrow_release_payout',
+                    (string) $this->id,
+                    "Escrow released to seller for Invoice #{$invoice->invoice_number}"
+                );
+            }
+
             $sellerWallet->credit(
-                $this->net_seller_amount,
+                (float) $this->net_seller_amount,
                 'escrow_release',
-                (string)$this->id,
-                "Escrow released for Invoice #{$this->invoice->invoice_number}"
+                (string) $this->id,
+                "Escrow released for Invoice #{$invoice->invoice_number}"
             );
         }
+
+        $this->update(['seller_wallet_credited_at' => now()]);
     }
 
     /**
@@ -93,6 +143,8 @@ class Payment extends Model
         $this->update([
             'escrow_status' => 'refunded',
             'refunded_at'   => now(),
+            // Treat refunded payments as not payable anymore so invoice totals/balances stay consistent.
+            'status'         => 'rejected',
         ]);
     }
 
@@ -121,7 +173,15 @@ class Payment extends Model
      */
     public static function allowedMethods(): array
     {
-        return ['cash', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
+        return ['cash', 'cod', 'wallet', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
+    }
+
+    /**
+     * Cash-on-delivery: no PayMongo session, no escrow.
+     */
+    public static function isCod(string $method): bool
+    {
+        return $method === 'cod';
     }
 
     /**

@@ -10,6 +10,15 @@
             <form @submit.prevent="submitOrder" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Order Form -->
                 <div class="lg:col-span-2 space-y-6">
+                    <div
+                        v-if="cart_has_prescription_items"
+                        class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
+                    >
+                        <p class="font-semibold">This order includes prescription medicine</p>
+                        <p class="mt-1 text-blue-800/90">
+                            After placing the order, you’ll be asked to upload a photo of your prescription. Payment (card, GCash, or Maya) is available after the distributor approves it. Wallet checkout is not available for these orders.
+                        </p>
+                    </div>
                     <!-- Error Display -->
                     <div v-if="form.errors && Object.keys(form.errors).length > 0" class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
                         <div class="flex">
@@ -29,154 +38,57 @@
 
                     <!-- Delivery Information -->
                     <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Delivery Information</h2>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900">Delivery Information</h2>
+                            <Link href="/addresses" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Manage Addresses</Link>
+                        </div>
                         
                         <div class="space-y-4">
+                            <!-- No Saved Addresses -->
+                            <div v-if="savedAddresses.length === 0" class="bg-amber-50 rounded-lg p-6 text-center border border-amber-200">
+                                <svg class="w-12 h-12 text-amber-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                <h3 class="text-lg font-bold text-amber-900 mb-1">No saved addresses</h3>
+                                <p class="text-amber-800 text-sm mb-4">Please add a delivery address to proceed with checkout.</p>
+                                <a href="/addresses" class="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Manage Addresses</a>
+                            </div>
+
                             <!-- Saved Addresses -->
-                            <div v-if="savedAddresses.length > 0" class="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h3 class="font-semibold text-blue-900">Saved Addresses</h3>
-                                    <Link href="/addresses" class="text-xs text-blue-600 hover:underline">Manage Addresses</Link>
-                                </div>
+                            <div v-if="savedAddresses.length > 0" class="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Select Delivery Address *</label>
                                 <select 
                                     v-model="selectedSavedAddress"
-                                    class="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="">-- Select a saved address --</option>
+                                    <option value="">-- Choose an address --</option>
                                     <option v-for="addr in savedAddresses" :key="addr.id" :value="addr.id">
-                                        {{ addr.label ? `${addr.label}: ` : '' }}{{ addr.address_line }}
+                                        {{ addr.label ? `${addr.label}: ` : '' }}{{ addr.address_line }}, Brgy. {{ addr.barangay }}, {{ addr.city }}
                                     </option>
                                 </select>
                             </div>
 
-                            <!-- Customer Name -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Recipient Name *
-                                    <span v-if="form.errors.customer_name" class="text-red-600 font-normal ml-2">{{ form.errors.customer_name }}</span>
-                                </label>
-                                <input 
-                                    v-model="form.customer_name"
-                                    type="text"
-                                    required
-                                    :class="[
-                                        'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                        form.errors.customer_name ? 'border-red-500' : 'border-gray-300'
-                                    ]"
-                                    placeholder="Juan Dela Cruz"
-                                />
-                            </div>
-
-                            <!-- City Selection -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        City/Municipality *
-                                    </label>
-                                    <select 
-                                        v-model="selectedCity"
-                                        @change="onCityChange"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
-                                    >
-                                        <option value="">Select City</option>
-                                        <option v-for="(data, city) in cities" :key="city" :value="city">
-                                            {{ city }}
-                                        </option>
-                                    </select>
+                            <!-- Selected Address Preview -->
+                            <div v-if="selectedSavedAddress" class="mt-4 p-5 rounded-xl border-2 border-blue-500 bg-blue-50 relative overflow-hidden">
+                                <div class="absolute top-0 right-0 pt-4 pr-4 text-blue-500">
+                                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
                                 </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Barangay *
-                                    </label>
-                                    <select 
-                                        v-if="availableBarangays.length > 0"
-                                        v-model="selectedBarangay"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        required
-                                    >
-                                        <option value="">Select Barangay</option>
-                                        <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">
-                                            {{ brgy }}
-                                        </option>
-                                        <option value="other">Other (type manually)</option>
-                                    </select>
-                                    <input
-                                        v-else
-                                        v-model="manualBarangay"
-                                        type="text"
-                                        required
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Enter barangay name"
-                                    />
-                                </div>
-                            </div>
-
-                            <!-- Manual Barangay Input (when "Other" is selected) -->
-                            <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Barangay Name *
-                                </label>
-                                <input 
-                                    v-model="manualBarangay"
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Type your barangay name"
-                                />
-                            </div>
-
-                            <!-- Street Address -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Complete Address *
-                                    <span class="font-normal text-gray-500">(Block, Lot, Street, Subdivision)</span>
-                                </label>
-                                <input 
-                                    v-model="streetAddress"
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="e.g., Blk 5 Lot 10 Sampaguita St., Golden Meadows Subd."
-                                />
-                            </div>
-
-                            <!-- Zip Code & Contact -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Zip Code *
-                                    </label>
-                                    <input 
-                                        v-model="zipCode"
-                                        type="text"
-                                        readonly
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                                        placeholder="Auto-filled"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Contact Number *
-                                        <span v-if="form.errors.contact_number" class="text-red-600 font-normal ml-2">{{ form.errors.contact_number }}</span>
-                                    </label>
-                                    <input 
-                                        v-model="form.contact_number"
-                                        type="tel"
-                                        required
-                                        :class="[
-                                            'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                            form.errors.contact_number ? 'border-red-500' : 'border-gray-300'
-                                        ]"
-                                        placeholder="09XX XXX XXXX"
-                                    />
+                                
+                                <div v-if="currentAddressObj" class="flex flex-col">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-lg font-bold text-gray-900">{{ currentAddressObj.label || 'Delivery Address' }}</h3>
+                                        <span v-if="currentAddressObj.is_default" class="bg-blue-200 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-blue-300">
+                                            Default
+                                        </span>
+                                    </div>
+                                    <p class="font-bold text-gray-900">{{ currentAddressObj.recipient_name }}</p>
+                                    <p class="text-gray-700 font-medium">{{ currentAddressObj.contact_number }}</p>
+                                    <p class="text-gray-600 mt-2">{{ form.delivery_address }}</p>
                                 </div>
                             </div>
 
                             <!-- Order Notes -->
-                            <div>
+                            <div v-if="savedAddresses.length > 0" class="pt-4 border-t border-gray-100">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Order Notes (Optional)</label>
                                 <textarea 
                                     v-model="form.notes"
@@ -188,6 +100,7 @@
                         </div>
                     </div>
 
+
                     <!-- Order Items -->
                     <div class="bg-white rounded-xl shadow-md p-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Order Items</h2>
@@ -195,11 +108,12 @@
                         <div class="space-y-3">
                             <div 
                                 v-for="item in cartItems" 
-                                :key="item.product.id"
+                                :key="item.line_key"
                                 class="flex justify-between items-center py-3 border-b last:border-0"
                             >
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-900">{{ item.product.name }}</p>
+                                    <p v-if="item.variation_label" class="text-sm text-blue-700 font-medium">{{ item.variation_label }}</p>
                                     <p class="text-sm text-gray-600">{{ item.product.brand || 'Generic' }}</p>
                                     <span v-if="item.is_wholesale" class="inline-block mt-1 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                                         Wholesale Price
@@ -226,11 +140,14 @@
                             </div>
                             <div class="flex justify-between text-gray-600">
                                 <span>Delivery Fee</span>
-                                <span class="text-green-600 font-semibold">FREE</span>
+                                <span>₱{{ Number(shipping_fee_total || 0).toLocaleString() }}</span>
                             </div>
+                            <p v-if="distributor_count > 1" class="text-xs text-gray-500">
+                                {{ distributor_count }} shipments x ₱{{ Number(shipping_fee_per_order || 0).toLocaleString() }}
+                            </p>
                             <div class="border-t pt-3 flex justify-between text-lg font-bold">
                                 <span>Total</span>
-                                <span class="text-blue-600">₱{{ Number(subtotal).toLocaleString() }}</span>
+                                <span class="text-blue-600">₱{{ Number(grandTotal).toLocaleString() }}</span>
                             </div>
                         </div>
 
@@ -296,11 +213,68 @@
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                     </svg>
                                 </label>
+
+                                <!-- Wallet -->
+                                <label :class="[
+                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 transition-all select-none',
+                                    cart_has_prescription_items
+                                        ? 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-60'
+                                        : form.payment_method === 'wallet'
+                                            ? 'border-emerald-500 bg-emerald-50 shadow-sm cursor-pointer'
+                                            : 'border-gray-200 hover:border-gray-300 bg-white cursor-pointer'
+                                ]">
+                                    <input
+                                        type="radio"
+                                        v-model="form.payment_method"
+                                        value="wallet"
+                                        class="sr-only"
+                                        :disabled="cart_has_prescription_items"
+                                    />
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="24" height="24" rx="4" fill="#059669"/>
+                                        <path d="M4 8a2 2 0 012-2h12a2 2 0 012 2v2H4V8z" fill="white" fill-opacity="0.3"/>
+                                        <path d="M4 10h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6z" fill="white" fill-opacity="0.6"/>
+                                        <circle cx="16.5" cy="13.5" r="1.5" fill="#059669"/>
+                                    </svg>
+                                    <span class="text-sm font-semibold" :class="form.payment_method === 'wallet' ? 'text-emerald-700' : 'text-gray-700'">Wallet</span>
+                                </label>
+
+                                <!-- Cash on Delivery -->
+                                <label :class="[
+                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
+                                    form.payment_method === 'cod'
+                                        ? 'border-orange-400 bg-orange-50 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ]">
+                                    <input type="radio" v-model="form.payment_method" value="cod" class="sr-only" />
+                                    <span class="text-lg leading-none">💵</span>
+                                    <span class="text-sm font-semibold" :class="form.payment_method === 'cod' ? 'text-orange-700' : 'text-gray-700'">Cash on Delivery</span>
+                                    <svg v-if="form.payment_method === 'cod'" class="h-4 w-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </label>
                             </div>
+                            <p v-if="form.payment_method === 'wallet'" class="mt-2 text-xs text-gray-600">
+                                Wallet Balance: <span class="font-semibold">₱{{ Number(wallet_balance || 0).toLocaleString() }}</span>
+                            </p>
+                            <p v-if="form.payment_method === 'wallet' && Number(wallet_balance || 0) < grandTotal" class="mt-1 text-xs text-red-600">
+                                Insufficient wallet balance for this checkout total.
+                            </p>
+                            <p v-if="cart_has_prescription_items" class="mt-2 text-xs text-gray-600">
+                                Wallet is unavailable when the cart includes prescription medicine.
+                            </p>
                         </div>
 
-                        <!-- Escrow Info -->
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+                        <!-- Payment info banner -->
+                        <div v-if="form.payment_method === 'cod'" class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-6">
+                            <div class="flex items-start">
+                                <span class="text-xl mr-2 flex-shrink-0">💵</span>
+                                <p class="text-xs text-orange-800">
+                                    <strong>Cash on Delivery:</strong> Your assigned courier will collect <strong>₱{{ Number(grandTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</strong> from you upon delivery. No online payment required now.
+                                </p>
+                            </div>
+                        </div>
+                        <div v-else class="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
                             <div class="flex items-start">
                                 <svg class="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
@@ -320,7 +294,7 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            {{ form.processing ? 'Processing...' : `Pay ₱${Number(subtotal).toLocaleString()} & Place Order` }}
+                            {{ form.processing ? 'Processing...' : `Pay ₱${Number(grandTotal).toLocaleString()} & Place Order` }}
                         </button>
 
                         <a 
@@ -337,61 +311,88 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
     cartItems: Array,
     subtotal: Number,
+    shipping_fee_per_order: {
+        type: Number,
+        default: 0
+    },
+    shipping_fee_total: {
+        type: Number,
+        default: 0
+    },
+    estimated_total: {
+        type: Number,
+        default: 0
+    },
+    distributor_count: {
+        type: Number,
+        default: 1
+    },
+    wallet_balance: {
+        type: Number,
+        default: 0
+    },
     cities: Object,
     barangays: Object,
     savedAddresses: {
         type: Array,
         default: () => []
     },
+    cart_has_prescription_items: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 // Address fields
-const selectedCity = ref('');
-const selectedBarangay = ref('');
-const manualBarangay = ref('');
-const streetAddress = ref('');
-const zipCode = ref('');
 const selectedSavedAddress = ref('');
+const currentAddressObj = ref(null);
 
 // Auto-fill from saved address
 watch(selectedSavedAddress, (newId) => {
-    if (!newId) return;
+    if (!newId) {
+        currentAddressObj.value = null;
+        return;
+    }
     
     const address = props.savedAddresses.find(a => a.id === newId);
     if (address) {
-        form.customer_name = address.recipient_name;
-        form.contact_number = address.contact_number;
-        streetAddress.value = address.address_line;
+        currentAddressObj.value = address;
+        form.customer_name = address.recipient_name || '';
+        form.contact_number = String(address.contact_number || '').replace(/\D/g, '').slice(0, 11);
         
-        // Handle location fields
-        if (Object.keys(props.cities || {}).includes(address.city)) {
-            selectedCity.value = address.city;
-            
-            // Wait for next tick/computation of availableBarangays
-            setTimeout(() => {
-                const barangays = props.barangays[address.city] || [];
-                if (barangays.includes(address.barangay)) {
-                    selectedBarangay.value = address.barangay;
-                    manualBarangay.value = '';
-                } else {
-                    selectedBarangay.value = 'other';
-                    manualBarangay.value = address.barangay;
-                }
-                zipCode.value = address.zip_code;
-            }, 50);
-        } else {
-            // Fallback for custom cities if we support them later
-            selectedCity.value = '';
-        }
+        const parts = [];
+        if (address.address_line) parts.push(address.address_line);
+        if (address.barangay) parts.push('Brgy. ' + address.barangay);
+        if (address.city) parts.push(address.city + ', Cavite');
+        if (address.zip_code) parts.push(address.zip_code);
+        
+        form.delivery_address = parts.join(', ');
     }
 });
+
+onMounted(() => {
+    const defaultAddress = props.savedAddresses.find(addr => addr.is_default) || props.savedAddresses[0];
+    if (defaultAddress) {
+        selectedSavedAddress.value = defaultAddress.id;
+    }
+});
+
+watch(
+    () => props.cart_has_prescription_items,
+    (rx) => {
+        if (rx && form.payment_method === 'wallet') {
+            form.payment_method = 'gcash';
+        }
+    },
+    { immediate: true }
+);
 
 // Form data — now includes payment_method
 const form = useForm({
@@ -404,87 +405,29 @@ const form = useForm({
     proof: null,
 });
 
+const sanitizeContactNumber = () => {
+    form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
+};
+
 // Payment method options — compact pill style, no external icon URLs
 const paymentMethods = [
     { value: 'gcash',   label: 'GCash' },
     { value: 'paymaya', label: 'Maya' },
     { value: 'card',    label: 'Card' },
+    { value: 'wallet',  label: 'Wallet' },
 ];
 
-// Get available barangays for selected city
-const availableBarangays = computed(() => {
-    if (!selectedCity.value || !props.barangays) return [];
-    return props.barangays[selectedCity.value] || [];
-});
+const grandTotal = computed(() => Number(props.subtotal || 0) + Number(props.shipping_fee_total || 0));
 
-// Show manual barangay input when "Other" is selected OR when no barangays available
-const showManualBarangay = computed(() => {
-    return selectedBarangay.value === 'other' || 
-           (selectedCity.value && availableBarangays.value.length === 0);
-});
-
-// Auto-fill zip code when city changes
-const onCityChange = () => {
-    selectedBarangay.value = '';
-    manualBarangay.value = '';
-    if (selectedCity.value && props.cities[selectedCity.value]) {
-        zipCode.value = props.cities[selectedCity.value].zip;
-        // Auto-select "other" if no barangays available
-        if (availableBarangays.value.length === 0) {
-            selectedBarangay.value = 'other';
-        }
-    } else {
-        zipCode.value = '';
-    }
-};
-
-// Combine address fields into delivery_address
-watch([selectedCity, selectedBarangay, manualBarangay, streetAddress, zipCode], () => {
-    const parts = [];
-    if (streetAddress.value) parts.push(streetAddress.value);
-    
-    // Use manual barangay if entered, otherwise use selected
-    const barangayToUse = showManualBarangay.value && manualBarangay.value 
-        ? manualBarangay.value 
-        : (selectedBarangay.value !== 'other' ? selectedBarangay.value : '');
-    
-    if (barangayToUse) parts.push('Brgy. ' + barangayToUse);
-    if (selectedCity.value) parts.push(selectedCity.value + ', Cavite');
-    if (zipCode.value) parts.push(zipCode.value);
-    
-    form.delivery_address = parts.join(', ');
-});
-
-// Form validation - relaxed to handle manual input
+// Form validation
 const isFormValid = computed(() => {
-    const hasName = form.customer_name.length >= 2;
-    const hasCity = !!selectedCity.value;
-    const hasBarangay = selectedBarangay.value && (
-        selectedBarangay.value !== 'other' || manualBarangay.value.length >= 2
-    );
-    const hasStreetAddress = streetAddress.value.length >= 5;
-    const hasContactNumber = form.contact_number.length >= 7;
-    
-    // Debug logging
-    console.log('Form Validation State:', {
-        hasName,
-        hasCity,
-        hasBarangay,
-        hasStreetAddress,
-        hasContactNumber,
-        'customer_name': form.customer_name,
-        'selectedCity': selectedCity.value,
-        'selectedBarangay': selectedBarangay.value,
-        'manualBarangay': manualBarangay.value,
-        'streetAddress': streetAddress.value,
-        'contact_number': form.contact_number,
-        'isValid': hasName && hasCity && hasBarangay && hasStreetAddress && hasContactNumber
-    });
-    
+    const hasAddress = !!selectedSavedAddress.value && form.customer_name.length >= 2 && form.delivery_address.length > 5;
     const hasPaymentMethod = !!form.payment_method;
-    const hasBankRef = form.payment_method !== 'bank_transfer' || (form.reference_number && form.reference_number.length >= 3);
-    
-    return hasName && hasCity && hasBarangay && hasStreetAddress && hasContactNumber && hasPaymentMethod && hasBankRef;
+    const walletOk =
+        form.payment_method !== 'wallet' ||
+        (!props.cart_has_prescription_items && Number(props.wallet_balance || 0) >= grandTotal.value);
+
+    return hasAddress && hasPaymentMethod && walletOk;
 });
 
 const submitOrder = () => {

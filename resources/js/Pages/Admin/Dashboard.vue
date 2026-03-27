@@ -35,36 +35,62 @@
                 <div class="p-6 border-b border-gray-200">
                     <h2 class="text-xl font-bold text-gray-900">Pending Distributor Verifications</h2>
                 </div>
-                <div v-if="pendingDistributors.length > 0" class="divide-y">
-                    <div v-for="distributor in pendingDistributors" :key="distributor.id" class="p-6 hover:bg-gray-50 transition">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
+                <div v-if="pendingDistributors.length > 0" class="divide-y relative">
+                    <div v-for="distributor in pendingDistributors" :key="distributor.id" class="p-6 hover:bg-gray-50 transition border-b">
+                        <div class="flex flex-col sm:flex-row justify-between items-start">
+                            <div class="flex-1 w-full relative">
                                 <h3 class="font-bold text-lg text-gray-900">{{ distributor.company_name }}</h3>
                                 <p class="text-sm text-gray-600 mt-1">Owner: {{ distributor.owner?.name ?? '—' }} ({{ distributor.owner?.email ?? '' }})</p>
                                 <p class="text-sm text-gray-500 mt-1">Registered: {{ formatDate(distributor.created_at) }}</p>
-                                <div class="mt-2 grid grid-cols-2 gap-4 max-w-2xl">
+                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl bg-gray-50 p-4 rounded-xl border border-gray-100">
                                     <div>
-                                        <p class="text-xs text-gray-500">Contact</p>
-                                        <p class="text-sm font-medium">{{ distributor.contact_number }}</p>
+                                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Contact</p>
+                                        <p class="text-sm font-bold text-gray-900">{{ distributor.contact_number }}</p>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-gray-500">Address</p>
-                                        <p class="text-sm font-medium">{{ distributor.address }}</p>
+                                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Address</p>
+                                        <p class="text-sm font-bold text-gray-900">{{ distributor.address }}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-6 border-t border-gray-100 pt-5">
+                                    <h4 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Submitted Verification Documents</h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        <a v-if="distributor.dti_sec_path" :href="`/admin/documents/${distributor.dti_sec_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition font-medium border border-blue-100">
+                                            📄 DTI/SEC Reg
+                                        </a>
+                                        <a v-if="distributor.business_license_path" :href="`/admin/documents/${distributor.business_license_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition font-medium border border-blue-100">
+                                            📄 Business Permit
+                                        </a>
+                                        <a v-if="distributor.bir_form_path" :href="`/admin/documents/${distributor.bir_form_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition font-medium border border-blue-100">
+                                            📄 BIR Form
+                                        </a>
+                                        <a v-if="distributor.fda_license_path" :href="`/admin/documents/${distributor.fda_license_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition font-medium border border-blue-100">
+                                            📄 FDA License (LTO)
+                                        </a>
+                                        <a v-if="distributor.prc_id_path" :href="`/admin/documents/${distributor.prc_id_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition font-medium border border-blue-100">
+                                            📄 Pharmacist PRC ID
+                                        </a>
+                                        <a v-if="distributor.valid_id_path" :href="`/admin/documents/${distributor.valid_id_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition font-medium border border-blue-100">
+                                            📄 Valid Gov ID
+                                        </a>
+                                        <a v-if="distributor.authorization_letter_path" :href="`/admin/documents/${distributor.authorization_letter_path}`" target="_blank" class="inline-flex items-center gap-2 text-sm text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition font-medium border border-amber-100">
+                                            📄 Auth Letter 
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex gap-3 ml-4">
+                            <div class="flex flex-col gap-3 ml-0 sm:ml-6 mt-6 sm:mt-0 w-full sm:w-auto h-full justify-start border-t sm:border-t-0 border-gray-100 pt-6 sm:pt-0">
                                 <button 
                                     @click="approveDistributor(distributor.id)"
-                                    class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-semibold"
+                                    class="w-full sm:w-32 bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition shadow-sm font-bold"
                                 >
-                                    ✓ Approve
+                                    Approve
                                 </button>
                                 <button 
                                     @click="rejectDistributor(distributor.id)"
-                                    class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-semibold"
+                                    class="w-full sm:w-32 bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition shadow-sm font-bold"
                                 >
-                                    ✗ Reject
+                                    Reject
                                 </button>
                             </div>
                         </div>

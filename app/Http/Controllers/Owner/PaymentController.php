@@ -72,6 +72,8 @@ class PaymentController extends Controller
                 $payment->applyEscrowFees();
             }
 
+            $payment->refresh()->creditSellerWalletOnVerification();
+
             // Update invoice status
             $invoice   = $payment->invoice()->with('payments')->first();
             $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
@@ -85,7 +87,7 @@ class PaymentController extends Controller
             $invoice->update(['status' => $invoiceStatus]);
         });
 
-        return back()->with('success', 'Payment verified. Funds held in escrow until buyer confirms receipt.');
+        return back()->with('success', 'Payment verified. Net proceeds are credited to your wallet; escrow status updates when the buyer confirms receipt.');
     }
 
     /**

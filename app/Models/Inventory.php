@@ -14,6 +14,7 @@ class Inventory extends Model
 
     protected $fillable = [
         'product_id',
+        'product_variation_id',
         'branch_id',
         'quantity',
         'reorder_level',
@@ -32,6 +33,11 @@ class Inventory extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function productVariation(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariation::class, 'product_variation_id');
     }
 
     /**

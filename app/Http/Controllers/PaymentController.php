@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\CheckoutBatch;
 use App\Models\Payment;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
@@ -33,9 +34,70 @@ class PaymentController extends Controller
         if ($event === 'checkout_session.payment.paid') {
             $sessionId = $eventData['id'] ?? null;
             $metadata  = $eventData['attributes']['metadata'] ?? [];
+            $batchId = $metadata['batch_id'] ?? null;
             $invoiceId = $metadata['invoice_id'] ?? null;
 
-            if (!$sessionId || !$invoiceId) {
+            if (!$sessionId) {
+                Log::warning('[PaymentController] Webhook missing session_id');
+                return response()->json(['error' => 'Missing data'], 422);
+            }
+
+            if ($batchId) {
+                DB::transaction(function () use ($sessionId, $batchId) {
+                    $batch = CheckoutBatch::find($batchId);
+                    if (!$batch) {
+                        Log::warning('[PaymentController] Batch not found', ['batch_id' => $batchId]);
+                        return;
+                    }
+
+                    if ($batch->paymongo_session_id !== $sessionId) {
+                        Log::warning('[PaymentController] Batch/session mismatch', [
+                            'batch_id' => $batchId,
+                            'batch_session' => $batch->paymongo_session_id,
+                            'webhook_session' => $sessionId,
+                        ]);
+                        return;
+                    }
+
+                    /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Payment> $payments */
+                    $payments = Payment::whereIn('invoice_id', $batch->invoice_ids ?? [])
+                        ->where('status', 'pending')
+                        ->get();
+
+                    foreach ($payments as $payment) {
+                        /** @var \App\Models\Payment $payment */
+                        $payment->update([
+                            'status'          => 'verified',
+                            'paymongo_status' => 'paid',
+                            'verified_at'     => now(),
+                            'escrow_status'   => 'held',
+                        ]);
+
+                        if ((float) $payment->platform_fee_amount === 0.0) {
+                            $payment->applyEscrowFees();
+                        }
+
+                        $payment->refresh()->creditSellerWalletOnVerification();
+
+                        $invoice = $payment->invoice;
+                        if ($invoice) {
+                            $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
+                            $invoice->update([
+                                'status' => $totalPaid >= $invoice->total_amount ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid')
+                            ]);
+                        }
+                    }
+
+                    $batch->update([
+                        'status' => 'paid',
+                        'paid_at' => now(),
+                    ]);
+                });
+
+                return response()->json(['received' => true]);
+            }
+
+            if (!$invoiceId) {
                 Log::warning('[PaymentController] Webhook missing session_id or invoice_id');
                 return response()->json(['error' => 'Missing data'], 422);
             }
@@ -45,6 +107,15 @@ class PaymentController extends Controller
 
                 if (!$payment) {
                     Log::warning('[PaymentController] No payment for session', ['session_id' => $sessionId]);
+                    return;
+                }
+
+                if ((int) $payment->invoice_id !== (int) $invoiceId) {
+                    Log::warning('[PaymentController] Session/invoice mismatch', [
+                        'session_id' => $sessionId,
+                        'expected_invoice_id' => $invoiceId,
+                        'payment_invoice_id' => $payment->invoice_id,
+                    ]);
                     return;
                 }
 
@@ -61,8 +132,14 @@ class PaymentController extends Controller
                     $payment->applyEscrowFees();
                 }
 
+                $payment->refresh()->creditSellerWalletOnVerification();
+
                 // Update invoice status
-                $invoice   = $payment->invoice()->with('payments')->first();
+                $invoice = $payment->invoice;
+                if (!$invoice) {
+                    Log::warning('[PaymentController] Payment has no invoice', ['payment_id' => $payment->id]);
+                    return;
+                }
                 $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
 
                 $invoiceStatus = match (true) {
@@ -94,6 +171,31 @@ class PaymentController extends Controller
             abort(403);
         }
 
+        // Fallback reconciliation: PayMongo may redirect before webhook is processed.
+        $activePayment = Payment::where('invoice_id', $invoice->id)
+            ->where('status', 'pending')
+            ->where('paymongo_status', 'active')
+            ->whereNotNull('paymongo_session_id')
+            ->latest()
+            ->first();
+
+        if ($activePayment) {
+            try {
+                $session = $this->paymongo->getCheckoutSession($activePayment->paymongo_session_id);
+                if ($this->isCheckoutSessionPaid($session)) {
+                    DB::transaction(function () use ($activePayment) {
+                        $this->finalizePaymentAsVerified($activePayment);
+                    });
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[PaymentController] Success fallback reconciliation failed', [
+                    'invoice_id' => $invoice->id,
+                    'payment_id' => $activePayment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return redirect()->route('orders.confirmation', $invoice->order)
             ->with('success', 'Payment successful! Your funds are securely held until delivery.');
     }
@@ -114,5 +216,124 @@ class PaymentController extends Controller
 
         return redirect()->route('orders.confirmation', $invoice->order)
             ->with('error', 'Payment was cancelled. You can retry from your orders.');
+    }
+
+    /**
+     * PayMongo redirects here for checkout batches.
+     */
+    public function batchSuccess(CheckoutBatch $batch)
+    {
+        if ($batch->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        // Fallback reconciliation for multi-order checkout session.
+        try {
+            $session = $this->paymongo->getCheckoutSession($batch->paymongo_session_id);
+            if ($this->isCheckoutSessionPaid($session)) {
+                DB::transaction(function () use ($batch) {
+                    $payments = Payment::whereIn('invoice_id', $batch->invoice_ids ?? [])
+                        ->where('status', 'pending')
+                        ->get();
+
+                    foreach ($payments as $payment) {
+                        /** @var \App\Models\Payment $payment */
+                        $this->finalizePaymentAsVerified($payment);
+                    }
+
+                    $batch->update([
+                        'status' => 'paid',
+                        'paid_at' => now(),
+                    ]);
+                });
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[PaymentController] Batch success fallback reconciliation failed', [
+                'batch_id' => $batch->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('orders.confirmation', $batch->primary_order_id)
+            ->with('confirmation_order_ids', $batch->order_ids ?? [])
+            ->with('success', 'Payment successful! Funds are held in escrow until delivery confirmation.');
+    }
+
+    public function batchCancel(CheckoutBatch $batch)
+    {
+        if ($batch->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        Payment::whereIn('invoice_id', $batch->invoice_ids ?? [])
+            ->where('paymongo_status', 'active')
+            ->update(['paymongo_status' => 'expired', 'status' => 'rejected']);
+
+        $batch->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+        ]);
+
+        return redirect()->route('orders.confirmation', $batch->primary_order_id)
+            ->with('confirmation_order_ids', $batch->order_ids ?? [])
+            ->with('error', 'Payment was cancelled. You can retry from your orders.');
+    }
+
+    private function finalizePaymentAsVerified(Payment $payment): void
+    {
+        $payment->update([
+            'status'          => 'verified',
+            'paymongo_status' => 'paid',
+            'verified_at'     => now(),
+            'escrow_status'   => 'held',
+        ]);
+
+        if ((float) $payment->platform_fee_amount === 0.0) {
+            $payment->applyEscrowFees();
+        }
+
+        $payment->refresh()->creditSellerWalletOnVerification();
+
+        $invoice = $payment->invoice;
+        if (!$invoice) {
+            return;
+        }
+
+        $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
+        $invoice->update([
+            'status' => $totalPaid >= $invoice->total_amount ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
+        ]);
+    }
+
+    private function isCheckoutSessionPaid(array $session): bool
+    {
+        $attributes = $session['attributes'] ?? [];
+        $sessionStatus = strtolower((string) ($attributes['status'] ?? ''));
+        $paymentStatus = strtolower((string) ($attributes['payment_status'] ?? ''));
+
+        if (in_array($sessionStatus, ['paid', 'succeeded', 'completed'], true)) {
+            return true;
+        }
+
+        if (in_array($paymentStatus, ['paid', 'succeeded'], true)) {
+            return true;
+        }
+
+        $paymentIntentStatus = strtolower((string) ($attributes['payment_intent']['attributes']['status'] ?? ''));
+        if (in_array($paymentIntentStatus, ['succeeded', 'paid'], true)) {
+            return true;
+        }
+
+        $payments = $attributes['payments'] ?? [];
+        if (is_array($payments)) {
+            foreach ($payments as $entry) {
+                $entryStatus = strtolower((string) ($entry['attributes']['status'] ?? $entry['status'] ?? ''));
+                if (in_array($entryStatus, ['paid', 'succeeded'], true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

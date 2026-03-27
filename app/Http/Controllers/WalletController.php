@@ -6,6 +6,7 @@ use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
@@ -51,17 +52,20 @@ class WalletController extends Controller
 
         $amountCentavos = (int) round($validated['amount'] * 100);
 
+        $topupToken = Str::uuid()->toString();
+
         // Store pending top-up in session so the callback can credit it
         session([
             'wallet_topup_amount'    => $validated['amount'],
             'wallet_topup_wallet_id' => $wallet->id,
+            'wallet_topup_token'     => $topupToken,
         ]);
 
         try {
             $session = $this->paymongo->createGenericCheckoutSession(
                 description:     'Wallet Top-up — ₱' . number_format($validated['amount'], 2),
                 amountCentavos:  $amountCentavos,
-                successUrl:      route('wallet.topup.success') . '?amount=' . $validated['amount'],
+                successUrl:      route('wallet.topup.success') . '?token=' . $topupToken,
                 cancelUrl:       route('wallet.topup.cancel'),
                 metadata:        [
                     'user_id'   => $user->id,
@@ -100,10 +104,20 @@ class WalletController extends Controller
         $user   = auth()->user();
         $wallet = $user->wallet;
 
-        // Read amount from query param (passed in success_url)
-        $amount = (float) $request->query('amount');
+        $callbackToken = (string) $request->query('token');
+        $sessionToken = (string) session('wallet_topup_token');
+        $amount = (float) session('wallet_topup_amount');
+        $walletId = (int) session('wallet_topup_wallet_id');
 
-        if (!$wallet || $amount <= 0) {
+        // Require one-time token + matching wallet context + non-zero amount.
+        if (
+            !$wallet ||
+            $amount <= 0 ||
+            !$callbackToken ||
+            !$sessionToken ||
+            !hash_equals($sessionToken, $callbackToken) ||
+            $walletId !== (int) $wallet->id
+        ) {
             return redirect()->route('wallet.index')
                 ->withErrors(['error' => 'Invalid top-up session.']);
         }
@@ -120,6 +134,9 @@ class WalletController extends Controller
             'wallet_id' => $wallet->id,
             'amount'    => $amount,
         ]);
+
+        // Prevent callback replay.
+        session()->forget(['wallet_topup_amount', 'wallet_topup_wallet_id', 'wallet_topup_token']);
 
         return redirect()->route('wallet.index')
             ->with('success', '₱' . number_format($amount, 2) . ' has been added to your wallet!');

@@ -11,13 +11,13 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Branch Name *</label>
                         <input
-                            v-model="form.name"
+                            v-model="form.branch_name"
                             type="text"
                             required
                             placeholder="e.g. Main Branch, Makati Branch"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
-                        <p v-if="form.errors.name" class="text-red-500 text-sm mt-1">{{ form.errors.name }}</p>
+                        <p v-if="form.errors.branch_name" class="text-red-500 text-sm mt-1">{{ form.errors.branch_name }}</p>
                     </div>
 
                     <div>
@@ -36,7 +36,11 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Number</label>
                             <input
                                 v-model="form.contact_number"
+                                @input="sanitizeContactNumber"
                                 type="tel"
+                                inputmode="numeric"
+                                pattern="09[0-9]{9}"
+                                maxlength="11"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             <p v-if="form.errors.contact_number" class="text-red-500 text-sm mt-1">{{ form.errors.contact_number }}</p>
@@ -83,11 +87,15 @@ const props = defineProps({
 });
 
 const form = useForm({
-    name: '',
+    branch_name: '',
     address: '',
     contact_number: '',
     email: '',
 });
+
+const sanitizeContactNumber = () => {
+    form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
+};
 
 const submit = () => {
     form.post(`/owner/distributor/${props.distributor.id}/branches`);

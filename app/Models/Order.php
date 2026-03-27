@@ -14,7 +14,12 @@ class Order extends Model
         'customer_id',
         'distributor_id',
         'status',
+        'prescription_status',
+        'prescription_image_path',
+        'prescription_review_note',
+        'prescription_reviewed_at',
         'subtotal',
+        'shipping_fee',
         'discount',
         'total_amount',
         'delivery_address',
@@ -29,13 +34,43 @@ class Order extends Model
 
     protected $casts = [
         'subtotal'     => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
         'discount'     => 'decimal:2',
         'total_amount' => 'decimal:2',
         'approved_at'  => 'datetime',
         'cancelled_at' => 'datetime',
         'delivered_at' => 'datetime',
         'received_at'  => 'datetime',
+        'prescription_reviewed_at' => 'datetime',
     ];
+
+    public const PRESCRIPTION_NOT_REQUIRED = 'not_required';
+
+    public const PRESCRIPTION_AWAITING_UPLOAD = 'awaiting_upload';
+
+    public const PRESCRIPTION_PENDING_REVIEW = 'pending_review';
+
+    public const PRESCRIPTION_APPROVED = 'approved';
+
+    public const PRESCRIPTION_REJECTED = 'rejected';
+
+    public function needsPrescriptionUpload(): bool
+    {
+        return $this->prescription_status === self::PRESCRIPTION_AWAITING_UPLOAD;
+    }
+
+    public function isPrescriptionPendingReview(): bool
+    {
+        return $this->prescription_status === self::PRESCRIPTION_PENDING_REVIEW;
+    }
+
+    public function prescriptionBlocksFulfillment(): bool
+    {
+        return in_array($this->prescription_status, [
+            self::PRESCRIPTION_AWAITING_UPLOAD,
+            self::PRESCRIPTION_PENDING_REVIEW,
+        ], true);
+    }
 
     /**
      * Get the customer
@@ -99,6 +134,22 @@ class Order extends Model
     public function canBeConfirmedReceived(): bool
     {
         return $this->status === 'delivered' && is_null($this->received_at);
+    }
+
+    /**
+     * Is this a Cash on Delivery order?
+     */
+    public function isCod(): bool
+    {
+        return $this->payment_method === 'cod';
+    }
+
+    /**
+     * COD orders have no online invoice/escrow.
+     */
+    public function hasOnlinePayment(): bool
+    {
+        return !$this->isCod() && $this->payment_method !== 'cash';
     }
 
     /**

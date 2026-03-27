@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -12,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // Alter enum to include 'completed' state
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders MODIFY status ENUM('pending', 'approved', 'processing', 'packed', 'shipped', 'delivered', 'cancelled', 'rejected', 'completed') DEFAULT 'pending'");
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE orders MODIFY status ENUM('pending', 'approved', 'processing', 'packed', 'shipped', 'delivered', 'cancelled', 'rejected', 'completed') DEFAULT 'pending'");
+        }
     }
 
     /**
@@ -21,6 +24,8 @@ return new class extends Migration
     public function down(): void
     {
         // Revert enum back to original
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE orders MODIFY status ENUM('pending', 'approved', 'processing', 'packed', 'shipped', 'delivered', 'cancelled', 'rejected') DEFAULT 'pending'");
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE orders MODIFY status ENUM('pending', 'approved', 'processing', 'packed', 'shipped', 'delivered', 'cancelled', 'rejected') DEFAULT 'pending'");
+        }
     }
 };

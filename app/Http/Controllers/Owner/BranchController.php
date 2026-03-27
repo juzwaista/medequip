@@ -53,7 +53,9 @@ class BranchController extends Controller
         $validated = $request->validate([
             'branch_name' => 'required|string|max:255',
             'address' => 'required|string',
-            'contact_number' => 'required|string|max:50',
+            'contact_number' => ['nullable', 'regex:/^09[0-9]{9}$/'],
+        ], [
+            'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);
 
         $distributor->branches()->create($validated);

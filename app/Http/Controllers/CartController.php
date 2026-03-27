@@ -3,24 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Inventory;
+use App\Models\ProductVariation;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CartController extends Controller
 {
-    /**
-     * Get cart from session
-     */
-    private function getCart()
+    private function getCart(): array
     {
         return session()->get('cart', []);
     }
 
-    /**
-     * Save cart to session
-     */
-    private function saveCart($cart)
+    private function saveCart(array $cart): void
     {
         session()->put('cart', $cart);
     }
@@ -30,12 +25,26 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cart = $this->getCart();
-        $cartItems = $this->enrichCartItems($cart);
+        $cart = CartService::pruneCart($this->getCart());
+        $this->saveCart($cart);
+
+        $cartItems = CartService::enrichCartItems($cart);
+        $subtotal = CartService::calculateSubtotal($cartItems);
+        $shippingFeePerOrder = (float) config('services.shipping.flat_fee', 50);
+        $distributorCount = collect($cartItems)
+            ->pluck('product.distributor_id')
+            ->filter()
+            ->unique()
+            ->count();
+        $shippingFee = count($cartItems) > 0 ? ($shippingFeePerOrder * max(1, $distributorCount)) : 0;
 
         return Inertia::render('Cart/Index', [
             'cartItems' => $cartItems,
-            'subtotal' => $this->calculateSubtotal($cartItems),
+            'subtotal' => $subtotal,
+            'shipping_fee' => $shippingFee,
+            'shipping_fee_per_order' => $shippingFeePerOrder,
+            'distributor_count' => $distributorCount,
+            'estimated_total' => $subtotal + $shippingFee,
         ]);
     }
 
@@ -47,34 +56,52 @@ class CartController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'product_variation_id' => 'nullable|integer|exists:product_variations,id',
         ]);
 
-        $product = Product::with('inventory')->findOrFail($request->product_id);
+        $product = Product::with(['inventory', 'variations'])->findOrFail($request->product_id);
 
-        // Check stock availability
-        $availableStock = $product->inventory->sum(function ($inv) {
-            return $inv->quantity - $inv->reserved_quantity;
-        });
+        $hasVariations = $product->variations()->where('is_active', true)->exists();
+        $variationId = $request->input('product_variation_id');
+
+        if ($hasVariations) {
+            if (! $variationId) {
+                return back()->with('error', 'Please select a product option before adding to cart.');
+            }
+
+            $variation = ProductVariation::where('id', $variationId)
+                ->where('product_id', $product->id)
+                ->where('is_active', true)
+                ->first();
+
+            if (! $variation) {
+                return back()->with('error', 'Invalid product option.');
+            }
+        } else {
+            $variationId = null;
+        }
+
+        $availableStock = CartService::availableStockForLine($product, $variationId ? (int) $variationId : null);
 
         if ($request->quantity > $availableStock) {
             return back()->with('error', 'Insufficient stock available');
         }
 
-        $cart = $this->getCart();
+        $cart = CartService::normalizeCart($this->getCart());
+        $lineKey = CartService::lineKey($product->id, $variationId ? (int) $variationId : null);
 
-        // If product already in cart, update quantity
-        if (isset($cart[$request->product_id])) {
-            $newQuantity = $cart[$request->product_id]['quantity'] + $request->quantity;
+        if (isset($cart[$lineKey])) {
+            $newQuantity = $cart[$lineKey]['quantity'] + $request->quantity;
 
             if ($newQuantity > $availableStock) {
                 return back()->with('error', 'Cannot add more items - insufficient stock');
             }
 
-            $cart[$request->product_id]['quantity'] = $newQuantity;
+            $cart[$lineKey]['quantity'] = $newQuantity;
         } else {
-            // Add new item to cart
-            $cart[$request->product_id] = [
+            $cart[$lineKey] = [
                 'product_id' => $product->id,
+                'product_variation_id' => $variationId ? (int) $variationId : null,
                 'quantity' => $request->quantity,
             ];
         }
@@ -87,28 +114,32 @@ class CartController extends Controller
     /**
      * Update cart item quantity
      */
-    public function update(Request $request, $productId)
+    public function update(Request $request, string $lineKey)
     {
         $request->validate([
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $product = Product::with('inventory')->findOrFail($productId);
+        $lineKey = rawurldecode($lineKey);
 
-        $availableStock = $product->inventory->sum(function ($inv) {
-            return $inv->quantity - $inv->reserved_quantity;
-        });
+        $cart = CartService::normalizeCart($this->getCart());
+
+        if (! isset($cart[$lineKey])) {
+            return back()->with('error', 'Cart item not found');
+        }
+
+        [$productId, $variationId] = CartService::parseLineKey($lineKey);
+
+        $product = Product::with(['inventory', 'variations'])->findOrFail($productId);
+
+        $availableStock = CartService::availableStockForLine($product, $variationId);
 
         if ($request->quantity > $availableStock) {
             return back()->with('error', 'Insufficient stock available');
         }
 
-        $cart = $this->getCart();
-
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity'] = $request->quantity;
-            $this->saveCart($cart);
-        }
+        $cart[$lineKey]['quantity'] = $request->quantity;
+        $this->saveCart($cart);
 
         return back()->with('success', 'Cart updated');
     }
@@ -116,12 +147,13 @@ class CartController extends Controller
     /**
      * Remove item from cart
      */
-    public function remove($productId)
+    public function remove(string $lineKey)
     {
-        $cart = $this->getCart();
+        $lineKey = rawurldecode($lineKey);
+        $cart = CartService::normalizeCart($this->getCart());
 
-        if (isset($cart[$productId])) {
-            unset($cart[$productId]);
+        if (isset($cart[$lineKey])) {
+            unset($cart[$lineKey]);
             $this->saveCart($cart);
         }
 
@@ -134,6 +166,7 @@ class CartController extends Controller
     public function clear()
     {
         session()->forget('cart');
+
         return back()->with('success', 'Cart cleared');
     }
 
@@ -142,49 +175,9 @@ class CartController extends Controller
      */
     public function count()
     {
-        $cart = $this->getCart();
-        $uniqueItems = count($cart); // Count unique items, not total quantity
+        $cart = CartService::normalizeCart($this->getCart());
+        $uniqueItems = count($cart);
 
         return response()->json(['count' => $uniqueItems]);
-    }
-
-    /**
-     * Enrich cart items with product data
-     */
-    private function enrichCartItems($cart)
-    {
-        $items = [];
-
-        foreach ($cart as $productId => $cartItem) {
-            $product = Product::with(['distributor', 'images', 'inventory'])
-                ->find($productId);
-
-            if (!$product) {
-                continue;
-            }
-
-            // Calculate price (wholesale if applicable)
-            $quantity = $cartItem['quantity'];
-            $isWholesale = $product->hasWholesalePricing() && $quantity >= $product->wholesale_min_qty;
-            $unitPrice = $isWholesale ? $product->wholesale_price : $product->base_price;
-
-            $items[] = [
-                'product' => $product,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'is_wholesale' => $isWholesale,
-                'subtotal' => $unitPrice * $quantity,
-            ];
-        }
-
-        return $items;
-    }
-
-    /**
-     * Calculate cart subtotal
-     */
-    private function calculateSubtotal($cartItems)
-    {
-        return array_sum(array_column($cartItems, 'subtotal'));
     }
 }

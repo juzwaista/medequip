@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Delivery;
+use App\Services\OrderInvoiceService;
+use App\Services\OrderPrescriptionRefundService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -69,20 +72,42 @@ class OrderController extends Controller
         $order->load([
             'customer',
             'items.product.images',
+            'items.productVariation',
             'items.inventory.branch',
             'invoice.payments',
             'delivery'
         ]);
 
+        $paymentSettlement = [
+            'state' => 'unpaid',
+            'label' => 'Unpaid',
+        ];
+        if ($order->invoice && $order->invoice->payments->isNotEmpty()) {
+            $hasReleased = $order->invoice->payments->contains(fn($p) => $p->status === 'verified' && $p->escrow_status === 'released');
+            $hasHeld = $order->invoice->payments->contains(fn($p) => $p->status === 'verified' && $p->escrow_status === 'held');
+            $hasRefunded = $order->invoice->payments->contains(fn($p) => $p->status === 'verified' && $p->escrow_status === 'refunded');
+
+            if ($hasReleased) {
+                $paymentSettlement = ['state' => 'released', 'label' => 'Released'];
+            } elseif ($hasHeld) {
+                $paymentSettlement = ['state' => 'pending_release', 'label' => 'Pending Release'];
+            } elseif ($hasRefunded) {
+                $paymentSettlement = ['state' => 'refunded', 'label' => 'Refunded'];
+            } else {
+                $paymentSettlement = ['state' => 'pending_verification', 'label' => 'Pending Verification'];
+            }
+        }
+
         return Inertia::render('Owner/Orders/Show', [
             'order' => $order,
+            'paymentSettlement' => $paymentSettlement,
         ]);
     }
 
     /**
      * Update order status
      */
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order, OrderPrescriptionRefundService $refundService)
     {
         $distributor = $this->getDistributor();
 
@@ -101,6 +126,12 @@ class OrderController extends Controller
 
         $oldStatus = $order->status;
         $newStatus = $request->status;
+
+        if ($newStatus === 'approved' && $order->prescriptionBlocksFulfillment()) {
+            return back()->withErrors([
+                'error' => 'You cannot approve fulfillment until the customer’s prescription is verified (uploaded and approved).',
+            ]);
+        }
 
         // Bug 14: Enforce valid state machine transitions
         $validTransitions = [
@@ -220,6 +251,8 @@ class OrderController extends Controller
                 [
                     'tracking_number'  => Delivery::generateTrackingNumber(),
                     'delivery_address' => $order->delivery_address ?? 'No address provided',
+                    'courier_fee'      => round((float) $order->shipping_fee * (float) config('services.shipping.courier_share_rate', 0.8), 2),
+                    'courier_payout_status' => 'pending',
                     'status'           => 'pending',
                 ]
             );
@@ -253,6 +286,11 @@ class OrderController extends Controller
             'final_status' => $newStatus
         ]);
 
+        // If owner cancels/rejects after payment, refund customer and claw back seller proceeds.
+        if (in_array($newStatus, ['rejected', 'cancelled'], true)) {
+            $refundService->refundAfterOrderCancellation($order->fresh(), $newStatus);
+        }
+
         return back()->with('success', "Order status updated to {$newStatus}");
     }
 
@@ -280,6 +318,122 @@ class OrderController extends Controller
         ]);
 
         return back()->with('success', 'Note added successfully');
+    }
+
+    /**
+     * Distributor confirms they received the COD cash remittance from the courier.
+     */
+    public function confirmCodRemittance(Order $order)
+    {
+        $distributor = $this->getDistributor();
+
+        if ($order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
+        if ($order->payment_method !== 'cod') {
+            return back()->withErrors(['error' => 'This is not a COD order.']);
+        }
+
+        $delivery = $order->delivery;
+
+        if (!$delivery || !$delivery->cod_collected_at) {
+            return back()->withErrors(['error' => 'Courier has not yet confirmed cash collection.']);
+        }
+
+        if ($delivery->cod_remitted_at) {
+            return back()->with('info', 'COD remittance already confirmed.');
+        }
+
+        $delivery->update([
+            'cod_remitted_at' => now(),
+        ]);
+
+        // Mark order as completed once remittance is confirmed
+        if ($order->status === 'delivered') {
+            $order->update([
+                'status'      => 'completed',
+                'received_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'COD remittance confirmed. Order is now complete.');
+    }
+
+    /**
+     * Approve uploaded prescription — creates invoice so customer can pay.
+     */
+    public function approvePrescription(Order $order)
+    {
+        $distributor = $this->getDistributor();
+
+        if ($order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
+        if ($order->prescription_status !== Order::PRESCRIPTION_PENDING_REVIEW) {
+            return back()->withErrors(['error' => 'Prescription is not pending review.']);
+        }
+
+        $order->update([
+            'prescription_status' => Order::PRESCRIPTION_APPROVED,
+            'prescription_reviewed_at' => now(),
+            'prescription_review_note' => null,
+        ]);
+
+        return back()->with('success', 'Prescription approved. You can fulfill this order when ready.');
+    }
+
+    /**
+     * Reject prescription — cancel order and release reserved stock.
+     */
+    public function rejectPrescription(Request $request, Order $order, OrderPrescriptionRefundService $refundService)
+    {
+        $distributor = $this->getDistributor();
+
+        if ($order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        if ($order->prescription_status !== Order::PRESCRIPTION_PENDING_REVIEW) {
+            return back()->withErrors(['error' => 'Prescription is not pending review.']);
+        }
+
+        DB::transaction(function () use ($order, $request, $refundService) {
+            $order->load('items.inventory');
+
+            foreach ($order->items as $item) {
+                $inv = $item->inventory;
+                if (! $inv) {
+                    continue;
+                }
+
+                $reserved = (int) $inv->reserved_quantity;
+                $qty = (int) $item->quantity;
+
+                // Prescription rejection should only release what is actually reserved.
+                // Inventory::releaseReservation throws if requested qty > reserved qty.
+                if ($reserved > 0) {
+                    $inv->releaseReservation(min($qty, $reserved));
+                }
+            }
+
+            $order->update([
+                'prescription_status' => Order::PRESCRIPTION_REJECTED,
+                'prescription_review_note' => $request->reason,
+                'prescription_reviewed_at' => now(),
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+            ]);
+
+            $refundService->refundAfterPrescriptionRejection($order->fresh());
+        });
+
+        return back()->with('success', 'Prescription rejected. The order was cancelled, stock reservations released, and the customer refunded where applicable.');
     }
 }
 

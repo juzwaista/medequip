@@ -75,4 +75,31 @@ class UserManagementController extends Controller
 
         return redirect()->back()->with('success', 'Admin account created successfully.');
     }
+
+    /**
+     * Update user role (super admin only).
+     */
+    public function updateRole(Request $request, User $user)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+        if (!$currentUser || $currentUser->role !== 'super_admin') {
+            abort(403, 'Only Super Admins can update user roles.');
+        }
+
+        $validated = $request->validate([
+            'role' => 'required|in:customer,courier,distributor,staff,admin',
+        ]);
+
+        // Do not allow role changes for super admins from this endpoint.
+        if ($user->role === 'super_admin') {
+            return redirect()->back()->with('error', 'Super Admin role cannot be changed.');
+        }
+
+        $user->update([
+            'role' => $validated['role'],
+        ]);
+
+        return redirect()->back()->with('success', 'User role updated successfully.');
+    }
 }

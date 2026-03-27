@@ -12,6 +12,7 @@ class Invoice extends Model
         'order_id',
         'invoice_number',
         'subtotal',
+        'shipping_fee',
         'tax',
         'discount',
         'total_amount',
@@ -21,6 +22,7 @@ class Invoice extends Model
 
     protected $casts = [
         'subtotal' => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
         'tax' => 'decimal:2',
         'discount' => 'decimal:2',
         'total_amount' => 'decimal:2',

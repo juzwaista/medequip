@@ -38,8 +38,10 @@
         <div>
             <label class="block text-sm font-medium mb-1">Password</label>
             <input type="password" name="password" required
-                   class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200">
-                   
+                   class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 @error('password') border-red-400 @enderror">
+            @error('password')
+                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         <div class="flex items-center justify-between text-sm">

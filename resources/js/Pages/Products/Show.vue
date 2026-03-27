@@ -1,201 +1,271 @@
 <template>
     <MainLayout>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <!-- Breadcrumb -->
-            <nav class="flex mb-8 text-sm text-gray-600">
+            <nav class="flex flex-wrap items-center gap-1.5 mb-6 text-xs sm:text-sm text-gray-600">
                 <Link href="/products" class="hover:text-blue-600 transition">Products</Link>
-                <span class="mx-2">/</span>
-                <Link :href="`/category/${product.category.id}`" class="hover:text-blue-600 transition">
+                <span class="text-gray-400">/</span>
+                <Link :href="`/category/${product.category.id}`" class="hover:text-blue-600 transition truncate max-w-[10rem] sm:max-w-none">
                     {{ product.category.name }}
                 </Link>
-                <span class="mx-2">/</span>
-                <span class="text-gray-900">{{ product.name }}</span>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900 font-medium truncate">{{ product.name }}</span>
             </nav>
 
-            <!-- Product Detail -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-                <!-- Product Image -->
-                <div>
-                    <div class="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-lg aspect-square flex items-center justify-center overflow-hidden">
-                        <img 
-                            v-if="product.image_url"
-                            :src="product.image_url" 
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+                <!-- Gallery -->
+                <div class="lg:col-span-6 space-y-3">
+                    <div class="aspect-square rounded-xl bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                        <img
+                            v-if="activeImageUrl"
+                            :src="activeImageUrl"
                             :alt="product.name"
-                            class="w-full h-full object-cover"
+                            class="w-full h-full object-contain"
                         />
-                        <svg v-else class="h-32 w-32 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg v-else class="h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                     </div>
+                    <div v-if="galleryUrls.length > 1" class="flex gap-2 overflow-x-auto pb-1">
+                        <button
+                            v-for="(url, idx) in galleryUrls"
+                            :key="idx"
+                            type="button"
+                            @click="activeImageIndex = idx"
+                            class="flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition"
+                            :class="activeImageIndex === idx ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'"
+                        >
+                            <img :src="url" alt="" class="w-full h-full object-cover" />
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Product Info -->
-                <div>
-                    <div class="mb-6">
-                        <div class="flex items-start justify-between mb-2">
-                            <div>
-                                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">
-                                    {{ product.product_type === 'equipment' ? 'Equipment' : 'Consumable' }}
-                                </span>
-                                <span v-if="product.has_warranty" class="ml-2 bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-semibold">
-                                    {{ product.warranty_months }} Month Warranty
-                                </span>
-                            </div>
-                        </div>
-                        <h1 class="text-4xl font-bold text-gray-900 mt-4 mb-2">{{ product.name }}</h1>
-                        <p class="text-xl text-gray-600">{{ product.brand || 'Generic Brand' }} {{ product.model ? `- ${product.model}` : '' }}</p>
+                <!-- Buy box -->
+                <div class="lg:col-span-6">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span
+                            v-if="product.requires_prescription"
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200"
+                        >
+                            Prescription required
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-100">
+                            {{ product.product_type === 'equipment' ? 'Equipment' : 'Consumable' }}
+                        </span>
+                        <span v-if="product.has_warranty" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+                            {{ product.warranty_months }} mo warranty
+                        </span>
                     </div>
 
-                    <!-- Distributor Info -->
-                    <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200">
-                        <p class="text-sm text-gray-600 mb-1">Sold by</p>
-                        <Link 
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{{ product.name }}</h1>
+                    <p class="text-sm text-gray-600 mt-1">
+                        {{ product.brand }} · {{ product.model }}
+                    </p>
+
+                    <!-- Price block (compact) -->
+                    <div class="mt-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                        <div class="flex flex-wrap items-baseline gap-2">
+                            <span class="text-2xl font-bold text-gray-900">₱{{ Number(effectiveRetail).toLocaleString() }}</span>
+                            <span class="text-sm text-gray-500">Retail</span>
+                        </div>
+                        <div v-if="product.wholesale_price" class="mt-3 pt-3 border-t border-gray-100">
+                            <div class="flex flex-wrap items-center gap-2 text-sm">
+                                <span class="font-semibold text-emerald-700">₱{{ Number(effectiveWholesale).toLocaleString() }}</span>
+                                <span class="text-gray-600">wholesale</span>
+                                <span class="text-xs text-gray-500">· min {{ product.wholesale_min_qty }} pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Variations -->
+                    <div v-if="hasVariations" class="mt-5">
+                        <p class="text-sm font-medium text-gray-800 mb-2">{{ variationOptionLabel }}</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                v-for="v in variationStocks"
+                                :key="v.id"
+                                type="button"
+                                @click="selectedVariationId = v.id"
+                                :disabled="v.available <= 0"
+                                class="px-3 py-1.5 rounded-lg border text-sm font-medium transition"
+                                :class="selectedVariationId === v.id
+                                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                                    : v.available <= 0
+                                        ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
+                                        : 'border-gray-300 text-gray-800 hover:border-blue-400'"
+                            >
+                                {{ v.option_value }}
+                                <span class="text-xs font-normal text-gray-500">({{ v.available }})</span>
+                            </button>
+                        </div>
+                        <p v-if="!selectedVariationId" class="text-xs text-amber-700 mt-2">Select an option to add to cart.</p>
+                    </div>
+
+                    <!-- Stock -->
+                    <p class="mt-4 text-sm">
+                        <span class="font-medium text-gray-800">{{ hasVariations ? 'Total Stock:' : 'Stock:' }}</span>
+                        <span :class="totalStock > 0 ? 'text-emerald-700' : 'text-red-600'" class="ml-1 font-semibold">
+                            {{ totalStock > 0 ? `${totalStock} available` : 'Out of stock' }}
+                        </span>
+                    </p>
+
+                    <!-- Seller -->
+                    <div class="mt-5 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2.5 text-sm">
+                        <span class="text-gray-500">Sold by </span>
+                        <Link
                             v-if="product.distributor.slug"
                             :href="`/seller/${product.distributor.slug}`"
-                            class="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                            class="font-semibold text-blue-600 hover:underline"
                         >
                             {{ product.distributor.company_name }}
                         </Link>
-                        <p v-else class="font-semibold text-gray-900">{{ product.distributor.company_name }}</p>
-                        <p class="text-sm text-gray-600 mt-1">{{ product.distributor.address }}</p>
+                        <span v-else class="font-semibold text-gray-900">{{ product.distributor.company_name }}</span>
                     </div>
 
-                    <!-- Pricing -->
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 mb-6 border border-blue-200">
-                        <div class="mb-4">
-                            <p class="text-sm text-gray-700 mb-1">Retail Price</p>
-                            <p class="text-4xl font-bold text-blue-600">
-                                ₱{{ Number(product.base_price).toLocaleString() }}
-                            </p>
-                        </div>
-
-                        <div v-if="product.wholesale_price" class="bg-white rounded-xl p-4 border border-blue-200">
-                            <div class="flex items-center mb-2">
-                                <svg class="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                <span class="font-semibold text-gray-900">Wholesale Price Available</span>
+                    <!-- Quantity + CTA -->
+                    <div class="mt-6 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Qty</label>
+                            <div class="inline-flex items-center border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                                <button
+                                    type="button"
+                                    @click="bumpQty(-1)"
+                                    :disabled="quantity <= 1 || lineAvailable <= 0"
+                                    class="w-11 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 text-lg font-bold"
+                                >−</button>
+                                <input
+                                    type="number"
+                                    v-model.number="quantity"
+                                    @input="sanitizeQuantityInput"
+                                    min="1"
+                                    :max="lineAvailable"
+                                    class="w-14 text-center text-sm font-bold py-2 border-x-2 border-gray-200 focus:outline-none focus:ring-0"
+                                />
+                                <button
+                                    type="button"
+                                    @click="bumpQty(1)"
+                                    :disabled="quantity >= lineAvailable || lineAvailable <= 0"
+                                    class="w-11 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 text-lg font-bold"
+                                >+</button>
                             </div>
-                            <p class="text-2xl font-bold text-green-600 mb-1">
-                                ₱{{ Number(product.wholesale_price).toLocaleString() }}
-                            </p>
-                            <p class="text-sm text-gray-600">
-                                When you buy {{ product.wholesale_min_qty }}+ pieces
-                                <span class="font-semibold text-green-600">
-                                    (Save ₱{{ (product.base_price - product.wholesale_price).toLocaleString() }} per piece!)
-                                </span>
-                            </p>
+                            <span class="text-xs text-gray-400">of {{ lineAvailable }} available</span>
                         </div>
-                    </div>
 
-                    <!-- Stock Info -->
-                    <div class="mb-6">
-                        <div class="flex items-center text-lg mb-3">
-                            <svg class="h-6 w-6 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="font-semibold text-gray-900">
-                                {{ availableStock }} units available
-                            </span>
+                        <!-- Desktop CTA row -->
+                        <div class="hidden sm:flex gap-3">
+                            <button
+                                type="button"
+                                @click="addToCart"
+                                :disabled="adding || lineAvailable <= 0 || (hasVariations && !selectedVariationId)"
+                                class="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border-2 border-blue-600 text-blue-600 text-sm font-bold py-3 px-4 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                <svg v-if="adding" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                {{ adding ? 'Adding…' : 'Add to Cart' }}
+                            </button>
+                            <button
+                                type="button"
+                                @click="buyNow"
+                                :disabled="buyingNow || lineAvailable <= 0 || (hasVariations && !selectedVariationId)"
+                                class="flex-1 inline-flex justify-center items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-3 px-4 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                            >
+                                <svg v-if="buyingNow" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                Buy Now
+                            </button>
                         </div>
-                        
-                        <!-- Branch Stock -->
-                        <div v-if="product.inventory.length > 0" class="space-y-2">
-                            <p class="text-sm font-semibold text-gray-700 mb-2">Available at:</p>
-                            <div v-for="inv in product.inventory" :key="inv.id" class="flex justify-between text-sm p-2 bg-gray-50 rounded-lg">
-                                <span class="text-gray-700">
-                                    {{ inv.branch ? inv.branch.branch_name : 'Main Warehouse' }}
-                                </span>
-                                <span class="font-semibold" :class="inv.quantity <= inv.reorder_level ? 'text-orange-600' : 'text-green-600'">
-                                    {{ inv.quantity - inv.reserved_quantity }} pcs
-                                </span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Add to Cart -->
-                    <div class="flex gap-4 mb-6">
-                        <div class="flex-1">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
-                            <input 
-                                type="number"
-                                v-model.number="quantity"
-                                min="1"
-                                :max="availableStock"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4">
-                        <button 
-                            @click="addToCart"
-                            :disabled="adding"
-                            class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl hover:shadow-xl transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                        >
-                            <svg v-if="adding" class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {{ adding ? 'Adding...' : 'Add to Cart' }}
-                        </button>
-                        <button class="px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                        </button>
+                        <!-- Mobile note -->
+                        <p class="sm:hidden text-xs text-gray-400 text-center">Use the buttons below to add to cart or buy now</p>
                     </div>
                 </div>
             </div>
 
-
-            <!-- Product Description -->
-            <div class="bg-white rounded-2xl shadow-md p-8 mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Product Description</h2>
-                <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">SKU</p>
-                        <p class="font-semibold">{{ product.sku }}</p>
+            <!-- Sticky Mobile Action Bar -->
+            <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl px-4 py-3 z-40" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom))">
+                <div class="flex gap-3 items-center">
+                    <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+                        <button type="button" @click="bumpQty(-1)" :disabled="quantity <= 1 || lineAvailable <= 0" class="w-10 h-10 flex items-center justify-center text-gray-600 disabled:opacity-40 text-base font-bold">−</button>
+                        <span class="w-8 text-center text-sm font-bold">{{ quantity }}</span>
+                        <button type="button" @click="bumpQty(1)" :disabled="quantity >= lineAvailable || lineAvailable <= 0" class="w-10 h-10 flex items-center justify-center text-gray-600 disabled:opacity-40 text-base font-bold">+</button>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Category</p>
-                        <p class="font-semibold">{{ product.category.name }}</p>
-                    </div>
-                    <div v-if="product.has_expiry" class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Expiry Tracking</p>
-                        <p class="font-semibold text-orange-600">Yes</p>
-                    </div>
-                    <div v-if="product.has_warranty" class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Warranty</p>
-                        <p class="font-semibold text-green-600">{{ product.warranty_months }} Months</p>
-                    </div>
+                    <button
+                        type="button"
+                        @click="addToCart"
+                        :disabled="adding || lineAvailable <= 0 || (hasVariations && !selectedVariationId)"
+                        class="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl border-2 border-blue-600 text-blue-600 font-bold text-sm hover:bg-blue-50 disabled:opacity-50 transition"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        {{ adding ? 'Adding…' : 'Cart' }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="buyNow"
+                        :disabled="buyingNow || lineAvailable <= 0 || (hasVariations && !selectedVariationId)"
+                        class="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 disabled:opacity-50 transition shadow-sm"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Buy Now
+                    </button>
                 </div>
             </div>
 
-            <!-- Related Products -->
-            <div v-if="relatedProducts.length">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Link 
-                        v-for="related in relatedProducts" 
+            <!-- Description -->
+            <div class="mt-10 rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-3">About this item</h2>
+                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ product.description }}</p>
+
+                <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 text-sm">
+                    <div class="rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <dt class="text-gray-500">Brand</dt>
+                        <dd class="font-semibold text-gray-900 mt-0.5">{{ product.brand }}</dd>
+                    </div>
+                    <div class="rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <dt class="text-gray-500">Model</dt>
+                        <dd class="font-semibold text-gray-900 mt-0.5">{{ product.model }}</dd>
+                    </div>
+                    <div class="rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <dt class="text-gray-500">Category</dt>
+                        <dd class="font-semibold text-gray-900 mt-0.5">{{ product.category.name }}</dd>
+                    </div>
+                    <div v-if="product.has_expiry" class="rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <dt class="text-gray-500">Expiry</dt>
+                        <dd class="font-semibold text-orange-700 mt-0.5">
+                            {{ nearestExpiryDate ? new Date(nearestExpiryDate).toLocaleDateString() : 'Tracked per batch' }}
+                        </dd>
+                        <dd v-if="nearestBatchNumber" class="text-xs text-gray-500 mt-1">Batch {{ nearestBatchNumber }}</dd>
+                    </div>
+                    <div v-if="product.has_warranty" class="rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <dt class="text-gray-500">Warranty</dt>
+                        <dd class="font-semibold text-emerald-700 mt-0.5">{{ product.warranty_months }} months</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Related -->
+            <div v-if="relatedProducts.length" class="mt-10">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Related products</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Link
+                        v-for="related in relatedProducts"
                         :key="related.id"
                         :href="`/products/${related.id}`"
-                        class="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden"
+                        class="group rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition"
                     >
-                        <div class="h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                            <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="aspect-square bg-gray-50 flex items-center justify-center">
+                            <img
+                                v-if="related.image_url"
+                                :src="related.image_url"
+                                :alt="related.name"
+                                class="w-full h-full object-contain p-2"
+                            />
+                            <svg v-else class="h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2 mb-2">
-                                {{ related.name }}
-                            </h3>
-                            <p class="text-xl font-bold text-blue-600">
-                                ₱{{ Number(related.base_price).toLocaleString() }}
-                            </p>
+                        <div class="p-3">
+                            <p class="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">{{ related.name }}</p>
+                            <p class="text-sm font-bold text-gray-900 mt-1">₱{{ Number(related.base_price).toLocaleString() }}</p>
                         </div>
                     </Link>
                 </div>
@@ -205,7 +275,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 
@@ -214,23 +284,138 @@ const props = defineProps({
     relatedProducts: Array,
     totalStock: Number,
     availableStock: Number,
+    hasVariations: {
+        type: Boolean,
+        default: false,
+    },
+    variationStocks: {
+        type: Array,
+        default: () => [],
+    },
+    nearestExpiryDate: {
+        type: String,
+        default: null,
+    },
+    nearestBatchNumber: {
+        type: String,
+        default: null,
+    },
 });
 
 const quantity = ref(1);
 const adding = ref(false);
+const buyingNow = ref(false);
+const activeImageIndex = ref(0);
+const selectedVariationId = ref(null);
+
+const galleryUrls = computed(() => {
+    const imgs = props.product.images || [];
+    if (imgs.length) {
+        return imgs.map((i) => i.url || `/storage/${i.image_path}`);
+    }
+    if (props.product.image_url) {
+        return [props.product.image_url];
+    }
+    return [];
+});
+
+const activeImageUrl = computed(() => galleryUrls.value[activeImageIndex.value] || null);
+
+const selectedVariation = computed(() => {
+    if (!props.hasVariations || !selectedVariationId.value) return null;
+    return props.variationStocks.find((v) => v.id === selectedVariationId.value) || null;
+});
+
+const priceAdjustment = computed(() => (selectedVariation.value ? Number(selectedVariation.value.price_adjustment) : 0));
+
+const effectiveRetail = computed(() => Number(props.product.base_price) + priceAdjustment.value);
+const effectiveWholesale = computed(() =>
+    props.product.wholesale_price ? Number(props.product.wholesale_price) + priceAdjustment.value : null
+);
+
+const variationOptionLabel = computed(() => {
+    if (!props.variationStocks.length) return 'Options';
+    return props.variationStocks[0].option_name || 'Option';
+});
+
+const lineAvailable = computed(() => {
+    if (props.hasVariations) {
+        return selectedVariation.value ? selectedVariation.value.available : 0;
+    }
+    return props.availableStock;
+});
+
+watch(
+    () => selectedVariationId.value,
+    () => {
+        quantity.value = 1;
+        sanitizeQuantityInput();
+    }
+);
+
+watch(
+    () => props.variationStocks,
+    (rows) => {
+        if (!props.hasVariations) return;
+        const first = rows.find((r) => r.available > 0);
+        selectedVariationId.value = first ? first.id : null;
+    },
+    { immediate: true }
+);
+
+const sanitizeQuantityInput = () => {
+    const parsed = Number(quantity.value);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+        quantity.value = 1;
+        return;
+    }
+    if (lineAvailable.value && parsed > lineAvailable.value) {
+        quantity.value = lineAvailable.value;
+    }
+};
+
+const bumpQty = (delta) => {
+    quantity.value = Math.max(1, Math.min(lineAvailable.value || 1, quantity.value + delta));
+};
 
 const addToCart = () => {
+    sanitizeQuantityInput();
+    if (props.hasVariations && !selectedVariationId.value) return;
+    if (lineAvailable.value <= 0) return;
+
     adding.value = true;
-    
-    router.post('/cart/add', {
+    const payload = {
         product_id: props.product.id,
         quantity: quantity.value,
-    }, {
+    };
+    if (props.hasVariations && selectedVariationId.value) {
+        payload.product_variation_id = selectedVariationId.value;
+    }
+
+    router.post('/cart/add', payload, {
         preserveScroll: true,
         onFinish: () => {
             adding.value = false;
-        }
+        },
     });
 };
-</script>
 
+const buyNow = async () => {
+    sanitizeQuantityInput();
+    if (props.hasVariations && !selectedVariationId.value) return;
+    if (lineAvailable.value <= 0) return;
+
+    buyingNow.value = true;
+    try {
+        const payload = { product_id: props.product.id, quantity: quantity.value };
+        if (props.hasVariations && selectedVariationId.value) {
+            payload.product_variation_id = selectedVariationId.value;
+        }
+        await window.axios.post('/cart/add', payload);
+        router.visit('/checkout');
+    } catch (e) {
+        alert(e?.response?.data?.message || 'Could not process. Please try again.');
+        buyingNow.value = false;
+    }
+};
+</script>

@@ -14,9 +14,12 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(): \Inertia\Response
     {
-        return view('auth.login');
+        return \Inertia\Inertia::render('Auth/Login', [
+            'status' => session('status'),
+            'error' => session('error'),
+        ]);
     }
 
     /**
@@ -49,7 +52,7 @@ class AuthenticatedSessionController extends Controller
                                 ->with('info', 'Please complete your distributor registration.');
                         }
                         if (in_array($distributor->status, ['pending', 'rejected'])) {
-                            return redirect()->route('owner.distributor.pending')
+                            return redirect()->route('owner.distributors.pending')
                                 ->with('info', 'Your application is ' . $distributor->status . '.');
                         }
                     }
@@ -72,8 +75,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        // Redirect specifically to 'login' to see the message
-        return redirect()->route('login')
+        return redirect('/')
             ->with('status', 'You have been successfully logged out of MedEquip.');
     }
 }

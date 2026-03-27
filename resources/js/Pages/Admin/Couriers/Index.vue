@@ -42,7 +42,11 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                                 <input 
                                     v-model="form.phone_number"
+                                    @input="sanitizePhoneNumber"
                                     type="text" 
+                                    inputmode="numeric"
+                                    pattern="09[0-9]{9}"
+                                    maxlength="11"
                                     class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm"
                                     required
                                 >
@@ -202,6 +206,10 @@ const form = useForm({
     plate_number: '',
     password: generatePassword(),
 });
+
+const sanitizePhoneNumber = () => {
+    form.phone_number = String(form.phone_number || '').replace(/\D/g, '').slice(0, 11);
+};
 
 const submit = () => {
     form.post(route('admin.couriers.store'), {

@@ -174,6 +174,13 @@
                             >
                                 Cancel Order
                             </button>
+                            <button
+                                v-if="canPayNow(order)"
+                                @click="payNow(order)"
+                                class="px-5 py-2.5 border-2 border-emerald-600 text-emerald-700 rounded-lg hover:bg-emerald-50 transition font-medium text-sm"
+                            >
+                                Pay Now
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -183,16 +190,16 @@
                     <svg class="h-20 w-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">It's quiet here.</h3>
                     <p class="text-gray-600 mb-6">
-                        {{ hasActiveFilters ? 'Try adjusting your filters' : "You haven't placed any orders yet" }}
+                        {{ hasActiveFilters ? 'Try adjusting your filters' : "Start exploring to find the supplies you need." }}
                     </p>
                     <Link 
                         v-if="!hasActiveFilters"
                         href="/products" 
                         class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                     >
-                        Start Shopping
+                        Find Equipment
                     </Link>
                 </div>
             </div>
@@ -311,5 +318,13 @@ const confirmReceived = (order) => {
             }
         });
     }
+};
+
+const canPayNow = (order) => {
+    return !!order.can_pay_now;
+};
+
+const payNow = (order) => {
+    router.post(`/orders/${order.id}/pay-now`);
 };
 </script>

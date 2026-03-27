@@ -51,12 +51,16 @@ class DssAlertService
             ->with('product')
             ->get()
             ->map(function ($inventory) {
-                $daysUntilExpiry = now()->diffInDays($inventory->expiry_date);
+                // Whole days until end of expiry day (integer, no decimals in UI)
+                $daysUntilExpiry = (int) now()->startOfDay()->diffInDays($inventory->expiry_date->copy()->startOfDay());
+
                 return [
                     'id' => $inventory->id,
+                    'product_id' => $inventory->product_id,
                     'product_name' => $inventory->product->name,
                     'batch_number' => $inventory->batch_number,
                     'expiry_date' => $inventory->expiry_date->format('Y-m-d'),
+                    'expiry_date_display' => $inventory->expiry_date->format('M j, Y'),
                     'days_until_expiry' => $daysUntilExpiry,
                     'quantity' => $inventory->quantity,
                     'severity' => $daysUntilExpiry <= 30 ? 'critical' : 'warning',
@@ -71,11 +75,29 @@ class DssAlertService
     {
         return Product::where('distributor_id', $distributorId)
             ->whereHas('inventory', function ($query) {
-                $query->whereRaw('quantity <= reorder_level');
+                $query->whereRaw('quantity <= reorder_level')
+                    ->where(function ($q) {
+                        $q->where(function ($sub) {
+                            $sub->whereNull('product_variation_id')
+                                ->whereRaw('NOT EXISTS (SELECT 1 FROM product_variations WHERE product_variations.product_id = inventory.product_id AND product_variations.is_active = 1)');
+                        })->orWhere(function ($sub) {
+                            $sub->whereNotNull('product_variation_id')
+                                ->whereRaw('EXISTS (SELECT 1 FROM product_variations WHERE product_variations.id = inventory.product_variation_id AND product_variations.is_active = 1)');
+                        });
+                    });
             })
             ->with([
                 'inventory' => function ($query) {
-                    $query->whereRaw('quantity <= reorder_level');
+                    $query->whereRaw('quantity <= reorder_level')
+                        ->where(function ($q) {
+                            $q->where(function ($sub) {
+                                $sub->whereNull('product_variation_id')
+                                    ->whereRaw('NOT EXISTS (SELECT 1 FROM product_variations WHERE product_variations.product_id = inventory.product_id AND product_variations.is_active = 1)');
+                            })->orWhere(function ($sub) {
+                                $sub->whereNotNull('product_variation_id')
+                                    ->whereRaw('EXISTS (SELECT 1 FROM product_variations WHERE product_variations.id = inventory.product_variation_id AND product_variations.is_active = 1)');
+                            });
+                        });
                 }
             ])
             ->get()

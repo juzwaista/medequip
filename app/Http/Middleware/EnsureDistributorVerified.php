@@ -27,13 +27,13 @@ class EnsureDistributorVerified
 
             // If pending or rejected, block access and redirect to the pending page
             // Allow access to pending/create routes to avoid infinite loops
-            $allowedRoutes = ['owner.distributor.pending', 'owner.distributors.create', 'owner.distributors.store'];
+            $allowedRoutes = ['owner.distributors.pending', 'owner.distributors.create', 'owner.distributors.store'];
             if (in_array($distributor->status, ['pending', 'rejected', null]) && !$request->routeIs(...$allowedRoutes)) {
                 // null status = distributor was reset for re-application, send to create form
                 if (is_null($distributor->status)) {
                     return redirect()->route('owner.distributors.create');
                 }
-                return redirect()->route('owner.distributor.pending');
+                return redirect()->route('owner.distributors.pending');
             }
         }
 

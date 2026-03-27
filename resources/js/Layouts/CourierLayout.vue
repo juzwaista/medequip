@@ -30,13 +30,21 @@
         <!-- Bottom Mobile Navigation Bar -->
         <div class="fixed bottom-0 w-full bg-white border-t border-gray-200 safe-area-bottom z-50">
             <div class="flex justify-around items-center h-16 max-w-lg mx-auto">
-                <Link href="/courier/dashboard" 
+                <Link href="/courier/dashboard"
                     class="flex flex-col items-center justify-center w-full h-full text-center hover:bg-gray-50 transition"
-                    :class="$page.url.startsWith('/couriers') || $page.url === '/courier/dashboard' ? 'text-blue-600' : 'text-gray-500'">
+                    :class="$page.url.startsWith('/courier/dashboard') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                     <span class="text-xs font-semibold">Jobs</span>
+                </Link>
+                <Link href="/wallet"
+                    class="flex flex-col items-center justify-center w-full h-full text-center hover:bg-gray-50 transition"
+                    :class="$page.url.startsWith('/wallet') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                    <span class="text-xs font-semibold">Wallet</span>
                 </Link>
                 <form @submit.prevent="logout" class="w-full h-full">
                     <button type="submit" class="flex flex-col items-center justify-center w-full h-full text-center text-gray-500 hover:bg-gray-50 transition hover:text-red-500">

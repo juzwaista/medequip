@@ -59,6 +59,7 @@ class CustomerOrderController extends Controller
             })->filter()->values();
             
             $order->remaining_items = max(0, $order->items->count() - 3);
+            $order->can_pay_now = $this->canPayNow($order);
             
             return $order;
         });
@@ -103,11 +104,14 @@ class CustomerOrderController extends Controller
 
         $order->load([
             'items.product',
+            'items.productVariation',
             'items.inventory.branch',
             'distributor',
             'invoice.payments',
             'delivery'
         ]);
+        $order->can_pay_now = $this->canPayNow($order);
+        $order->customer_payment_status = $this->getCustomerPaymentStatus($order);
 
         return Inertia::render('Orders/Show', [
             'order' => $order,
@@ -115,9 +119,87 @@ class CustomerOrderController extends Controller
     }
 
     /**
+     * Determine if customer can retry payment for this order.
+     */
+    private function canPayNow(Order $order): bool
+    {
+        if (in_array($order->status, ['cancelled', 'rejected'], true)) {
+            return false;
+        }
+
+        $invoice = $order->invoice;
+        if (! $invoice) {
+            return false;
+        }
+
+        if ($invoice->status === 'paid') {
+            return false;
+        }
+
+        $payments = $invoice->payments ?? collect();
+
+        $hasVerifiedPayment = $payments->contains(fn($payment) => $payment->status === 'verified');
+        if ($hasVerifiedPayment) {
+            return false;
+        }
+
+        $hasActiveCheckoutSession = $payments->contains(
+            fn($payment) => in_array($payment->paymongo_status, ['active', 'processing'], true)
+        );
+
+        if ($hasActiveCheckoutSession) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Customer-facing payment status derived from payment + escrow states.
+     */
+    private function getCustomerPaymentStatus(Order $order): array
+    {
+        $invoice = $order->invoice;
+        if (! $invoice) {
+            if ($order->prescription_status === Order::PRESCRIPTION_AWAITING_UPLOAD) {
+                return ['state' => 'rx_upload', 'label' => 'Prescription required'];
+            }
+            if ($order->prescription_status === Order::PRESCRIPTION_PENDING_REVIEW) {
+                return ['state' => 'rx_review', 'label' => 'Prescription under review'];
+            }
+            if ($order->prescription_status === Order::PRESCRIPTION_REJECTED) {
+                return ['state' => 'rx_rejected', 'label' => 'Prescription rejected'];
+            }
+
+            return ['state' => 'unpaid', 'label' => 'Unpaid'];
+        }
+
+        $payments = $invoice->payments ?? collect();
+
+        $hasVerified = $payments->contains(fn($payment) => $payment->status === 'verified');
+        if ($hasVerified) {
+            return ['state' => 'paid', 'label' => 'Paid'];
+        }
+
+        $hasActive = $payments->contains(
+            fn($payment) => in_array($payment->paymongo_status, ['active', 'processing'], true)
+        );
+        if ($hasActive) {
+            return ['state' => 'pending_verification', 'label' => 'Pending Verification'];
+        }
+
+        $hasRejected = $payments->contains(fn($payment) => $payment->status === 'rejected');
+        if ($hasRejected) {
+            return ['state' => 'payment_failed', 'label' => 'Payment Failed'];
+        }
+
+        return ['state' => 'unpaid', 'label' => 'Unpaid'];
+    }
+
+    /**
      * Cancel an order (only if pending or approved)
      */
-    public function cancel(Order $order)
+    public function cancel(Order $order, \App\Services\OrderPrescriptionRefundService $refundService)
     {
         $user = auth()->user();
         
@@ -157,6 +239,9 @@ class CustomerOrderController extends Controller
                 'status'       => 'cancelled',
                 'cancelled_at' => now(),
             ]);
+
+            // Fix: Trigger refund if the order has been paid in advance
+            $refundService->refundAfterOrderCancellation($order->fresh(), 'cancelled');
 
             Log::info('[CustomerOrderController] Order cancelled successfully', [
                 'user_id'      => $user->id,

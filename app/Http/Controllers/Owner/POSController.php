@@ -51,8 +51,9 @@ class POSController extends Controller
         return DB::transaction(function () use ($validated, $distributor, $user, $request) {
             $totalAmount = 0;
             $orderItemsData = [];
+            $lockedProducts = [];
 
-            // Calculate total and deduct stock
+            // Lock products and validate stock without mutating inventory first.
             foreach ($validated['items'] as $item) {
                 $product = Product::with('inventory')
                     ->where('id', $item['product_id'])
@@ -64,19 +65,12 @@ class POSController extends Controller
                     return back()->withErrors(['message' => "Not enough stock for {$product->name}."]);
                 }
 
-                $remainingQuantity = $item['quantity'];
-                foreach ($product->inventory as $inventory) {
-                    if ($remainingQuantity <= 0) break;
-                    $available = $inventory->quantity;
-                    if ($available > 0) {
-                        $deductAmount = min($available, $remainingQuantity);
-                        $inventory->decrement('quantity', $deductAmount);
-                        $remainingQuantity -= $deductAmount;
-                    }
-                }
-
                 $subtotal = $product->base_price * $item['quantity'];
                 $totalAmount += $subtotal;
+                $lockedProducts[] = [
+                    'product' => $product,
+                    'quantity' => $item['quantity'],
+                ];
 
                 $orderItemsData[] = [
                     'product_id'   => $product->id,
@@ -92,6 +86,22 @@ class POSController extends Controller
             // Cash validation
             if ($validated['payment_method'] === 'cash' && $validated['amount_paid'] < $totalAmount) {
                 return back()->withErrors(['message' => 'Amount paid is less than total amount.']);
+            }
+
+            // Deduct stock only after all validation checks pass.
+            foreach ($lockedProducts as $lineItem) {
+                $remainingQuantity = $lineItem['quantity'];
+                foreach ($lineItem['product']->inventory as $inventory) {
+                    if ($remainingQuantity <= 0) {
+                        break;
+                    }
+                    $available = $inventory->quantity;
+                    if ($available > 0) {
+                        $deductAmount = min($available, $remainingQuantity);
+                        $inventory->decrement('quantity', $deductAmount);
+                        $remainingQuantity -= $deductAmount;
+                    }
+                }
             }
 
             $paymentMethod = $validated['payment_method'];
@@ -130,7 +140,7 @@ class POSController extends Controller
 
             // ── CASH: Immediate settlement, no escrow ──────────────────────────
             if ($paymentMethod === 'cash') {
-                Payment::create([
+                $posPayment = Payment::create([
                     'invoice_id'          => $invoice->id,
                     'payment_method'      => 'cash',
                     'amount'              => $totalAmount,
@@ -142,6 +152,7 @@ class POSController extends Controller
                     'verified_at'         => now(),
                     'released_at'         => now(),
                 ]);
+                $posPayment->creditSellerWalletOnVerification();
 
                 $change = number_format($validated['amount_paid'] - $totalAmount, 2);
                 return back()->with('success', "✅ Cash sale complete! Change: ₱{$change}");
@@ -190,6 +201,11 @@ class POSController extends Controller
      */
     public function paymentSuccess(\App\Models\Invoice $invoice)
     {
+        $distributor = $this->getDistributor();
+        if (!$invoice->order || $invoice->order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
         return redirect()->route('owner.pos.index')
             ->with('success', "✅ Online payment received for Invoice #{$invoice->invoice_number}! Funds are in escrow.");
     }
@@ -199,6 +215,11 @@ class POSController extends Controller
      */
     public function paymentCancel(\App\Models\Invoice $invoice)
     {
+        $distributor = $this->getDistributor();
+        if (!$invoice->order || $invoice->order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
         // Mark the pending payment as expired
         Payment::where('invoice_id', $invoice->id)
             ->where('paymongo_status', 'active')

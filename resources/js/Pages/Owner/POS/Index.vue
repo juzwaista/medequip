@@ -5,6 +5,9 @@
         </template>
 
         <div class="py-6 h-[calc(100vh-100px)] flex flex-col md:flex-row gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div v-if="form.errors.message || page.props.errors?.message" class="w-full md:col-span-2 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3">
+                {{ form.errors.message || page.props.errors?.message }}
+            </div>
             <!-- Left Panel: Products List -->
             <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
@@ -222,13 +225,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 
 const props = defineProps({
     products: Array
 });
+const page = usePage();
 
 const searchQuery = ref('');
 const searchInput = ref(null);

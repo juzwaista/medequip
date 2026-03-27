@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CustomerAddress;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class CustomerAddressController extends Controller
 {
@@ -16,7 +17,9 @@ class CustomerAddressController extends Controller
         $addresses = auth()->user()->addresses()->latest()->get();
         
         return Inertia::render('Customer/Addresses/Index', [
-            'addresses' => $addresses
+            'addresses' => $addresses,
+            'cities' => config('cavite.cities'),
+            'barangays' => config('cavite.barangays'),
         ]);
     }
     
@@ -25,17 +28,21 @@ class CustomerAddressController extends Controller
      */
     public function store(Request $request)
     {
+        $cityKeys = array_keys(config('cavite.cities', []));
         $validated = $request->validate([
             'label' => 'nullable|string|max:50',
             'recipient_name' => 'required|string|max:255',
-            'contact_number' => 'required|string|max:20',
+            'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
             'address_line' => 'required|string|max:500',
             'barangay' => 'required|string|max:100',
-            'city' => 'required|string|max:100',
-            'province' => 'required|string|max:100',
+            'city' => ['required', 'string', Rule::in($cityKeys)],
+            'province' => 'required|string|in:Cavite',
             'zip_code' => 'required|string|max:10',
             'is_default' => 'boolean',
+        ], [
+            'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);
+        $validated['zip_code'] = data_get(config('cavite.cities'), $validated['city'] . '.zip', $validated['zip_code']);
         
         // If setting as default, unset other defaults
         if ($request->is_default) {
@@ -57,17 +64,21 @@ class CustomerAddressController extends Controller
             return back()->with('error', 'Unauthorized');
         }
         
+        $cityKeys = array_keys(config('cavite.cities', []));
         $validated = $request->validate([
             'label' => 'nullable|string|max:50',
             'recipient_name' => 'required|string|max:255',
-            'contact_number' => 'required|string|max:20',
+            'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
             'address_line' => 'required|string|max:500',
             'barangay' => 'required|string|max:100',
-            'city' => 'required|string|max:100',
-            'province' => 'required|string|max:100',
+            'city' => ['required', 'string', Rule::in($cityKeys)],
+            'province' => 'required|string|in:Cavite',
             'zip_code' => 'required|string|max:10',
             'is_default' => 'boolean',
+        ], [
+            'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);
+        $validated['zip_code'] = data_get(config('cavite.cities'), $validated['city'] . '.zip', $validated['zip_code']);
         
         // If setting as default, unset other defaults
         if ($request->is_default) {

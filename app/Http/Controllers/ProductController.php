@@ -95,7 +95,8 @@ class ProductController extends Controller
             'category',
             'distributor.branches',
             'images' => fn($q) => $q->orderBy('sort_order'),
-            'inventory.branch'
+            'inventory.branch',
+            'variations' => fn($q) => $q->where('is_active', true)->orderBy('sort_order'),
         ])
             ->where('is_active', true)
             ->findOrFail($id);
@@ -108,17 +109,45 @@ class ProductController extends Controller
             ->limit(4)
             ->get();
 
-        // Calculate total available stock
-        $totalStock = $product->inventory->sum('quantity');
-        $availableStock = $product->inventory->sum(function ($inv) {
-            return $inv->quantity - $inv->reserved_quantity;
-        });
+        $variationStocks = $product->variations->where('is_active', true)->values()->map(function ($v) use ($product) {
+            $available = (int) $product->inventory->where('product_variation_id', $v->id)->sum(function ($inv) {
+                return $inv->quantity - $inv->reserved_quantity;
+            });
+
+            return [
+                'id' => $v->id,
+                'option_name' => $v->option_name,
+                'option_value' => $v->option_value,
+                'display_label' => $v->display_label,
+                'price_adjustment' => (float) $v->price_adjustment,
+                'available' => $available,
+            ];
+        })->values();
+
+        $hasVariations = $variationStocks->isNotEmpty();
+
+        if ($hasVariations) {
+            $totalStock = $product->aggregateStockQuantity();
+            $availableStock = (int) $variationStocks->sum('available');
+        } else {
+            $totals = $product->stockTotals();
+            $totalStock = $totals['quantity'];
+            $availableStock = max(0, $totals['quantity'] - $totals['reserved']);
+        }
+        $nearestExpiryInventory = $product->inventory
+            ->filter(fn($inv) => !is_null($inv->expiry_date))
+            ->sortBy('expiry_date')
+            ->first();
 
         return Inertia::render('Products/Show', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
             'totalStock' => $totalStock,
             'availableStock' => $availableStock,
+            'hasVariations' => $hasVariations,
+            'variationStocks' => $variationStocks,
+            'nearestExpiryDate' => $nearestExpiryInventory?->expiry_date?->format('Y-m-d'),
+            'nearestBatchNumber' => $nearestExpiryInventory?->batch_number,
         ]);
     }
 

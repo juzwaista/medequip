@@ -27,7 +27,12 @@ class Distributor extends Model
         'status',           // pending | approved | rejected
         'rejection_reason',
         'valid_id_path',
-        'business_license_path',
+        'business_license_path', // Reused for Business Permit
+        'dti_sec_path',
+        'bir_form_path',
+        'fda_license_path',
+        'prc_id_path',
+        'authorization_letter_path',
         'auto_approve_orders',
     ];
 

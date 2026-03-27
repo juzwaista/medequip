@@ -38,4 +38,33 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /**
+     * IDs for the Medicine parent and its subcategories (slug: medicine).
+     */
+    public static function medicineTreeIds(): array
+    {
+        $parent = static::where('slug', 'medicine')->first();
+        if (! $parent) {
+            return [];
+        }
+
+        $childIds = static::where('parent_id', $parent->id)->pluck('id')->all();
+
+        return array_values(array_unique(array_merge([$parent->id], $childIds)));
+    }
+
+    /**
+     * Only medicine-category products may require a prescription flag.
+     */
+    public static function normalizeRequiresPrescription(int $categoryId, bool $checked): bool
+    {
+        $ids = static::medicineTreeIds();
+
+        if ($ids === [] || ! in_array($categoryId, $ids, true)) {
+            return false;
+        }
+
+        return $checked;
+    }
 }

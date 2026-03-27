@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // Safe way to modify an ENUM in MySQL/MariaDB
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('super_admin', 'admin', 'distributor', 'staff', 'customer', 'courier') NOT NULL DEFAULT 'customer'");
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('super_admin', 'admin', 'distributor', 'staff', 'customer', 'courier') NOT NULL DEFAULT 'customer'");
+        }
     }
 
     /**
@@ -21,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'distributor', 'staff', 'customer') NOT NULL DEFAULT 'customer'");
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'distributor', 'staff', 'customer') NOT NULL DEFAULT 'customer'");
+        }
     }
 };

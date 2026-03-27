@@ -85,4 +85,23 @@ class DashboardController extends Controller
         return redirect()->route('admin.dashboard')
             ->with('success', 'Distributor rejected.');
     }
+
+    /**
+     * Securely serve distributor compliance documents to admins
+     */
+    public function viewDocument($path)
+    {
+        // Enforce boundary to distributor_documents
+        if (!str_starts_with($path, 'distributor_documents/')) {
+            abort(403, 'Unauthorized Access');
+        }
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+
+        if (!$disk->exists($path)) {
+            abort(404, 'Document not found');
+        }
+
+        return response()->file($disk->path($path));
+    }
 }

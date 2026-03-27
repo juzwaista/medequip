@@ -69,9 +69,14 @@
                                         <label class="block text-sm font-medium text-gray-700">Phone</label>
                                         <input 
                                             v-model="form.phone"
+                                            @input="sanitizePhoneNumber"
                                             type="tel"
+                                            inputmode="numeric"
+                                            pattern="09[0-9]{9}"
+                                            maxlength="11"
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         />
+                                        <p v-if="form.errors.phone" class="text-red-500 text-xs mt-1">{{ form.errors.phone }}</p>
                                     </div>
 
                                     <div>
@@ -197,6 +202,10 @@ const form = useForm({
 const logoPreview = ref(null);
 const coverPreview = ref(null);
 const slugStatus = ref(null);
+
+const sanitizePhoneNumber = () => {
+    form.phone = String(form.phone || '').replace(/\D/g, '').slice(0, 11);
+};
 
 const handleLogoUpload = (e) => {
     const file = e.target.files[0];

@@ -29,18 +29,23 @@ Route::get('/', function () {
     return redirect('/products');
 })->name('landing');
 
+// Static Pages
+Route::get('/about', function () { return \Inertia\Inertia::render('Static/About'); })->name('about');
+Route::get('/contact', function () { return \Inertia\Inertia::render('Static/Contact'); })->name('contact');
+Route::get('/help', function () { return \Inertia\Inertia::render('Static/Help'); })->name('help');
+
 
 // Product Routes (Public) - search must come before the {id} wildcard
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
-Route::get('/category/{category}', [ProductController::class, 'byCategory'])->name('products.category');
+Route::get('/category/{category:slug}', [ProductController::class, 'byCategory'])->name('products.category');
 
 // Cart Routes
 Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
-Route::patch('/cart/{productId}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{productId}', [\App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+Route::patch('/cart/{lineKey}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{lineKey}', [\App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 Route::get('/cart/count', [\App\Http\Controllers\CartController::class, 'count'])->name('cart.count');
 
@@ -58,16 +63,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
     Route::post('/orders', [\App\Http\Controllers\OrderController::class, 'placeOrder'])->name('orders.place');
     Route::get('/orders/confirmation/{order}', [\App\Http\Controllers\OrderController::class, 'confirmation'])->name('orders.confirmation');
+    Route::get('/orders/{order}/prescription', [\App\Http\Controllers\OrderController::class, 'prescriptionUploadForm'])->name('orders.prescription.show');
+    Route::post('/orders/{order}/prescription', [\App\Http\Controllers\OrderController::class, 'prescriptionUpload'])->name('orders.prescription.store');
 
     // Customer order tracking
     Route::get('/my-orders', [\App\Http\Controllers\CustomerOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\CustomerOrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/cancel', [\App\Http\Controllers\CustomerOrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/orders/{order}/confirm-received', [\App\Http\Controllers\OrderController::class, 'confirmReceived'])->name('orders.confirmReceived');
+    Route::post('/orders/{order}/pay-now', [\App\Http\Controllers\OrderController::class, 'payNow'])->name('orders.payNow');
 
     // Payment callbacks (PayMongo redirects here)
     Route::get('/invoices/{invoice}/success', [\App\Http\Controllers\PaymentController::class, 'success'])->name('payment.success');
     Route::get('/invoices/{invoice}/cancel', [\App\Http\Controllers\PaymentController::class, 'cancel'])->name('payment.cancel');
+    Route::get('/payments/checkout/{batch}/success', [\App\Http\Controllers\PaymentController::class, 'batchSuccess'])->name('payment.batch.success');
+    Route::get('/payments/checkout/{batch}/cancel', [\App\Http\Controllers\PaymentController::class, 'batchCancel'])->name('payment.batch.cancel');
 
     // Saved Addresses
     Route::get('/addresses', [\App\Http\Controllers\CustomerAddressController::class, 'index'])->name('addresses.index');
@@ -161,6 +171,8 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
         // Owner Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\Owner\DashboardController::class, 'index'])
             ->name('dashboard');
+        Route::get('/dashboard/pulse', [\App\Http\Controllers\Owner\DashboardController::class, 'pulse'])
+            ->name('dashboard.pulse');
 
         // Point of Sale (POS)
         Route::get('/pos', [\App\Http\Controllers\Owner\POSController::class, 'index'])
@@ -175,8 +187,11 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
         // Orders
         Route::get('/orders', [\App\Http\Controllers\Owner\OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [\App\Http\Controllers\Owner\OrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order}/prescription/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approvePrescription'])->name('orders.prescription.approve');
+        Route::post('/orders/{order}/prescription/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectPrescription'])->name('orders.prescription.reject');
         Route::patch('/orders/{order}/status', [\App\Http\Controllers\Owner\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::post('/orders/{order}/note', [\App\Http\Controllers\Owner\OrderController::class, 'addNote'])->name('orders.addNote');
+        Route::post('/orders/{order}/confirm-cod-remittance', [\App\Http\Controllers\Owner\OrderController::class, 'confirmCodRemittance'])->name('orders.confirmCodRemittance');
 
         // Inventory Management (Unified Product + Stock)
         Route::resource('inventory', \App\Http\Controllers\Owner\InventoryController::class, [
@@ -192,21 +207,12 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
         Route::post('/inventory/{id}/adjust', [\App\Http\Controllers\Owner\InventoryController::class, 'adjustStock'])
             ->name('inventory.adjust');
 
-        // Redirect old product routes to inventory
-        Route::redirect('/products', '/owner/inventory');
-        Route::redirect('/products/create', '/owner/inventory/create');
-
-        // Product Management (legacy - keeping for now)
-        Route::resource('products', \App\Http\Controllers\Owner\ProductController::class, [
-            'names' => [
-                'index' => 'products.index',
-                'create' => 'products.create',
-                'store' => 'products.store',
-                'edit' => 'products.edit',
-                'update' => 'products.update',
-                'destroy' => 'products.destroy',
-            ]
-        ]);
+        // Legacy /products/* URLs → unified inventory (single add/edit flow)
+        Route::get('/products', fn () => redirect()->route('owner.inventory.index'))->name('products.index');
+        Route::get('/products/create', fn () => redirect()->route('owner.inventory.create'))->name('products.create');
+        Route::get('/products/{product}/edit', function (\App\Models\Product $product) {
+            return redirect()->route('owner.inventory.edit', $product);
+        })->name('products.edit');
 
         // ==========================================
         // OWNER-ONLY MANAGEMENT
@@ -232,14 +238,10 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
                 ->name('profile.checkSlug');
 
             // Branch Management
-            Route::get('/distributor/{distributor}/branches', function () {
-                return \Inertia\Inertia::render('Owner/Branches/Index', [
-                    'message' => 'Branch management is coming soon!'
-                ]);
-            })->name('distributors.branches.index');
-            Route::get('/distributor/{distributor}/branches/create', function () {
-                return \Inertia\Inertia::render('Owner/Branches/Create');
-            })->name('distributors.branches.create');
+            Route::get('/distributor/{distributor}/branches', [\App\Http\Controllers\Owner\BranchController::class, 'index'])
+                ->name('distributors.branches.index');
+            Route::get('/distributor/{distributor}/branches/create', [\App\Http\Controllers\Owner\BranchController::class, 'create'])
+                ->name('distributors.branches.create');
             Route::post('/distributor/{distributor}/branches', [\App\Http\Controllers\Owner\BranchController::class, 'store'])
                 ->name('distributors.branches.store');
 
@@ -252,6 +254,16 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
                 ->name('payments.reject');
             Route::get('/sales', [\App\Http\Controllers\Owner\SalesController::class, 'index'])
                 ->name('sales.index');
+
+            // DSS
+            Route::get('/dss', [\App\Http\Controllers\Owner\DssController::class, 'index'])
+                ->name('dss.index');
+            Route::patch('/dss/settings', [\App\Http\Controllers\Owner\DssController::class, 'updateSettings'])
+                ->name('dss.settings.update');
+            Route::post('/dss/alerts/{alert}/read', [\App\Http\Controllers\Owner\DssController::class, 'markAlertRead'])
+                ->name('dss.alerts.read');
+            Route::post('/dss/recommendations/{recommendation}/action', [\App\Http\Controllers\Owner\DssController::class, 'actionRecommendation'])
+                ->name('dss.recommendations.action');
 
             // Staff Management
             Route::get('/staff', [\App\Http\Controllers\Owner\StaffController::class, 'index'])
@@ -279,6 +291,11 @@ Route::middleware(['auth', 'role:admin,super_admin'])
         Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])->name('distributors.approve');
         Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])->name('distributors.reject');
         
+        // Secure Document Viewing
+        Route::get('/documents/{path}', [\App\Http\Controllers\Admin\DashboardController::class, 'viewDocument'])
+            ->where('path', '.*')
+            ->name('documents.view');
+        
         // Users Management
         Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
@@ -299,11 +316,6 @@ Route::middleware(['auth', 'role:super_admin'])
     ->group(function () {
         Route::get('/staff', [\App\Http\Controllers\SuperAdmin\AdminManagementController::class, 'index'])->name('staff.index');
         Route::post('/staff', [\App\Http\Controllers\SuperAdmin\AdminManagementController::class, 'store'])->name('staff.store');
-        
-        // Withdrawal Management (Payouts)
-        Route::get('/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('withdrawals.index');
-        Route::post('/withdrawals/{id}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('withdrawals.approve');
-        Route::post('/withdrawals/{id}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('withdrawals.reject');
 
         // Courier Governance
         Route::get('/couriers', [\App\Http\Controllers\Admin\CourierManagementController::class, 'index'])->name('couriers.index');

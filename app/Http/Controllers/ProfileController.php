@@ -60,7 +60,7 @@ class ProfileController extends Controller
             'user_id' => $user->id
         ]);
 
-        return Redirect::back()->with('success', 'Profile updated successfully');
+        return Redirect::route('profile.edit')->with('success', 'Profile updated successfully');
     }
 
     /**
@@ -109,15 +109,15 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        $user->delete(); // soft-deletes when SoftDeletes is enabled
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        Log::info('[ProfileController] Account deleted successfully', [
-            'deleted_user_id' => $user->id
+        Log::info('[ProfileController] Account archived (soft deleted)', [
+            'archived_user_id' => $user->id
         ]);
 
-        return Redirect::to('/')->with('success', 'Account deleted successfully');
+        return Redirect::to('/')->with('success', 'Your account has been archived.');
     }
 }

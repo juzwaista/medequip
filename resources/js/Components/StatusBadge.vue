@@ -1,10 +1,11 @@
 <template>
-    <span 
-        :class="statusClasses"
-        class="px-3 py-1 rounded-full text-xs font-semibold capitalize inline-block"
+    <div 
+        :class="[statusClasses, 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold capitalize border shadow-sm backdrop-blur-sm']"
     >
+        <!-- Dynamic bullet indicator -->
+        <span class="w-1.5 h-1.5 rounded-full bg-current opacity-75 mr-0.5"></span>
         {{ displayText }}
-    </span>
+    </div>
 </template>
 
 <script setup>

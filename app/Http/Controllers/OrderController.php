@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\CheckoutBatch;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Inventory;
+use App\Services\CartService;
+use App\Services\OrderInvoiceService;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,28 +17,46 @@ use Inertia\Inertia;
 
 class OrderController extends Controller
 {
-    public function __construct(private PayMongoService $paymongo) {}
+    public function __construct(
+        private PayMongoService $paymongo,
+        private OrderInvoiceService $orderInvoiceService,
+    ) {}
 
     /**
      * Show checkout page.
      */
     public function checkout()
     {
-        $cart = session()->get('cart', []);
+        $cart = CartService::pruneCart(session()->get('cart', []));
+        session()->put('cart', $cart);
 
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
-        $cartItems = $this->enrichCartItems($cart);
-        $subtotal = $this->calculateSubtotal($cartItems);
+        $cartItems = CartService::enrichCartItems($cart);
+        $subtotal = CartService::calculateSubtotal($cartItems);
+        $shippingFeePerOrder = (float) config('services.shipping.flat_fee', 50);
+        $distributorCount = collect($cartItems)
+            ->pluck('product.distributor_id')
+            ->filter()
+            ->unique()
+            ->count();
+        $shippingFeeTotal = $shippingFeePerOrder * max(1, $distributorCount);
+        $cartHasPrescriptionItems = collect($cartItems)->contains(fn ($line) => $line['product']->requires_prescription);
 
         return Inertia::render('Checkout/Index', [
             'cartItems'      => $cartItems,
+            'cart_has_prescription_items' => $cartHasPrescriptionItems,
             'subtotal'       => $subtotal,
+            'shipping_fee_per_order' => $shippingFeePerOrder,
+            'shipping_fee_total' => $shippingFeeTotal,
+            'estimated_total' => $subtotal + $shippingFeeTotal,
+            'distributor_count' => $distributorCount,
             'cities'         => config('cavite.cities'),
             'barangays'      => config('cavite.barangays'),
             'savedAddresses' => auth()->user()->addresses()->latest()->get(),
+            'wallet_balance' => (float) (auth()->user()->wallet?->balance ?? 0),
         ]);
     }
 
@@ -53,22 +72,28 @@ class OrderController extends Controller
         $validated = $request->validate([
             'customer_name'    => 'required|string|min:2|max:100',
             'delivery_address' => 'required|string|max:500|min:5',
-            'contact_number'   => 'required|string|min:7|max:20',
+            'contact_number'   => ['required', 'regex:/^09[0-9]{9}$/'],
             'notes'            => 'nullable|string|max:1000',
-            'payment_method'   => 'required|in:card,gcash,paymaya',
+            'payment_method'   => 'required|in:card,gcash,paymaya,wallet,cod',
         ], [
             'customer_name.required'    => 'Please provide the recipient name',
             'delivery_address.required' => 'Please provide a delivery address',
             'contact_number.required'   => 'Contact number is required for delivery',
+            'contact_number.regex'      => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
             'payment_method.required'   => 'Please choose a payment method',
         ]);
 
-        $cart = session()->get('cart', []);
+        $cart = CartService::pruneCart(session()->get('cart', []));
+        session()->put('cart', $cart);
+
         if (empty($cart)) {
             return back()->withErrors(['cart' => 'Your cart is empty'])->withInput();
         }
 
         $isPaymongo = in_array($validated['payment_method'], Payment::paymongoMethods());
+        $isWallet   = $validated['payment_method'] === 'wallet';
+        $isCod      = $validated['payment_method'] === 'cod';
+        $shippingFeePerOrder = (float) config('services.shipping.flat_fee', 50);
 
         try {
             DB::beginTransaction();
@@ -76,25 +101,41 @@ class OrderController extends Controller
             // Group cart items by distributor
             $ordersByDistributor = [];
 
-            foreach ($cart as $productId => $cartItem) {
-                $product = Product::with('inventory')->findOrFail($productId);
+            foreach ($cart as $lineKey => $cartItem) {
+                [$productId, $variationId] = CartService::parseLineKey($lineKey);
+
+                $product = Product::with(['inventory', 'variations'])->lockForUpdate()->findOrFail($productId);
                 $distributorId = $product->distributor_id;
 
-                if (!isset($ordersByDistributor[$distributorId])) {
+                $variation = null;
+                if ($variationId) {
+                    $variation = $product->variations->firstWhere('id', $variationId);
+                    if (! $variation || ! $variation->is_active) {
+                        throw new \Exception('Invalid product option in cart. Please refresh and try again.');
+                    }
+                } elseif ($product->variations->where('is_active', true)->isNotEmpty()) {
+                    throw new \Exception('Please select a product option for ' . $product->name);
+                }
+
+                if (! isset($ordersByDistributor[$distributorId])) {
                     $ordersByDistributor[$distributorId] = [
                         'distributor_id' => $distributorId,
-                        'items' => []
+                        'items' => [],
                     ];
                 }
 
                 $ordersByDistributor[$distributorId]['items'][] = [
-                    'product'  => $product,
+                    'product' => $product,
                     'quantity' => $cartItem['quantity'],
+                    'variation_id' => $variationId,
+                    'variation' => $variation,
                 ];
             }
 
+            $walletToDebitTotal = 0;
+            $customerWallet = auth()->user()->wallet;
+
             $createdOrders = [];
-            $totalInvoiceForPaymongo = null;
 
             foreach ($ordersByDistributor as $distributorData) {
                 $order = Order::create([
@@ -110,75 +151,93 @@ class OrderController extends Controller
                     'payment_method'   => $validated['payment_method'],
                 ]);
 
-                $totalAmount = 0;
+                $itemSubtotal = 0;
 
                 foreach ($distributorData['items'] as $item) {
-                    $product  = $item['product'];
+                    $product = $item['product'];
                     $quantity = $item['quantity'];
+                    $variationId = $item['variation_id'] ?? null;
+                    $variation = $item['variation'] ?? null;
 
                     $isWholesale = $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
-                    $unitPrice   = $isWholesale ? $product->wholesale_price : $product->base_price;
+                    $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
+                    $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
+                    $unitPrice = round($base + $adjustment, 2);
 
                     // Reserve inventory
-                    $inventory = $product->inventory()
-                        ->whereRaw('(quantity - reserved_quantity) >= ?', [$quantity])
-                        ->first();
+                    $inventoryQuery = $product->inventory()
+                        ->whereRaw('(quantity - reserved_quantity) >= ?', [$quantity]);
 
-                    if (!$inventory) {
+                    if ($variationId) {
+                        $inventoryQuery->where('product_variation_id', $variationId);
+                    } else {
+                        $inventoryQuery->whereNull('product_variation_id');
+                    }
+
+                    $inventory = $inventoryQuery->first();
+
+                    if (! $inventory) {
                         throw new \Exception("Insufficient stock for {$product->name}");
                     }
 
-                    if (!$inventory->reserve($quantity)) {
+                    if (! $inventory->reserve($quantity)) {
                         throw new \Exception("Unable to reserve stock for {$product->name}");
                     }
 
+                    $lineTotal = $unitPrice * $quantity;
+
                     $order->items()->create([
-                        'product_id'   => $product->id,
+                        'product_id' => $product->id,
+                        'product_variation_id' => $variationId,
                         'inventory_id' => $inventory->id,
-                        'quantity'     => $quantity,
-                        'unit_price'   => $unitPrice,
-                        'total_price'  => $unitPrice * $quantity,
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total_price' => $lineTotal,
+                        'subtotal' => $lineTotal,
                         'is_wholesale' => $isWholesale,
                     ]);
 
-                    $totalAmount += $unitPrice * $quantity;
+                    $itemSubtotal += $lineTotal;
                 }
 
+                $totalAmount = $itemSubtotal + $shippingFeePerOrder;
+
                 $order->update([
-                    'subtotal'     => $totalAmount,
+                    'subtotal'     => $itemSubtotal,
+                    'shipping_fee' => $shippingFeePerOrder,
                     'total_amount' => $totalAmount,
                 ]);
 
-                // Create invoice
-                $invoice = Invoice::create([
-                    'order_id'       => $order->id,
-                    'invoice_number' => Invoice::generateInvoiceNumber(),
-                    'subtotal'       => $totalAmount,
-                    'tax'            => 0,
-                    'discount'       => 0,
-                    'total_amount'   => $totalAmount,
-                    'status'         => 'unpaid',
-                    'due_date'       => now()->addDays(7),
+                $order->load('items.product');
+                $needsRx = $order->items->contains(fn ($line) => $line->product->requires_prescription);
+                $order->update([
+                    'prescription_status' => $needsRx
+                        ? Order::PRESCRIPTION_AWAITING_UPLOAD
+                        : Order::PRESCRIPTION_NOT_REQUIRED,
                 ]);
 
-                // Create payment record
-                $fees = Payment::calculateFees($totalAmount);
+                // COD: no invoice or payment record — courier collects cash on delivery
+                if (!$isCod) {
+                    $this->orderInvoiceService->createInvoiceAndPayment($order->fresh());
+                }
+                if ($isWallet) {
+                    $walletToDebitTotal += $totalAmount;
+                }
 
-                // PayMongo — create payment record, session created below
-                $payment = Payment::create([
-                    'invoice_id'          => $invoice->id,
-                    'payment_method'      => 'paymongo',
-                    'amount'              => $totalAmount,
-                    'status'              => 'pending',
-                    'escrow_status'       => 'held',
-                    'platform_fee_rate'   => $fees['platform_fee_rate'],
-                    'platform_fee_amount' => $fees['platform_fee_amount'],
-                    'net_seller_amount'   => $fees['net_seller_amount'],
-                ]);
+                $createdOrders[] = $order->fresh();
+            }
 
-                $totalInvoiceForPaymongo = $invoice;
+            if ($isWallet) {
+                if (!$customerWallet || $customerWallet->balance < $walletToDebitTotal) {
+                    throw new \Exception('Insufficient wallet balance for this checkout.');
+                }
 
-                $createdOrders[] = $order;
+                $customerWallet->debit(
+                    $walletToDebitTotal,
+                    'order_payment',
+                    (string) ($createdOrders[0]->id ?? uniqid('order_', true)),
+                    'Wallet payment for order checkout'
+                );
             }
 
             // Clear cart
@@ -186,22 +245,47 @@ class OrderController extends Controller
 
             DB::commit();
 
-            // For PayMongo — redirect to checkout session
-            if ($isPaymongo && $totalInvoiceForPaymongo) {
+            $ordersWithInvoices = collect($createdOrders)->filter(fn ($o) => $o->invoice);
+
+            // For PayMongo — create a single checkout for all created invoices (includes Rx orders; pay first, then upload prescription).
+            if ($isPaymongo && $ordersWithInvoices->isNotEmpty()) {
                 try {
-                    $session = $this->paymongo->createCheckoutSession(
-                        $totalInvoiceForPaymongo,
-                        route('orders.confirmation', $createdOrders[0]),
-                        route('orders.confirmation', $createdOrders[0])
+                    $invoiceIds = $ordersWithInvoices
+                        ->map(fn ($o) => $o->invoice?->id)
+                        ->filter()
+                        ->values()
+                        ->all();
+                    $orderIds = $ordersWithInvoices->pluck('id')->values()->all();
+                    $batchTotal = $ordersWithInvoices->sum(fn ($o) => (float) $o->total_amount);
+
+                    $batch = CheckoutBatch::create([
+                        'user_id' => auth()->id(),
+                        'primary_order_id' => $ordersWithInvoices->first()->id,
+                        'paymongo_session_id' => 'pending-' . uniqid(),
+                        'order_ids' => $orderIds,
+                        'invoice_ids' => $invoiceIds,
+                        'total_amount' => $batchTotal,
+                        'status' => 'pending',
+                    ]);
+
+                    // Now that batch exists, create a final checkout session with callback URLs containing batch id.
+                    $session = $this->paymongo->createGenericCheckoutSession(
+                        description: 'MedEquip checkout (' . count($orderIds) . ' order' . (count($orderIds) > 1 ? 's' : '') . ')',
+                        amountCentavos: (int) round($batchTotal * 100),
+                        successUrl: route('payment.batch.success', ['batch' => $batch->id]),
+                        cancelUrl: route('payment.batch.cancel', ['batch' => $batch->id]),
+                        metadata: [
+                            'batch_id' => $batch->id,
+                            'invoice_ids' => implode(',', $invoiceIds),
+                            'order_ids' => implode(',', $orderIds),
+                        ]
                     );
 
-                    // Link session to payment
-                    Payment::where('invoice_id', $totalInvoiceForPaymongo->id)
+                    $batch->update(['paymongo_session_id' => $session['session_id']]);
+
+                    Payment::whereIn('invoice_id', $invoiceIds)
                         ->where('status', 'pending')
-                        ->update([
-                            'paymongo_session_id' => $session['session_id'],
-                            'paymongo_status'     => 'active',
-                        ]);
+                        ->update(['paymongo_status' => 'active']);
 
                     return Inertia::location($session['checkout_url']);
                 } catch (\Exception $e) {
@@ -210,13 +294,26 @@ class OrderController extends Controller
                     ]);
                     // Fallback: redirect to confirmation, payment can be retried
                     return redirect()->route('orders.confirmation', $createdOrders[0])
+                        ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
                         ->with('warning', 'Order placed, but payment initiation failed. Please try again from your orders page.');
                 }
             }
 
-            // Bank transfer — go to confirmation
+            if ($isWallet) {
+                return redirect()->route('orders.confirmation', $createdOrders[0])
+                    ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
+                    ->with('success', 'Order placed! Payment verified and funds are now held in escrow.');
+            }
+
+            if ($isCod) {
+                return redirect()->route('orders.confirmation', $createdOrders[0])
+                    ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
+                    ->with('success', 'Order placed! Your courier will collect payment on delivery.');
+            }
+
             return redirect()->route('orders.confirmation', $createdOrders[0])
-                ->with('success', 'Order placed! Your bank transfer is pending verification.');
+                ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
+                ->with('success', 'Order placed successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -237,10 +334,36 @@ class OrderController extends Controller
             abort(403);
         }
 
-        $order->load(['items.product', 'distributor', 'invoice.payments']);
+        $requestedIds = collect(session('confirmation_order_ids', []))
+            ->filter(fn($id) => is_numeric($id))
+            ->map(fn($id) => (int) $id)
+            ->values();
+
+        if (!$requestedIds->contains($order->id)) {
+            $requestedIds->prepend($order->id);
+        }
+
+        $orders = Order::with(['items.product', 'distributor', 'invoice.payments'])
+            ->where('customer_id', auth()->id())
+            ->whereIn('id', $requestedIds->all())
+            ->orderByDesc('created_at')
+            ->get()
+            ->values();
+
+        $primaryOrder = $orders->firstWhere('id', $order->id) ?? $orders->first();
+        $shippingTotal = (float) $orders->sum('shipping_fee');
+        $grandTotal = (float) $orders->sum('total_amount');
+        $itemsCount = (int) $orders->sum(fn($o) => $o->items->count());
 
         return Inertia::render('Orders/Confirmation', [
-            'order' => $order,
+            'order' => $primaryOrder,
+            'orders' => $orders,
+            'summary' => [
+                'shops_count' => $orders->count(),
+                'items_count' => $itemsCount,
+                'shipping_total' => $shippingTotal,
+                'grand_total' => $grandTotal,
+            ],
         ]);
     }
 
@@ -283,37 +406,114 @@ class OrderController extends Controller
     }
 
     /**
-     * Enrich cart items with product data.
+     * Retry payment for an unpaid order.
      */
-    private function enrichCartItems($cart)
+    public function payNow(Order $order)
     {
-        $items = [];
-
-        foreach ($cart as $productId => $cartItem) {
-            $product = Product::with(['distributor', 'images', 'inventory'])->find($productId);
-            if (!$product) continue;
-
-            $quantity    = $cartItem['quantity'];
-            $isWholesale = $product->hasWholesalePricing() && $quantity >= $product->wholesale_min_qty;
-            $unitPrice   = $isWholesale ? $product->wholesale_price : $product->base_price;
-
-            $items[] = [
-                'product'      => $product,
-                'quantity'     => $quantity,
-                'unit_price'   => $unitPrice,
-                'is_wholesale' => $isWholesale,
-                'subtotal'     => $unitPrice * $quantity,
-            ];
+        if ($order->customer_id !== auth()->id()) {
+            abort(403);
         }
 
-        return $items;
+        if (in_array($order->status, ['cancelled', 'rejected'])) {
+            return back()->withErrors(['payment' => 'Cannot pay for cancelled or rejected orders.']);
+        }
+
+        $order->load('invoice.payments');
+        $invoice = $order->invoice;
+        if (! $invoice) {
+            return back()->withErrors(['payment' => 'Invoice not found for this order.']);
+        }
+
+        if ($invoice->status === 'paid') {
+            return back()->with('info', 'This order is already paid.');
+        }
+
+        $payment = $invoice->payments()
+            ->whereIn('status', ['pending', 'rejected'])
+            ->latest()
+            ->first();
+
+        if (!$payment) {
+            $fees = Payment::calculateFees((float) $invoice->total_amount);
+            $payment = Payment::create([
+                'invoice_id'          => $invoice->id,
+                'payment_method'      => 'paymongo',
+                'amount'              => $invoice->total_amount,
+                'status'              => 'pending',
+                'escrow_status'       => 'held',
+                'platform_fee_rate'   => $fees['platform_fee_rate'],
+                'platform_fee_amount' => $fees['platform_fee_amount'],
+                'net_seller_amount'   => $fees['net_seller_amount'],
+                'paymongo_status'     => 'pending',
+            ]);
+        } else {
+            $payment->update([
+                'status' => 'pending',
+                'paymongo_status' => 'pending',
+                'paymongo_session_id' => null,
+            ]);
+        }
+
+        $session = $this->paymongo->createCheckoutSession(
+            $invoice,
+            route('payment.success', $invoice),
+            route('payment.cancel', $invoice)
+        );
+
+        $payment->update([
+            'paymongo_session_id' => $session['session_id'],
+            'paymongo_status' => 'active',
+        ]);
+
+        return Inertia::location($session['checkout_url']);
     }
 
     /**
-     * Calculate cart subtotal.
+     * Customer: upload prescription photo (Rx-required orders).
      */
-    private function calculateSubtotal($cartItems)
+    public function prescriptionUploadForm(Order $order)
     {
-        return array_sum(array_column($cartItems, 'subtotal'));
+        if ($order->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($order->prescription_status !== Order::PRESCRIPTION_AWAITING_UPLOAD) {
+            return redirect()->route('orders.show', $order)
+                ->with('info', 'This order does not require a prescription upload right now.');
+        }
+
+        return Inertia::render('Orders/PrescriptionUpload', [
+            'order' => $order->load(['distributor', 'items.product']),
+        ]);
+    }
+
+    /**
+     * Customer: store prescription image.
+     */
+    public function prescriptionUpload(Request $request, Order $order)
+    {
+        if ($order->customer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($order->prescription_status !== Order::PRESCRIPTION_AWAITING_UPLOAD) {
+            return back()->withErrors(['prescription' => 'You cannot upload a prescription for this order at this time.']);
+        }
+
+        $request->validate([
+            'prescription' => 'required|image|max:8192',
+        ], [
+            'prescription.required' => 'Please choose a clear photo of your prescription.',
+        ]);
+
+        $path = $request->file('prescription')->store('prescriptions', 'public');
+
+        $order->update([
+            'prescription_image_path' => $path,
+            'prescription_status' => Order::PRESCRIPTION_PENDING_REVIEW,
+        ]);
+
+        return redirect()->route('orders.show', $order)
+            ->with('success', 'Prescription submitted. The distributor will review it before you can pay.');
     }
 }

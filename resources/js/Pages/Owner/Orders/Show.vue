@@ -73,6 +73,64 @@
                         </div>
                     </div>
 
+                    <!-- Prescription (Rx) review -->
+                    <div
+                        v-if="order.prescription_status === 'awaiting_upload'"
+                        class="bg-amber-50 border border-amber-200 rounded-xl p-6"
+                    >
+                        <h2 class="text-lg font-bold text-amber-900 mb-1">Prescription pending</h2>
+                        <p class="text-sm text-amber-800">The customer has not uploaded a prescription photo yet.</p>
+                    </div>
+                    <div
+                        v-else-if="order.prescription_status === 'pending_review' && order.prescription_image_path"
+                        class="bg-white rounded-xl shadow-md p-6 border border-indigo-200"
+                    >
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Prescription review</h2>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Approve if the prescription is valid. Rejecting cancels the order and releases reserved stock.
+                        </p>
+                        <a
+                            :href="`/storage/${order.prescription_image_path}`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-block mb-4"
+                        >
+                            <img
+                                :src="`/storage/${order.prescription_image_path}`"
+                                alt="Prescription upload"
+                                class="max-w-full sm:max-w-md rounded-xl border border-gray-200 shadow-sm"
+                            />
+                            <span class="text-sm text-blue-600 font-medium mt-2 block">Open full size</span>
+                        </a>
+                        <div class="flex flex-col lg:flex-row gap-4 lg:items-start">
+                            <button
+                                type="button"
+                                @click="approvePrescription"
+                                :disabled="rxProcessing"
+                                class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                Approve prescription
+                            </button>
+                            <form class="flex-1 space-y-2 max-w-lg" @submit.prevent="rejectPrescription">
+                                <label class="block text-sm font-semibold text-gray-700">Reject with reason</label>
+                                <textarea
+                                    v-model="rejectReason"
+                                    required
+                                    rows="2"
+                                    placeholder="e.g. Illegible, expired, wrong patient name…"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                />
+                                <button
+                                    type="submit"
+                                    :disabled="rxProcessing"
+                                    class="px-5 py-2.5 rounded-xl border-2 border-red-300 text-red-700 font-semibold hover:bg-red-50 disabled:opacity-50"
+                                >
+                                    Reject prescription
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
                     <!-- Order Items -->
                     <div class="bg-white rounded-xl shadow-md p-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Order Items</h2>
@@ -90,6 +148,9 @@
                                 </div>
                                 <div class="flex-1">
                                     <h3 class="font-semibold text-gray-900">{{ item.product.name }}</h3>
+                                    <p v-if="item.product_variation" class="text-sm text-blue-700 font-medium mt-0.5">
+                                        {{ item.product_variation.display_label || `${item.product_variation.option_name}: ${item.product_variation.option_value}` }}
+                                    </p>
                                     <p class="text-sm text-gray-600">{{ item.product.brand || 'Generic' }}</p>
                                     <p class="text-sm text-gray-500 mt-1">
                                         Branch: {{ item.inventory?.branch?.location ?? 'Main Warehouse' }}
@@ -109,9 +170,19 @@
                         </div>
 
                         <div class="mt-6 pt-4 border-t">
-                            <div class="flex justify-between items-center">
-                                <span class="text-lg font-semibold text-gray-900">Total Amount</span>
-                                <span class="text-2xl font-bold text-blue-600">₱{{ Number(order.total_amount).toLocaleString() }}</span>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Items Subtotal</span>
+                                    <span class="font-semibold text-gray-900">₱{{ Number(orderSubtotal).toLocaleString() }}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Shipping Fee</span>
+                                    <span class="font-semibold text-gray-900">₱{{ Number(orderShippingFee).toLocaleString() }}</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t">
+                                    <span class="text-lg font-semibold text-gray-900">Total Amount</span>
+                                    <span class="text-2xl font-bold text-blue-600">₱{{ Number(orderGrandTotal).toLocaleString() }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -125,11 +196,27 @@
                                 <p class="font-semibold text-gray-900">{{ order.invoice.invoice_number }}</p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-600">Status</p>
-                                <span 
+                                <p class="text-sm text-gray-600">Payment Status</p>
+                                <span
+                                    :class="{
+                                        'bg-amber-100 text-amber-800': paymentSettlement.state === 'pending_release' || paymentSettlement.state === 'pending_verification',
+                                        'bg-green-100 text-green-800': paymentSettlement.state === 'released',
+                                        'bg-red-100 text-red-800': paymentSettlement.state === 'refunded',
+                                        'bg-gray-100 text-gray-800': paymentSettlement.state === 'unpaid',
+                                    }"
+                                    class="inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize"
+                                >
+                                    {{ paymentSettlement.label }}
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Invoice Record</p>
+                                <span
                                     :class="{
                                         'bg-yellow-100 text-yellow-800': order.invoice.status === 'unpaid',
+                                        'bg-orange-100 text-orange-800': order.invoice.status === 'partial',
                                         'bg-green-100 text-green-800': order.invoice.status === 'paid',
+                                        'bg-red-100 text-red-800': order.invoice.status === 'overdue',
                                     }"
                                     class="inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize"
                                 >
@@ -283,6 +370,10 @@ import QrcodeVue from 'qrcode.vue';
 
 const props = defineProps({
     order: Object,
+    paymentSettlement: {
+        type: Object,
+        default: () => ({ state: 'unpaid', label: 'Unpaid' }),
+    },
 });
 
 const page = usePage();
@@ -306,6 +397,33 @@ const statusForm = reactive({
 
 const updating = ref(false);
 const showWaybill = ref(false);
+const rxProcessing = ref(false);
+const rejectReason = ref('');
+
+const approvePrescription = () => {
+    if (!confirm('Approve this prescription and allow the customer to pay for this order?')) return;
+    rxProcessing.value = true;
+    router.post(`/owner/orders/${props.order.id}/prescription/approve`, {}, {
+        preserveScroll: true,
+        onFinish: () => { rxProcessing.value = false; },
+    });
+};
+
+const rejectPrescription = () => {
+    if (!confirm('Reject this prescription? The order will be cancelled and stock reservations released.')) return;
+    rxProcessing.value = true;
+    router.post(`/owner/orders/${props.order.id}/prescription/reject`, { reason: rejectReason.value }, {
+        preserveScroll: true,
+        onFinish: () => { rxProcessing.value = false; },
+    });
+};
+const orderSubtotal = computed(() => Number(props.order?.subtotal || 0));
+const orderShippingFee = computed(() => Number(props.order?.shipping_fee || 0));
+const orderGrandTotal = computed(() => {
+    const total = Number(props.order?.total_amount || 0);
+    if (total > 0) return total;
+    return orderSubtotal.value + orderShippingFee.value;
+});
 
 const printWaybill = () => {
     window.print();

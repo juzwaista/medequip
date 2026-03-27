@@ -4,14 +4,16 @@ namespace App\Http\Controllers\Courier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Delivery;
+use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $courier = auth()->user()->courier;
+        $user    = auth()->user();
 
         // Dispatch Pool: Deliveries that are pending and have no courier assigned yet
         $availableDeliveries = Delivery::with(['order.distributor', 'order.items.product', 'order.customer'])
@@ -20,26 +22,42 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
-        // Active Deliveries: Deliveries assigned to this courier that are not yet delivered/failed
+        // Active Deliveries: assigned to this courier, not yet completed
         $myDeliveries = Delivery::with(['order.distributor', 'order.customer', 'order.items.product'])
             ->where('courier_id', $courier->id)
             ->whereNotIn('status', ['delivered', 'failed'])
             ->latest()
             ->get();
 
-        // History: Past completed or failed deliveries
+        // Full paginated history
         $history = Delivery::with(['order.distributor', 'order.customer'])
             ->where('courier_id', $courier->id)
             ->whereIn('status', ['delivered', 'failed'])
             ->latest()
-            ->take(10)
-            ->get();
+            ->paginate(20);
+
+        // Earnings summary from wallet transactions
+        $totalEarned = WalletTransaction::whereHas('wallet', fn ($q) => $q->where('user_id', $user->id))
+            ->where('type', 'delivery_fee')
+            ->where('amount', '>', 0)
+            ->sum('amount');
+
+        $totalDeliveries = Delivery::where('courier_id', $courier->id)
+            ->where('status', 'delivered')
+            ->count();
+
+        $walletBalance = $user->wallet?->balance ?? 0;
 
         return Inertia::render('Courier/Dashboard', [
             'availableDeliveries' => $availableDeliveries,
-            'myDeliveries' => $myDeliveries,
-            'history' => $history,
-            'courier' => $courier
+            'myDeliveries'        => $myDeliveries,
+            'history'             => $history,
+            'courier'             => $courier,
+            'earnings'            => [
+                'total_earned'     => (float) $totalEarned,
+                'total_deliveries' => $totalDeliveries,
+                'wallet_balance'   => (float) $walletBalance,
+            ],
         ]);
     }
 }

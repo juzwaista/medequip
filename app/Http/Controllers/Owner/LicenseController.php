@@ -24,9 +24,13 @@ class LicenseController extends Controller
 
     public function store(Request $request, Distributor $distributor)
     {
+        if ($distributor->user_id !== auth()->id()) {
+            abort(403);
+        }
+
         $request->validate([
-            'type' => 'required|string',
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'type' => 'required|in:fda,business_permit,phic,doh,other',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         $path = $request->file('file')->store('licenses', 'public');

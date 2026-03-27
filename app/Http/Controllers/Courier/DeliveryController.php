@@ -44,9 +44,38 @@ class DeliveryController extends Controller
         }
 
         if ($orderNewStatus) {
-            $delivery->order->update(['status' => $orderNewStatus]);
+            $order = $delivery->order;
+            $order->update(['status' => $orderNewStatus]);
+
             if ($orderNewStatus === 'delivered') {
-                $delivery->order->update(['delivered_at' => now()]);
+                $order->update(['delivered_at' => now()]);
+
+                // Credit courier's shipping fee to their wallet
+                if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
+                    $courierWallet = auth()->user()->wallet;
+                    if ($courierWallet) {
+                        $courierWallet->credit(
+                            (float) $delivery->courier_fee,
+                            'delivery_fee',
+                            (string) $delivery->id,
+                            "Courier fee for {$delivery->tracking_number}"
+                        );
+                    }
+                    $delivery->update([
+                        'courier_payout_status' => 'paid',
+                        'courier_paid_at'       => now(),
+                    ]);
+                }
+
+                // COD: record cash collected from customer.
+                // Courier physically holds the cash and must remit it to the distributor.
+                // Platform records collection time and amount. Distributor will confirm receipt separately.
+                if ($order->payment_method === 'cod') {
+                    $delivery->update([
+                        'cod_amount'       => $order->total_amount,
+                        'cod_collected_at' => now(),
+                    ]);
+                }
             }
         }
 
