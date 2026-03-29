@@ -12,8 +12,13 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-20">
                     <!-- Logo -->
-                    <a href="/products" class="flex items-center flex-shrink-0 group">
-                        <img :src="'/images/logo.png'" alt="MedEquip" class="h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-sm">
+                    <!-- <a href="/products" class="flex items-center flex-shrink-0 group">
+                        <img :src="'/images/logo.png'" alt="MedEquip" class="h-28 w-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-sm">
+                    </a> -->
+
+                    <a href="/products" class="flex items-center flex-shrink-0">
+                        <img :src="'/images/logo.png'" 
+                            class="h-20 sm:h-16 md:h-24 lg:h-28 w-auto object-contain transition-transform duration-500 drop-shadow-sm">
                     </a>
 
                     <!-- Nav Links Removed -->
@@ -23,19 +28,20 @@
                         <Link
                             v-if="$page.props.auth.user && $page.props.auth.user.role !== 'staff'"
                             href="/wallet"
-                            class="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition relative"
+                            class="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition relative"
                             title="My Wallet"
                         >
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                             </svg>
                         </Link>
 
-                        <Link href="/cart" class="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition relative" title="Cart">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <Link href="/cart" class="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition relative" title="Cart">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
-                            <span v-if="cartCount > 0" class="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center leading-none">
+
+                            <span v-if="cartCount > 0" class="absolute top-1 right-1 bg-blue-600 text-white text-[11px] font-black rounded-full h-5 w-5 flex items-center justify-center leading-none">
                                 {{ cartCount > 9 ? '9+' : cartCount }}
                             </span>
                         </Link>
@@ -47,11 +53,31 @@
                             :userRole="$page.props.auth.user.role || 'customer'"
                             :csrfToken="csrfToken"
                         />
-                        <div v-else class="flex items-center gap-2">
-                            <a href="/login" class="text-sm text-gray-600 hover:text-blue-600 font-medium transition px-3 py-2 rounded-lg hover:bg-gray-50">
+                        <!-- <div v-else class="flex items-center gap-2">
+                            <a href="/login" 
+                            class="text-sm sm:text-lg text-gray-600 hover:text-blue-600 font-medium transition px-2 py-1 sm:px-3 sm:py-2 rounded-lg hover:bg-gray-50">
                                 Login
                             </a>
-                            <a href="/register" class="text-sm px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold shadow-sm">
+                            <a href="/register" 
+                            class="text-sm sm:text-lg px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold shadow-sm">
+                                Sign Up
+                            </a>
+                        </div> -->
+                        <div v-else class="flex items-center gap-2">
+                            <!-- Login Button -->
+                           
+                            <a href="/login" 
+                            class="text-base sm:text-base text-gray-600 font-medium px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-md 
+                                    bg-white hover:bg-gradient-to-r hover:from-blue-400 hover:to-blue-600 
+                                    hover:text-white shadow-md transition-all duration-300">
+                                Login
+                            </a>
+
+                            <!-- Sign Up Button -->
+                            <a href="/register" 
+                            class="text-base sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg 
+                                    bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 
+                                    text-white font-semibold shadow-lg transition-transform transform hover:scale-105 duration-300">
                                 Sign Up
                             </a>
                         </div>

@@ -33,7 +33,7 @@
             <!-- Sidebar Header / Logo -->
             <div class="h-16 flex items-center px-4 bg-gray-950/50 border-b border-gray-800 shrink-0 justify-between lg:justify-center">
                 <a href="/owner/dashboard" class="flex items-center gap-3 group w-full">
-                    <img :src="'/images/logo.png'" alt="MedEquip" class="h-12 w-auto scale-125 object-contain">
+                    <img :src="'/images/logo.png'" alt="MedEquip" class="h-16 w-auto scale-125 object-contain">
                     <span class="text-[10px] uppercase tracking-widest text-blue-400 font-medium">
                         {{ isOwner ? 'Owner Portal' : 'Staff Portal' }}
                     </span>

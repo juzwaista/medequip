@@ -1,53 +1,58 @@
 <template>
     <Head title="Login · MedEquip" />
-    <div class="min-h-screen flex">
-        <!-- Left: Brand Panel (hidden on mobile) -->
-        <div class="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 flex-col justify-between p-12 relative overflow-hidden">
-            <!-- Background decoration -->
-            <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                <div class="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-                <div class="absolute bottom-0 right-0 w-72 h-72 bg-cyan-400/20 rounded-full blur-2xl"></div>
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-800/20 rounded-full blur-3xl"></div>
-            </div>
-
-            <div class="relative z-10">
-                <a href="/products" class="inline-flex items-center gap-3">
-                    <img :src="'/images/logo.png'" alt="MedEquip" class="h-10 w-auto brightness-0 invert" />
-                </a>
-            </div>
-
-            <div class="relative z-10 space-y-6">
-                <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/30">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Trusted by Healthcare Professionals
-                </div>
-                <h1 class="text-4xl xl:text-5xl font-black text-white leading-tight">
-                    Your clinic's new<br>
-                    <span class="text-cyan-300">supply room.</span>
-                </h1>
-                <p class="text-blue-100 text-lg leading-relaxed max-w-sm">
-                    Stock up on essential equipment and daily consumables directly from local distributors you can trust.
-                </p>
-
-                <!-- Trust badges -->
-                <div class="grid grid-cols-3 gap-4 pt-4">
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
-                        <p class="text-2xl font-black text-white">FDA</p>
-                        <p class="text-xs text-blue-200 mt-1">Verified sellers</p>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
-                        <p class="text-2xl font-black text-white">100%</p>
-                        <p class="text-xs text-blue-200 mt-1">Secure checkout</p>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
-                        <p class="text-2xl font-black text-white">24h</p>
-                        <p class="text-xs text-blue-200 mt-1">Order support</p>
-                    </div>
-                </div>
-            </div>
-
-            <p class="relative z-10 text-blue-200 text-xs">&copy; 2026 MedEquip Platform. Cavite, Philippines.</p>
+<div class="min-h-screen flex">
+    <!-- Left: Brand Panel (hidden on mobile) -->
+    <div class="hidden lg:flex lg:w-2/5 xl:w-2/5 bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 flex-col justify-between p-12 relative overflow-hidden">
+        <!-- Background decoration -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-0 right-0 w-72 h-72 bg-cyan-400/20 rounded-full blur-2xl"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-800/20 rounded-full blur-3xl"></div>
         </div>
+
+        <!-- Logo -->
+        <div class="relative z-10">
+            <a href="/products" class="inline-flex items-center gap-3">
+                <img :src="'/images/logo.png'" alt="MedEquip" class="h-24 sm:h-28 md:h-24 lg:h-28 w-auto brightness-0 invert" />
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="relative z-10 space-y-6">
+            
+
+            <h1 class="text-4xl xl:text-5xl font-black text-white leading-tight">
+                Access your<br>
+                <span class="text-cyan-300">MedEquip account</span>
+            </h1>
+
+            <p class="text-blue-100 text-lg leading-relaxed max-w-sm">
+                Continue managing your clinic’s supply needs with secure and reliable access to your account.
+            </p>
+
+            <!-- Trust badges -->
+            <div class="grid grid-cols-3 gap-4 pt-4">
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
+                    <p class="text-2xl font-black text-white">FDA</p>
+                    <p class="text-xs text-blue-200 mt-1">Verified sellers</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
+                    <p class="text-2xl font-black text-white">100%</p>
+                    <p class="text-xs text-blue-200 mt-1">Secure checkout</p>
+                </div>
+
+                <!-- Highlighted / Important Badge -->
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
+                    <p class="text-2xl font-black text-white">Fast</p>
+                    <p class="text-xs text-blue-200 mt-1">Delivery Process</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <p class="relative z-10 text-blue-200 text-xs">&copy; 2026 MedEquip Platform. Cavite, Philippines.</p>
+    </div>
 
         <!-- Right: Login Form -->
         <div class="flex-1 flex items-center justify-center px-6 py-12 bg-slate-50">
