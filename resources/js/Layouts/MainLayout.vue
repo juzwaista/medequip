@@ -1,6 +1,11 @@
 <template>
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
         <FlashMessage />
+        <TermsBanner
+            v-if="$page.props.auth.user"
+            :needs-acceptance="$page.props.needsTermsAcceptance"
+            :user-role="$page.props.auth.user?.role || 'customer'"
+        />
 
         <!-- Header -->
         <header class="bg-white/90 backdrop-blur-md shadow-md sticky top-0 z-50 border-b border-gray-100">
@@ -165,6 +170,7 @@ import { ref, computed, onMounted } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AccountMenu from '@/Components/AccountMenu.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
+import TermsBanner from '@/Components/TermsBanner.vue';
 
 const page = usePage();
 

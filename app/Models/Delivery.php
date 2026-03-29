@@ -15,23 +15,37 @@ class Delivery extends Model
         'courier_id',
         'tracking_number',
         'delivery_address',
+        'seller_address',
         'scheduled_date',
         'actual_delivery_at',
+        'pickup_started_at',
+        'item_scanned_at',
+        'pickup_confirmed_at',
         'driver_name',
         'driver_contact',
         'courier_fee',
         'courier_payout_status',
         'courier_paid_at',
         'proof_of_delivery_path',
-        'status', // pending, scheduled, in_transit, delivered, failed
+        'status', // pending, scheduled, picking_up, in_transit, delivered, failed
         'notes',
+        'cod_amount',
+        'cod_collected_at',
+        'cod_remitted_at',
+        'cod_remittance_sent_at',
     ];
 
     protected $casts = [
-        'scheduled_date'     => 'date',
-        'actual_delivery_at' => 'datetime',
-        'courier_fee'        => 'decimal:2',
-        'courier_paid_at'    => 'datetime',
+        'scheduled_date'      => 'date',
+        'actual_delivery_at'  => 'datetime',
+        'pickup_started_at'   => 'datetime',
+        'item_scanned_at'     => 'datetime',
+        'pickup_confirmed_at' => 'datetime',
+        'cod_collected_at'    => 'datetime',
+        'cod_remitted_at'     => 'datetime',
+        'cod_remittance_sent_at' => 'datetime',
+        'courier_fee'         => 'decimal:2',
+        'courier_paid_at'     => 'datetime',
     ];
 
     public function order(): BelongsTo

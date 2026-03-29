@@ -1,6 +1,11 @@
 <template>
     <div class="flex h-screen bg-gray-50 font-sans overflow-hidden">
         <FlashMessage />
+        <TermsBanner
+            v-if="$page.props.auth.user"
+            :needs-acceptance="$page.props.needsTermsAcceptance"
+            :user-role="$page.props.auth.user?.role || 'distributor'"
+        />
 
         <!-- Mobile Sidebar Backdrop -->
         <transition
@@ -40,6 +45,7 @@
 
             <!-- Navigation Links -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <template v-if="!isSuspended">
                 <Link 
                     href="/owner/dashboard" 
                     :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/owner/dashboard') && !isActive('/owner/dashboard/') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
@@ -113,10 +119,27 @@
                         Business Profile
                     </Link>
                 </template>
+                </template>
+                <template v-else>
+                    <Link 
+                        href="/owner/dashboard" 
+                        :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/owner/dashboard') && !isActive('/owner/dashboard/') ? 'bg-rose-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                    >
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Suspension Notice
+                    </Link>
+                    <Link 
+                        href="/owner/orders" 
+                        :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/owner/orders') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                    >
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        Process Orders
+                    </Link>
+                </template>
             </nav>
 
             <!-- Quick actions (fixed at bottom of sidebar) -->
-            <div class="shrink-0 border-t border-gray-800 bg-gray-950 px-3 py-4 space-y-1">
+            <div v-if="!isSuspended" class="shrink-0 border-t border-gray-800 bg-gray-950 px-3 py-4 space-y-1">
                 <p class="px-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick actions</p>
                 <Link
                     href="/owner/inventory/create"
@@ -144,6 +167,17 @@
 
         <!-- Main Workspace -->
         <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-gray-50">
+            <div v-if="isSuspended" class="bg-rose-600 text-white px-4 py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                ACCOUNT SUSPENDED. You are restricted to processing existing orders.
+            </div>
+            <div v-else-if="hasWarning" class="bg-blue-600 text-white px-4 py-3 text-sm shadow-sm shrink-0 flex items-start gap-3">
+                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div>
+                    <h3 class="font-bold uppercase tracking-wider">Warning from Admin: {{ warningReason }}</h3>
+                    <p v-if="warningMessage" class="opacity-90 mt-0.5 pr-8">{{ warningMessage }}</p>
+                </div>
+            </div>
             <!-- Topbar Header -->
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
                 <div class="flex items-center gap-4">
@@ -183,9 +217,33 @@ import { computed, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AccountMenu from '@/Components/AccountMenu.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
+import TermsBanner from '@/Components/TermsBanner.vue';
 
 const page = usePage();
 const mobileSidebarOpen = ref(false);
+
+const suspendedUntilDate = computed(() => {
+    const timestamp = page.props.auth?.user?.suspended_until;
+    if (!timestamp) return null;
+    return new Date(timestamp * 1000);
+});
+
+const isSuspended = computed(() => {
+    if (!suspendedUntilDate.value) return false;
+    return suspendedUntilDate.value > new Date();
+});
+
+const warningReason = computed(() => {
+    return page.props.auth?.user?.warning_reason;
+});
+
+const warningMessage = computed(() => {
+    return page.props.auth?.user?.warning_message;
+});
+
+const hasWarning = computed(() => {
+    return !!warningReason.value;
+});
 
 const csrfToken = computed(() => {
     return page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.content;

@@ -282,8 +282,8 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
+import { ref, reactive, onMounted } from 'vue';
+import { router, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import axios from 'axios';
 
@@ -312,13 +312,19 @@ const addedProductId = ref(null);
 const addToCart = async (productId) => {
     addingToCart.value = productId;
     try {
-        await axios.post('/cart/add', { product_id: productId, quantity: 1 });
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        await axios.post('/cart/add', { product_id: productId, quantity: 1 }, {
+            headers: { 'X-CSRF-TOKEN': token }
+        });
         addedProductId.value = productId;
         setTimeout(() => { addedProductId.value = null; }, 2200);
         window.dispatchEvent(new CustomEvent('cart-updated'));
     } catch (e) {
         if (e?.response?.status === 401) {
             router.visit('/login');
+        } else if (e?.response?.status === 419) {
+            // CSRF expired - reload the page to get a fresh token
+            window.location.reload();
         } else {
             alert(e?.response?.data?.message || 'Could not add to cart. Please try again.');
         }

@@ -29,6 +29,10 @@ class User extends Authenticatable
         'distributor_id',
         'social_provider',
         'social_id',
+        'banned_at',
+        'ban_reason',
+        'terms_accepted_at',
+        'terms_version',
     ];
 
     /**
@@ -50,8 +54,23 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The current terms version — bump this string to force re-acceptance.
+     */
+    public const CURRENT_TERMS_VERSION = '2026-03-29';
+
+    /**
+     * Check if user has accepted the current terms version.
+     */
+    public function hasAcceptedTerms(): bool
+    {
+        return $this->terms_accepted_at !== null
+            && $this->terms_version === self::CURRENT_TERMS_VERSION;
     }
 
     /**
@@ -100,6 +119,11 @@ class User extends Authenticatable
     public function isCustomer(): bool
     {
         return $this->role === 'customer';
+    }
+
+    public function isBanned(): bool
+    {
+        return !is_null($this->banned_at);
     }
     /**
      * Get the user's wallet

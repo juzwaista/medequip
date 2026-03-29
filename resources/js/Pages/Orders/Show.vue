@@ -186,7 +186,12 @@
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-600 mb-1">Carrier</p>
-                                <p class="font-semibold text-gray-900">{{ order.delivery.carrier }}</p>
+                                <p class="font-semibold text-gray-900">
+                                    MedEquip Express
+                                    <span v-if="order.delivery.courier?.user?.name" class="text-gray-500 font-normal">
+                                        ({{ order.delivery.courier.user.name }})
+                                    </span>
+                                </p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-600 mb-1">Delivery Status</p>
@@ -285,6 +290,16 @@
                                 </svg>
                                 Cancel Order
                             </button>
+                            <button 
+                                v-if="order.status === 'delivered' && !order.received_at"
+                                @click="confirmReceived"
+                                class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition px-4 py-3 rounded-lg font-medium text-left flex items-center"
+                            >
+                                <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Confirm Received
+                            </button>
                             <button
                                 v-if="canPayNow"
                                 @click="payNow"
@@ -341,6 +356,20 @@ const cancelOrder = () => {
             },
             onError: (errors) => {
                 console.error('[OrderShow] Cancel failed', errors);
+            }
+        });
+    }
+};
+
+const confirmReceived = () => {
+    if (confirm(`Confirm that you received order ${props.order.order_number}? This will release the payment to the seller.`)) {
+        console.log('[OrderShow] Confirming receipt for order', props.order.id);
+        router.post(`/orders/${props.order.id}/confirm-received`, {}, {
+            onSuccess: () => {
+                console.log('[OrderShow] Order receipt confirmed successfully');
+            },
+            onError: (errors) => {
+                console.error('[OrderShow] Confirm failed', errors);
             }
         });
     }

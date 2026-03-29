@@ -26,8 +26,18 @@ use App\Http\Controllers\Courier\DeliveryController as CourierDeliveryController
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        return match($user->role) {
+            'super_admin', 'admin' => redirect()->route('admin.dashboard'),
+            'courier'              => redirect()->route('courier.dashboard'),
+            'distributor', 'staff' => redirect()->route('owner.dashboard'),
+            default                => redirect('/products'),
+        };
+    }
     return redirect('/products');
 })->name('landing');
+
 
 // Static Pages
 Route::get('/about', function () { return \Inertia\Inertia::render('Static/About'); })->name('about');
@@ -57,6 +67,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/wallet/topup/cancel', [\App\Http\Controllers\WalletController::class, 'topupCancel'])->name('wallet.topup.cancel');
     Route::post('/wallet/withdraw', [\App\Http\Controllers\WalletController::class, 'withdraw'])->name('wallet.withdraw');
 });
+
+// Terms acceptance (Auth required)
+Route::middleware('auth')->post('/terms/accept', [\App\Http\Controllers\TermsController::class, 'accept'])->name('terms.accept');
 
 // Checkout and Orders (Auth required)
 Route::middleware('auth')->group(function () {
@@ -121,8 +134,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/password', [ProfileController::class, 'updatePassword'])
         ->name('password.update');
 
-    Route::delete('/profile', [ProfileController::class, 'destroy'])
-        ->name('profile.destroy');
+    Route::post('/profile/deactivate', [ProfileController::class, 'deactivate'])
+        ->name('profile.deactivate');
+
 
     // Account Settings
     Route::get('/settings', [ProfileController::class, 'edit'])
@@ -139,10 +153,11 @@ Route::middleware('auth')->group(function () {
 | DISTRIBUTOR SETUP ROUTES (No Verification Required Yet)
 |--------------------------------------------------------------------------
 */
-// These are extracted from the verified middleware so new/pending users can access them!
-Route::middleware(['auth', 'role:distributor'])
+// Any authenticated user can apply — they don't have the distributor role yet!
+Route::middleware(['auth'])
     ->prefix('owner')
     ->name('owner.')
+
     ->group(function () {
         Route::get('/distributor/create', [\App\Http\Controllers\Owner\DistributorController::class, 'create'])
             ->name('distributors.create');
@@ -291,6 +306,11 @@ Route::middleware(['auth', 'role:admin,super_admin'])
         Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])->name('distributors.approve');
         Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])->name('distributors.reject');
         
+        // DSS Risk Actions
+        Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');
+        Route::post('/distributors/{id}/ban', [\App\Http\Controllers\Admin\DashboardController::class, 'banDistributor'])->name('distributors.ban');
+        Route::post('/distributors/{id}/warn', [\App\Http\Controllers\Admin\DashboardController::class, 'warnDistributor'])->name('distributors.warn');
+        
         // Secure Document Viewing
         Route::get('/documents/{path}', [\App\Http\Controllers\Admin\DashboardController::class, 'viewDocument'])
             ->where('path', '.*')
@@ -299,6 +319,8 @@ Route::middleware(['auth', 'role:admin,super_admin'])
         // Users Management
         Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
+        Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])->name('users.ban');
+        Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])->name('users.unban');
         
         // Courier Management
         Route::get('/couriers', [CourierController::class, 'index'])->name('couriers.index');
@@ -338,6 +360,11 @@ Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')
     Route::get('/lookup-order', [\App\Http\Controllers\CourierController::class, 'lookupOrder'])->name('lookup-order');
     Route::post('/deliveries/{delivery}/accept', [CourierDeliveryController::class, 'accept'])->name('deliveries.accept');
     Route::post('/deliveries/{delivery}/status', [CourierDeliveryController::class, 'updateStatus'])->name('deliveries.status');
+    Route::post('/deliveries/{delivery}/start-pickup', [CourierDeliveryController::class, 'startPickup'])->name('deliveries.startPickup');
+    Route::post('/deliveries/{delivery}/confirm-scan', [CourierDeliveryController::class, 'confirmScan'])->name('deliveries.confirmScan');
+    Route::post('/deliveries/{delivery}/confirm-pickup', [CourierDeliveryController::class, 'confirmPickup'])->name('deliveries.confirmPickup');
+    Route::post('/deliveries/{delivery}/confirm-delivery', [CourierDeliveryController::class, 'confirmDelivery'])->name('deliveries.confirmDelivery');
+    Route::post('/deliveries/{delivery}/remittance-sent', [CourierDeliveryController::class, 'markRemittanceSent'])->name('deliveries.remittanceSent');
 });
 
 /*

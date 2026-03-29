@@ -15,6 +15,9 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['category', 'distributor', 'images', 'inventory'])
+            ->whereHas('distributor', function ($q) {
+                $q->where('status', '!=', 'banned');
+            })
             ->where('is_active', true);
 
         // Search
@@ -98,16 +101,61 @@ class ProductController extends Controller
             'inventory.branch',
             'variations' => fn($q) => $q->where('is_active', true)->orderBy('sort_order'),
         ])
+            ->whereHas('distributor', function ($q) {
+                $q->where('status', '!=', 'banned');
+            })
             ->where('is_active', true)
             ->findOrFail($id);
 
-        // Get related products from same category
-        $relatedProducts = Product::with(['images', 'distributor'])
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->where('is_active', true)
+        // DSS Engine: Frequently Bought Together
+        $fbtProductIds = \Illuminate\Support\Facades\DB::table('order_items')
+            ->whereIn('order_id', function ($query) use ($product) {
+                $query->select('order_id')
+                    ->from('order_items')
+                    ->where('product_id', $product->id);
+            })
+            ->where('product_id', '!=', $product->id)
+            ->select('product_id')
+            ->selectRaw('COUNT(*) as frequency')
+            ->groupBy('product_id')
+            ->orderByDesc('frequency')
             ->limit(4)
-            ->get();
+            ->pluck('product_id')
+            ->toArray();
+
+        $relatedProducts = collect();
+        if (!empty($fbtProductIds)) {
+            $relatedProducts = Product::with(['images', 'distributor'])
+                ->whereIn('id', $fbtProductIds)
+                ->where('is_active', true)
+                ->get()
+                ->sortBy(function ($model) use ($fbtProductIds) {
+                    return array_search($model->id, $fbtProductIds);
+                })
+                ->values();
+        }
+
+        $relatedProducts->each(function ($item) {
+            $item->is_dss_recommendation = true;
+        });
+
+        // Fallback: Pad with category items if we lack correlation data
+        if ($relatedProducts->count() < 4) {
+            $excludeIds = $relatedProducts->pluck('id')->push($product->id)->toArray();
+            
+            $fallbackProducts = Product::with(['images', 'distributor'])
+                ->where('category_id', $product->category_id)
+                ->whereNotIn('id', $excludeIds)
+                ->where('is_active', true)
+                ->limit(4 - $relatedProducts->count())
+                ->get();
+                
+            $fallbackProducts->each(function ($item) {
+                $item->is_dss_recommendation = false;
+            });
+
+            $relatedProducts = $relatedProducts->concat($fallbackProducts);
+        }
 
         $variationStocks = $product->variations->where('is_active', true)->values()->map(function ($v) use ($product) {
             $available = (int) $product->inventory->where('product_variation_id', $v->id)->sum(function ($inv) {
@@ -163,6 +211,9 @@ class ProductController extends Controller
         }
 
         $products = Product::with(['images', 'distributor'])
+            ->whereHas('distributor', function ($q) {
+                $q->where('status', '!=', 'banned');
+            })
             ->where('is_active', true)
             ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
@@ -181,6 +232,9 @@ class ProductController extends Controller
     public function byCategory(Category $category, Request $request)
     {
         $query = Product::with(['images', 'distributor', 'inventory'])
+            ->whereHas('distributor', function ($q) {
+                $q->where('status', '!=', 'banned');
+            })
             ->where('is_active', true)
             ->where('category_id', $category->id);
 

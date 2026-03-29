@@ -148,18 +148,15 @@
 
                 <!-- Logout -->
                 <div class="py-1">
-                    <form method="POST" action="/logout">
-                        <input type="hidden" name="_token" :value="csrfToken" />
-                        <button 
-                            type="submit"
-                            class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-                        >
-                            <svg class="h-5 w-5 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Logout
-                        </button>
-                    </form>
+                    <button 
+                        @click="logout"
+                        class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                    >
+                        <svg class="h-5 w-5 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Sign Out
+                    </button>
                 </div>
             </div>
         </Transition>
@@ -168,7 +165,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 
 const $page = usePage();
 
@@ -208,13 +205,20 @@ const isDistributorPending = computed(() =>
 const dashboardRoute = computed(() => {
     switch (props.userRole) {
         case 'admin':
+        case 'super_admin':
             return '/admin/dashboard';
         case 'distributor':
             return '/owner/dashboard';
+        case 'courier':
+            return '/courier/dashboard';
         default:
             return '/dashboard';
     }
 });
+
+const logout = () => {
+    router.post('/logout');
+};
 
 // Close dropdown when clicking outside
 const handleClickOutside = (event) => {

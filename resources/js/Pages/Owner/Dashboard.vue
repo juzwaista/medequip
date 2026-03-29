@@ -27,6 +27,24 @@
                 </div>
             </header>
 
+            <!-- Automated DSS Risk Warning -->
+            <div v-if="dssWarning" class="mb-8 border rounded-2xl p-5 shadow-sm" :class="dssWarning.level === 'Critical' ? 'bg-rose-50 border-rose-200' : 'bg-orange-50 border-orange-200'">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 mt-0.5" :class="dssWarning.level === 'Critical' ? 'text-rose-600' : 'text-orange-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider mb-1" :class="dssWarning.level === 'Critical' ? 'text-rose-800' : 'text-orange-800'">
+                             AUTOMATED ACCOUNT WARNING: {{ dssWarning.level }} RISK
+                        </h3>
+                        <p class="text-xs mb-3 font-medium" :class="dssWarning.level === 'Critical' ? 'text-rose-700' : 'text-orange-700'">
+                            Your account has been flagged by the system for the following reasons. Please resolve these issues immediately to avoid account suspension:
+                        </p>
+                        <ul class="list-disc list-inside text-sm space-y-1" :class="dssWarning.level === 'Critical' ? 'text-rose-800' : 'text-orange-800'">
+                            <li v-for="reason in dssWarning.reasons" :key="reason">{{ reason }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <!-- Today at a Glance Strip -->
             <section class="mb-8">
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -109,7 +127,7 @@
                 </div>
             </section>
 
-            <section class="mb-10 grid lg:grid-cols-3 gap-6">
+            <section class="mb-10 grid lg:grid-cols-2 gap-6">
                 <div class="space-y-4">
                     <div class="flex items-center justify-between gap-2 ml-1">
                         <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Order Status Breakdown</h2>
@@ -148,22 +166,12 @@
                     <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Your Earnings</h2>
                     <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm h-full flex flex-col gap-4">
                         <template v-if="canViewFinancials">
-                            <div>
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">💰 Money Earned This Month</p>
-                                <p class="text-4xl font-extrabold tabular-nums text-slate-900 mt-1 tracking-tight">₱{{ Number(stats.revenueMtd ?? 0).toLocaleString() }}</p>
-                                <p class="text-[11px] font-medium text-slate-400 mt-2 leading-snug">Verified payments only, net after platform fee.</p>
-                            </div>
-                            <div class="rounded-xl bg-slate-50/50 border border-slate-100 p-4 mt-auto">
-                                <p class="text-xs font-bold text-slate-700">Monthly Revenue Target</p>
-                                <p class="text-sm font-medium text-slate-500 mt-1">
-                                    {{ financial_kpis?.revenue_target != null ? '₱' + Number(financial_kpis.revenue_target).toLocaleString() : 'Not set yet. Configure in planning.' }}
-                                </p>
-                            </div>
-                            <div class="rounded-xl bg-slate-50/50 border border-slate-100 p-4">
-                                <p class="text-xs font-bold text-slate-700">Profit Margin</p>
-                                <p class="text-sm font-medium text-slate-500 mt-1">
-                                    {{ financial_kpis?.gross_margin_pct != null ? financial_kpis.gross_margin_pct + '% gross margin' : 'Not enough data yet.' }}
-                                </p>
+                            <div class="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-6 flex flex-col justify-center h-full text-white shadow-md relative overflow-hidden">
+                                <svg class="absolute -right-4 -bottom-4 h-32 w-32 text-emerald-400 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                
+                                <p class="text-xs font-bold uppercase tracking-wider text-emerald-100 relative z-10">Money Earned This Month</p>
+                                <p class="text-5xl font-black mt-2 tracking-tight drop-shadow-sm relative z-10">₱{{ Number(stats.revenueMtd ?? 0).toLocaleString() }}</p>
+                                <p class="text-xs font-medium text-emerald-50 mt-4 leading-snug relative z-10 max-w-[80%] opacity-90">Verified payments only, net after platform fee.</p>
                             </div>
                         </template>
                         <template v-else>
@@ -199,6 +207,65 @@
                             {{ stats.lowStockCount }} below reorder point
                         </p>
                         <Link href="/owner/inventory" class="mt-auto pt-3 text-xs font-semibold text-cyan-700 group-hover:text-cyan-800 group-hover:underline decoration-cyan-300 underline-offset-4">Manage products &rarr;</Link>
+                    </div>
+                </div>
+
+                <!-- NEW ACTIONABLE RECOMMENDATIONS BLOCK -->
+                <div class="mt-6 rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+                    <div class="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-900">Restock Recommendations</h3>
+                                <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wider">Recommended Action</span>
+                            </div>
+                            <p class="text-xs font-medium text-slate-500 mt-1">Smart replenishment alerts based on your sales velocity and remaining stock.</p>
+                        </div>
+                    </div>
+                    
+                    <div v-if="restock_insights?.recommendations?.length" class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                                <tr class="bg-white border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    <th class="py-3 px-6">Product</th>
+                                    <th class="py-3 px-4 text-right">Current Stock</th>
+                                    <th class="py-3 px-4 text-right">Run Rate/Day</th>
+                                    <th class="py-3 px-4 text-right">Stockout target</th>
+                                    <th class="py-3 px-6 text-right">Recommended Restock</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50 bg-white">
+                                <tr v-for="rec in restock_insights.recommendations" :key="rec.id" class="hover:bg-slate-50/50 transition-colors group">
+                                    <td class="py-4 px-6">
+                                        <div class="flex items-center gap-2">
+                                            <span v-if="rec.priority === 'urgent'" class="h-2 w-2 rounded-full bg-rose-500 shrink-0" title="Urgent"></span>
+                                            <span v-else-if="rec.priority === 'high'" class="h-2 w-2 rounded-full bg-amber-500 shrink-0" title="High"></span>
+                                            <span v-else class="h-2 w-2 rounded-full bg-blue-500 shrink-0" title="Normal"></span>
+                                            <Link :href="`/owner/inventory?search=${rec.product_id}`" class="text-sm font-bold text-slate-800 line-clamp-1 truncate hover:text-cyan-700 group-hover:underline decoration-cyan-300 underline-offset-4" :title="rec.product_name">{{ rec.product_name }}</Link>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 text-right text-sm font-bold text-slate-700">{{ rec.current_stock }}</td>
+                                    <td class="py-4 px-4 text-right text-xs font-medium text-slate-500">{{ Number(rec.avg_daily_sales).toFixed(1) }} units</td>
+                                    <td class="py-4 px-4 text-right">
+                                        <span class="inline-flex px-2 py-1 rounded-md text-xs font-bold" :class="rec.days_until_stockout <= 5 ? 'bg-rose-50 text-rose-700 border border-rose-200/50' : 'bg-amber-50 text-amber-700 border border-amber-200/50'">
+                                            {{ rec.days_until_stockout }} days
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6 text-right">
+                                        <span class="inline-flex px-3 py-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-200 text-xs font-bold whitespace-nowrap">
+                                            +{{ rec.recommended_quantity }} units
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div v-else class="py-12 flex flex-col items-center justify-center text-center bg-white">
+                        <div class="h-12 w-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <p class="text-sm font-bold text-slate-800">Your stock levels are healthy</p>
+                        <p class="text-xs font-medium text-slate-500 mt-1 max-w-sm">There are no urgent restock recommendations at this time. We'll notify you when items are running low.</p>
                     </div>
                 </div>
             </section>
@@ -314,38 +381,7 @@
                 </div>
 
                 <div class="grid xl:grid-cols-2 gap-6 mb-6">
-                    <div v-if="canViewFinancials" class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                        <div class="flex flex-col sm:flex-row justify-between gap-3 mb-6">
-                            <div>
-                                <h3 class="font-bold text-slate-900">Net proceeds over time</h3>
-                                <p class="text-xs font-medium text-slate-500">{{ charts.revenue_period_label }}</p>
-                                <p class="text-[11px] text-slate-400 mt-1">Totals use verified payments (net after platform fee), by verification date — not order delivery date.</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input v-model="revFrom" type="date" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 focus:ring-cyan-500" />
-                                <span class="text-slate-400 text-xs">–</span>
-                                <input v-model="revTo" type="date" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 focus:ring-cyan-500" />
-                                <button type="button" class="rounded-xl bg-slate-100 text-slate-700 text-xs font-bold px-3 py-2.5 hover:bg-slate-200 transition-colors" @click="applyRevenue">Apply</button>
-                            </div>
-                        </div>
-
-                        <div class="h-60 relative rounded-xl border border-slate-100 bg-slate-50/30">
-                            <canvas ref="revenueChartRef" class="w-full h-full block" />
-                            <div
-                                v-if="!charts.revenue_series?.length"
-                                class="absolute inset-0 flex items-center justify-center rounded-xl bg-white/90"
-                            >
-                                <p class="text-sm font-medium text-slate-400">No data points for this date range.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
-                        <svg class="w-10 h-10 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        <p class="text-sm font-bold text-slate-500">Financial Data Restricted</p>
-                        <p class="text-xs text-slate-400 mt-1">Revenue details are only visible to the shop owner.</p>
-                    </div>
-
-                    <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                    <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm flex flex-col h-full">
                         <div class="flex flex-col sm:flex-row justify-between gap-3 mb-6">
                             <div>
                                 <h3 class="font-bold text-slate-900">Total Orders Over Time</h3>
@@ -359,43 +395,43 @@
                             </div>
                         </div>
                         
-                        <div v-show="charts.orders_series?.length" class="h-60">
+                        <div v-show="charts.orders_series?.length" class="h-[280px]">
                             <canvas ref="dailyChartRef" />
                         </div>
-                        <div v-show="!charts.orders_series?.length" class="h-60 flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
+                        <div v-show="!charts.orders_series?.length" class="h-[280px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
                             <p class="text-sm font-medium text-slate-400">No order data for this period.</p>
                         </div>
                     </div>
-                </div>
 
-                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                    <div class="flex flex-col lg:flex-row justify-between gap-4 mb-6">
-                        <div>
-                            <h3 class="font-bold text-slate-900">Top Performers</h3>
-                            <p class="text-xs font-medium text-slate-500 mt-1">{{ charts.top_period_label }} · {{ topMetricDescription }}</p>
+                    <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm flex flex-col h-full">
+                        <div class="flex flex-col lg:flex-row justify-between gap-4 mb-6">
+                            <div class="min-w-0 pr-4">
+                                <h3 class="font-bold text-slate-900 truncate">Top Performers</h3>
+                                <p class="text-xs font-medium text-slate-500 mt-1 line-clamp-1 truncate" :title="charts.top_period_label + ' · ' + topMetricDescription">{{ charts.top_period_label }} · {{ topMetricDescription }}</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                <select v-if="canViewFinancials" v-model="topMetric" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 py-2 focus:ring-cyan-500">
+                                    <option value="revenue">By Revenue</option>
+                                    <option value="units">By Units Sold</option>
+                                    <option value="orders">By Total Orders</option>
+                                </select>
+                                <select v-else v-model="topMetric" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 py-2 focus:ring-cyan-500">
+                                    <option value="units">By Units Sold</option>
+                                    <option value="orders">By Total Orders</option>
+                                </select>
+                                <button type="button" class="rounded-xl bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 flex items-center gap-1 hover:bg-slate-200 transition-colors" @click="applyTop">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    Sort
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <input v-model="topFrom" type="date" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 focus:ring-cyan-500" />
-                            <span class="text-slate-400 text-xs">–</span>
-                            <input v-model="topTo" type="date" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 focus:ring-cyan-500" />
-                            <select v-if="canViewFinancials" v-model="topMetric" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 py-2 focus:ring-cyan-500">
-                                <option value="revenue">By Revenue</option>
-                                <option value="units">By Units Sold</option>
-                                <option value="orders">By Total Orders</option>
-                            </select>
-                            <select v-else v-model="topMetric" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 py-2 focus:ring-cyan-500">
-                                <option value="units">By Units Sold</option>
-                                <option value="orders">By Total Orders</option>
-                            </select>
-                            <button type="button" class="rounded-xl bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 hover:bg-slate-200 transition-colors" @click="applyTop">Apply</button>
+                        
+                        <div v-show="charts.top_products?.length" class="h-[280px]">
+                            <canvas ref="topProductsChartRef" />
                         </div>
-                    </div>
-                    
-                    <div v-show="charts.top_products?.length" class="h-72">
-                        <canvas ref="topProductsChartRef" />
-                    </div>
-                    <div v-show="!charts.top_products?.length" class="h-72 flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
-                        <p class="text-sm font-medium text-slate-400">No performance data available.</p>
+                        <div v-show="!charts.top_products?.length" class="h-[280px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
+                            <p class="text-sm font-medium text-slate-400">No performance data available.</p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -488,6 +524,7 @@ const props = defineProps({
     filters: { type: Object, required: true },
     stats: Object,
     recentOrders: Array,
+    dssWarning: { type: Object, default: null },
     inventory_alerts: { type: Object, default: () => ({ expiring_batches: [], low_stock_rows: [] }) },
     unreadAlerts: Array,
     charts: { type: Object, default: () => ({}) },
@@ -619,12 +656,11 @@ function applyTop() { navigate(dashboardQuery({ top_from: topFrom.value, top_to:
 // ----------------------------------------------------------------------
 // CHART LOGIC (WITH SETTIMEOUT & SUGGESTEDMAX SAFETIES)
 // ----------------------------------------------------------------------
-const revenueChartRef = ref(null);
 const dailyChartRef = ref(null);
 const topProductsChartRef = ref(null);
 const demandForecastRef = ref(null);
 
-let revenueChart, dailyChart, topProductsChart, demandForecastChart;
+let dailyChart, topProductsChart, demandForecastChart;
 
 function buildDemandChart() {
     const el = demandForecastRef.value;
@@ -662,32 +698,6 @@ function buildCharts() {
         setTimeout(() => {
             buildDemandChart();
 
-            // 1. Revenue Chart
-            const rev = props.charts?.revenue_series || [];
-            if (props.canViewFinancials && revenueChartRef.value && rev.length) {
-                if (revenueChart) {
-                    revenueChart.data.labels = rev.map((m) => m.label);
-                    revenueChart.data.datasets[0].data = rev.map((m) => m.revenue);
-                    revenueChart.update();
-                } else {
-                    revenueChart = new Chart(revenueChartRef.value, {
-                        type: 'line',
-                        data: {
-                            labels: rev.map((m) => m.label),
-                            datasets: [{ label: 'Revenue ₱', data: rev.map((m) => m.revenue), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5 }],
-                        },
-                        options: {
-                            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                            plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 10, cornerRadius: 8 } },
-                            scales: {
-                                // suggestedMax prevents the flatline bug if all revenue data happens to be 0
-                                y: { beginAtZero: true, suggestedMax: 1000, grid: { color: '#f1f5f9', drawBorder: false } }, 
-                                x: { grid: { display: false }, ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 8, font: { size: 10 } } },
-                            },
-                        },
-                    });
-                }
-            }
 
             // 2. Daily Orders Chart
             const daily = props.charts?.orders_series || [];
@@ -791,7 +801,6 @@ onMounted(() => {
 watch(() => [props.charts, props.canViewFinancials, props.analytics], buildCharts, { deep: true });
 
 onBeforeUnmount(() => {
-    if (revenueChart) revenueChart.destroy();
     if (dailyChart) dailyChart.destroy();
     if (topProductsChart) topProductsChart.destroy();
     if (demandForecastChart) demandForecastChart.destroy();

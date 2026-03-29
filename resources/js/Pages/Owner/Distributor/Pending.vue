@@ -1,6 +1,6 @@
 <template>
     <Head :title="status === 'rejected' ? 'Application Rejected' : 'Application Pending'" />
-    <MainLayout>
+    <OnboardingLayout :title="status === 'rejected' ? 'Application Rejected' : 'Application Under Review'">
         <div class="max-w-2xl mx-auto py-16 px-4">
             <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-10 text-center relative overflow-hidden">
                 <!-- Background Icon -->
@@ -80,23 +80,19 @@
                             Browse Products
                         </Link>
                         
-                        <form method="POST" action="/logout" class="w-full sm:w-auto">
-                            <input type="hidden" name="_token" :value="csrfToken">
-                            <button type="submit" class="w-full text-gray-500 hover:text-gray-900 font-bold py-3 px-4 transition">
-                                Sign Out
-                            </button>
-                        </form>
+                        <button @click="logout" class="w-full text-gray-500 hover:text-gray-900 font-bold py-3 px-4 transition">
+                            Sign Out
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </MainLayout>
+    </OnboardingLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue';
 import { Head, usePage, router, Link } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
 
 const props = defineProps({
     distributor: Object,
@@ -104,10 +100,8 @@ const props = defineProps({
 });
 
 const page   = usePage();
-const csrfToken = computed(() =>
-    page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.content
-);
 
+const logout = () => router.post('/logout');
 
 // Use Inertia router so it goes through the SPA stack and the middleware
 // can distinguish the allowed 'distributors.create' route

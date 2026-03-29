@@ -1,5 +1,5 @@
 <template>
-    <MainLayout>
+    <component :is="layoutComponent">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-8">
@@ -149,24 +149,24 @@
                         </form>
                     </div>
 
-                    <!-- Danger Zone -->
-                    <div class="bg-white rounded-xl shadow-md border-2 border-red-200 p-6">
-                        <h2 class="text-xl font-bold text-red-900 mb-2">Danger Zone</h2>
-                        <p class="text-sm text-gray-600 mb-4">Irreversible and destructive actions</p>
+                    <!-- Deactivate Account -->
+                    <div class="bg-white rounded-xl shadow-md border-2 border-amber-200 p-6">
+                        <h2 class="text-xl font-bold text-amber-900 mb-2">Deactivate Account</h2>
+                        <p class="text-sm text-gray-600 mb-4">Temporarily disable your account</p>
                         
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
-                                    <h3 class="font-semibold text-red-900">Delete Account</h3>
-                                    <p class="text-sm text-red-700 mt-1">
-                                        Permanently delete your account and all associated data. This action cannot be undone.
+                                    <h3 class="font-semibold text-amber-900">Deactivate My Account</h3>
+                                    <p class="text-sm text-amber-700 mt-1">
+                                        Your account will be deactivated immediately. After <strong>30 days</strong>, it will be permanently deleted. You can reactivate it anytime within those 30 days by logging back in.
                                     </p>
                                 </div>
                                 <button 
-                                    @click="showDeleteConfirmation = true"
-                                    class="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm"
+                                    @click="showDeactivateConfirmation = true"
+                                    class="ml-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-medium text-sm"
                                 >
-                                    Delete Account
+                                    Deactivate
                                 </button>
                             </div>
                         </div>
@@ -203,47 +203,48 @@
                                 </svg>
                                 Privacy Settings
                             </Link>
-                            <a 
-                                href="/"
+                            <!-- Role-based back link -->
+                            <Link 
+                                :href="user.role === 'courier' ? '/courier/dashboard' : user.role === 'distributor' || user.role === 'staff' ? '/owner/dashboard' : '/'"
                                 class="flex items-center text-gray-700 hover:text-blue-600 transition py-2"
                             >
                                 <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                 </svg>
-                                Back to Home
-                            </a>
+                                {{ user.role === 'courier' ? 'Back to Jobs' : user.role === 'distributor' || user.role === 'staff' ? 'Back to Dashboard' : 'Back to Home' }}
+                            </Link>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Delete Confirmation Modal -->
+        <!-- Deactivate Confirmation Modal -->
         <Teleport to="body">
-            <div v-if="showDeleteConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+            <div v-if="showDeactivateConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
                 <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.stop>
                     <div class="flex items-start mb-4">
-                        <div class="flex-shrink-0 bg-red-100 rounded-full p-3 mr-4">
-                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 bg-amber-100 rounded-full p-3 mr-4">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="text-lg font-bold text-gray-900">Delete Account</h3>
+                            <h3 class="text-lg font-bold text-gray-900">Deactivate Account</h3>
                             <p class="text-sm text-gray-600 mt-1">
-                                This will permanently delete your account and all associated data. This action cannot be undone.
+                                Your account will be deactivated and you'll be logged out. After <strong>30 days</strong> it will be permanently deleted. You can reactivate it within 30 days by logging back in.
                             </p>
                         </div>
                     </div>
 
-                    <form @submit.prevent="deleteAccount">
+                    <form @submit.prevent="deactivateAccount">
                         <div class="mb-4">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm with your password</label>
                             <input 
-                                v-model="deleteForm.password"
+                                v-model="deactivateForm.password"
                                 type="password"
                                 placeholder="Enter your password"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                 required
                             />
                         </div>
@@ -251,41 +252,51 @@
                         <div class="flex gap-3">
                             <button 
                                 type="button"
-                                @click="showDeleteConfirmation = false"
+                                @click="showDeactivateConfirmation = false"
                                 class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
-                                :disabled="deleting"
+                                :disabled="deactivating"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit"
-                                :disabled="deleting"
-                                class="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                :disabled="deactivating"
+                                class="flex-1 px-4 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                             >
-                                <svg v-if="deleting" class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                                <svg v-if="deactivating" class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                {{ deleting ? 'Deleting...' : 'Delete Forever' }}
+                                {{ deactivating ? 'Deactivating...' : 'Yes, Deactivate' }}
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
         </Teleport>
-    </MainLayout>
+    </component>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import CourierLayout from '@/Layouts/CourierLayout.vue';
+import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
 const props = defineProps({
     user: Object
 });
 
 const page = usePage();
+
+// Render the correct layout based on user role
+const layoutComponent = computed(() => {
+    const role = props.user?.role || page.props.auth?.user?.role;
+    if (role === 'courier') return CourierLayout;
+    if (role === 'distributor' || role === 'staff') return OwnerLayout;
+    return MainLayout;
+});
 
 const profileForm = reactive({
     name: props.user.name,
@@ -304,8 +315,10 @@ const deleteForm = reactive({
 
 const updatingProfile = ref(false);
 const updatingPassword = ref(false);
-const deleting = ref(false);
-const showDeleteConfirmation = ref(false);
+const deactivating = ref(false);
+const showDeactivateConfirmation = ref(false);
+
+const deactivateForm = reactive({ password: '' });
 
 onMounted(() => {
     console.log('[AccountSettings] Component mounted', {
@@ -368,22 +381,16 @@ const updatePassword = () => {
     });
 };
 
-const deleteAccount = () => {
-    console.log('[AccountSettings] Account deletion initiated');
-    deleting.value = true;
-
-    router.delete('/profile', {
-        data: deleteForm,
+const deactivateAccount = () => {
+    deactivating.value = true;
+    router.post('/profile/deactivate', deactivateForm, {
         preserveScroll: true,
-        onSuccess: () => {
-            console.log('[AccountSettings] Account deleted successfully');
-        },
         onError: (errors) => {
-            console.error('[AccountSettings] Account deletion failed', errors);
-            deleting.value = false;
+            console.error('[AccountSettings] Deactivation failed', errors);
+            deactivating.value = false;
         },
         onFinish: () => {
-            showDeleteConfirmation.value = false;
+            showDeactivateConfirmation.value = false;
         }
     });
 };

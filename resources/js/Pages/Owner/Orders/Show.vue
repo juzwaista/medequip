@@ -266,7 +266,12 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Carrier</p>
-                                <p class="font-semibold text-gray-900">{{ order.delivery.carrier ?? 'N/A' }}</p>
+                                <p class="font-semibold text-gray-900">
+                                    MedEquip Express
+                                    <span v-if="order.delivery.courier?.user?.name" class="text-gray-500 font-normal">
+                                        ({{ order.delivery.courier.user.name }})
+                                    </span>
+                                </p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">Status</p>
@@ -284,6 +289,75 @@
                                     />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- COD Remittance Panel (for delivered COD orders) -->
+                    <div v-if="order.payment_method === 'cod' && order.delivery && order.delivery.cod_collected_at"
+                        class="rounded-xl shadow-md p-6 mb-6 border-2"
+                        :class="order.delivery.cod_remitted_at
+                            ? 'bg-green-50 border-green-200'
+                            : order.delivery.cod_remittance_sent_at
+                                ? 'bg-blue-50 border-blue-300'
+                                : 'bg-amber-50 border-amber-300'">
+
+                        <!-- Header -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                :class="order.delivery.cod_remitted_at ? 'bg-green-100' : order.delivery.cod_remittance_sent_at ? 'bg-blue-100' : 'bg-amber-100'">
+                                <span class="text-xl">{{ order.delivery.cod_remitted_at ? '✅' : order.delivery.cod_remittance_sent_at ? '⏳' : '💵' }}</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-sm">Cash on Delivery — Remittance</h3>
+                                <p class="text-xs mt-0.5"
+                                    :class="order.delivery.cod_remitted_at ? 'text-green-700' : order.delivery.cod_remittance_sent_at ? 'text-blue-700' : 'text-amber-700'">
+                                    {{ order.delivery.cod_remitted_at
+                                        ? 'Remittance confirmed. Order complete.'
+                                        : order.delivery.cod_remittance_sent_at
+                                            ? 'Courier has marked cash as sent — awaiting your confirmation'
+                                            : 'Courier has collected cash from customer. Awaiting remittance.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">COD Amount</span>
+                                <span class="font-bold text-gray-900">₱{{ Number(order.delivery.cod_amount || order.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Cash Collected</span>
+                                <span class="text-gray-700">{{ order.delivery.cod_collected_at ? new Date(order.delivery.cod_collected_at).toLocaleString('en-PH') : '—' }}</span>
+                            </div>
+                            <div v-if="order.delivery.cod_remittance_sent_at" class="flex justify-between text-sm">
+                                <span class="text-gray-600">Remittance Sent</span>
+                                <span class="text-blue-700 font-semibold">{{ new Date(order.delivery.cod_remittance_sent_at).toLocaleString('en-PH') }}</span>
+                            </div>
+                            <div v-if="order.delivery.cod_remitted_at" class="flex justify-between text-sm">
+                                <span class="text-gray-600">Confirmed Received</span>
+                                <span class="text-green-700 font-semibold">{{ new Date(order.delivery.cod_remitted_at).toLocaleString('en-PH') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Courier payout notice -->
+                        <div v-if="!order.delivery.cod_remitted_at" class="bg-white/70 rounded-lg p-3 mb-4 text-xs text-gray-600 border border-gray-200">
+                            💡 The courier's shipping fee payout is <strong>held</strong> until you confirm receiving the cash. Confirming releases their payment.
+                        </div>
+
+                        <!-- Action: Confirm remittance -->
+                        <button v-if="order.delivery.cod_remittance_sent_at && !order.delivery.cod_remitted_at"
+                            @click="confirmRemittance"
+                            :disabled="confirmingRemittance"
+                            class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                            <svg v-if="confirmingRemittance" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            ✓ Confirm Cash Received — Release Courier Payout
+                        </button>
+
+                        <!-- Waiting state (courier hasn't sent yet) -->
+                        <div v-else-if="!order.delivery.cod_remittance_sent_at && !order.delivery.cod_remitted_at"
+                            class="w-full bg-amber-100 text-amber-800 font-semibold py-3 px-4 rounded-xl text-sm text-center border border-amber-200">
+                            ⏳ Waiting for courier to remit cash...
                         </div>
                     </div>
 
@@ -399,6 +473,16 @@ const updating = ref(false);
 const showWaybill = ref(false);
 const rxProcessing = ref(false);
 const rejectReason = ref('');
+const confirmingRemittance = ref(false);
+
+const confirmRemittance = () => {
+    if (!confirm('Confirm that you have received the cash from the courier?\n\nThis will release the courier\'s shipping fee payout and mark the order as complete.')) return;
+    confirmingRemittance.value = true;
+    router.post(`/owner/orders/${props.order.id}/confirm-cod-remittance`, {}, {
+        preserveScroll: true,
+        onFinish: () => { confirmingRemittance.value = false; },
+    });
+};
 
 const approvePrescription = () => {
     if (!confirm('Approve this prescription and allow the customer to pay for this order?')) return;

@@ -33,8 +33,16 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $distributorStatus = null;
+        $suspendedUntil = null;
+        $suspensionReason = null;
+        $warningReason = null;
+        $warningMessage = null;
         if ($user && $user->role === 'distributor') {
             $distributorStatus = $user->distributor?->status;
+            $suspendedUntil = $user->distributor?->suspended_until?->timestamp;
+            $suspensionReason = $user->distributor?->suspension_reason;
+            $warningReason = $user->distributor?->warning_reason;
+            $warningMessage = $user->distributor?->warning_message;
         }
 
         return array_merge(parent::share($request), [
@@ -44,9 +52,14 @@ class HandleInertiaRequests extends Middleware
                     'name'               => $user->name,
                     'email'              => $user->email,
                     'role'               => $user->role,
-                    'distributor_status' => $distributorStatus, // null | pending | approved | rejected
+                    'distributor_status' => $distributorStatus,
+                    'suspended_until'    => $suspendedUntil,
+                    'suspension_reason'  => $suspensionReason,
+                    'warning_reason'     => $warningReason,
+                    'warning_message'    => $warningMessage,
                 ] : null,
             ],
+            'needsTermsAcceptance' => $user ? !$user->hasAcceptedTerms() : false,
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error'   => fn() => $request->session()->get('error'),

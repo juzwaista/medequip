@@ -6,7 +6,7 @@
                     <h1 class="text-3xl font-bold text-gray-900">My Wallet</h1>
                     <p class="text-gray-600 mt-1">Manage your funds and transaction history</p>
                     <p v-if="page.props.auth?.user?.role === 'distributor'" class="text-sm text-gray-500 mt-2 max-w-xl">
-                        Shop sales credit here when payments are verified (net after fees). Older entries may show as “Escrow payout” if they were released on delivery before wallet-on-verify.
+                        Shop sales credit here when payments are verified (net after fees). Older entries may show as “Completed Order Payout” if they were released on delivery before wallet-on-verify.
                     </p>
                 </div>
             </div>
@@ -226,7 +226,7 @@ const formatType = (type) => {
     const map = {
         'topup': 'Wallet Top-up',
         'escrow_verified': 'Sale (payment verified)',
-        'escrow_release': 'Escrow payout (on delivery)',
+        'escrow_release': 'Completed Order Payout',
         'escrow_refund_clawback': 'Sale reversal (refund)',
         'withdrawal': 'Withdrawal',
         'payment': 'Payment Sent',

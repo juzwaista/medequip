@@ -91,33 +91,49 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's account.
+     * Deactivate the user's account.
+     * The account is permanently deleted after 30 days of inactivity by the scheduler.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function deactivate(Request $request): RedirectResponse
     {
-        $request->validateWithBag('userDeletion', [
+        $request->validate([
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
 
-        Log::warning('[ProfileController] Account deletion initiated', [
-            'user_id' => $user->id,
+        Log::warning('[ProfileController] Account deactivation initiated', [
+            'user_id'    => $user->id,
             'user_email' => $user->email,
-            'user_type' => $user->user_type
+            'user_type'  => $user->user_type,
         ]);
 
+        $user->update(['deactivated_at' => now()]);
+
         Auth::logout();
-
-        $user->delete(); // soft-deletes when SoftDeletes is enabled
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        Log::info('[ProfileController] Account archived (soft deleted)', [
-            'archived_user_id' => $user->id
+        Log::info('[ProfileController] Account deactivated. Will be permanently deleted in 30 days.', [
+            'user_id' => $user->id,
         ]);
 
-        return Redirect::to('/')->with('success', 'Your account has been archived.');
+        return Redirect::to('/')
+            ->with('success', 'Your account has been deactivated. It will be permanently deleted after 30 days unless you log back in to reactivate it.');
+    }
+
+    /**
+     * Reactivate a deactivated account on successful login.
+     * Called from the LoginController or middleware.
+     */
+    public function reactivate(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->deactivated_at) {
+            $user->update(['deactivated_at' => null]);
+            Log::info('[ProfileController] Account reactivated', ['user_id' => $user->id]);
+        }
+        return Redirect::back()->with('success', 'Your account has been reactivated.');
     }
 }
+

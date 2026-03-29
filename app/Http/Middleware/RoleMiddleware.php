@@ -60,7 +60,7 @@ class RoleMiddleware
         }
 
         if (!in_array($user->role, $allowedRoles)) {
-            abort(403, 'Unauthorized access.');
+            return redirect('/')->with('error', 'You do not have permission to access that page.');
         }
 
         return $next($request);

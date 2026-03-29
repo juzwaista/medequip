@@ -268,6 +268,49 @@ class DashboardController extends Controller
 
         $newestOrderId = (int) (Order::where('distributor_id', $distributor->id)->max('id') ?? 0);
 
+        // --- Automated DSS Risk Assessment (On-the-fly) ---
+        $dssWarning = null;
+        $riskScore = 0;
+        $dssReasons = [];
+        $now = now();
+        $thirtyDaysAgo = now()->copy()->subDays(30);
+
+        // Metric 1: Cancellation Rate
+        $recentOrdersCount = Order::where('distributor_id', $distributor->id)->where('created_at', '>=', $thirtyDaysAgo)->count();
+        if ($recentOrdersCount > 0) {
+            $cancelledCount = Order::where('distributor_id', $distributor->id)->where('created_at', '>=', $thirtyDaysAgo)->whereIn('status', ['cancelled', 'rejected'])->count();
+            if (($cancelledCount / $recentOrdersCount) > 0.15) {
+                $dssReasons[] = "High Cancellation Rate (>15% in last 30 days)";
+                $riskScore += 2;
+            }
+        }
+        
+        // Metric 2: Stale Pending Orders
+        $stalePendingCount = Order::where('distributor_id', $distributor->id)->where('status', 'pending')->where('created_at', '<', $now->copy()->subHours(48))->count();
+        if ($stalePendingCount > 0) {
+            $dssReasons[] = "{$stalePendingCount} order(s) pending approval for over 48 hours";
+            $riskScore += ($stalePendingCount >= 5) ? 3 : 1;
+        }
+
+        // Metric 3: Zero Inventory for Active Products
+        $activeProductsCount = Product::where('distributor_id', $distributor->id)->where('is_active', true)->count();
+        if ($activeProductsCount > 0) {
+            $totalInventory = \App\Models\Inventory::whereHas('product', function($q) use ($distributor) {
+                $q->where('distributor_id', $distributor->id)->where('is_active', true);
+            })->sum('quantity');
+            if ($totalInventory == 0) {
+                $dssReasons[] = "All active products are completely out of stock";
+                $riskScore += 1;
+            }
+        }
+
+        if ($riskScore > 0) {
+            $dssWarning = [
+                'reasons' => $dssReasons,
+                'level' => $riskScore >= 4 ? 'Critical' : ($riskScore >= 2 ? 'High' : 'Medium')
+            ];
+        }
+
         return Inertia::render('Owner/Dashboard', [
             'distributor' => $distributor,
             'canViewFinancials' => $canViewFinancials,
@@ -323,6 +366,7 @@ class DashboardController extends Controller
             'pulse_baseline' => [
                 'newest_order_id' => $newestOrderId,
             ],
+            'dssWarning' => $dssWarning,
             'recentOrders' => $recentOrders,
             'inventory_alerts' => [
                 'expiring_batches' => $expiryAlerts,

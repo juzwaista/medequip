@@ -15,12 +15,13 @@ class DashboardController extends Controller
         $courier = auth()->user()->courier;
         $user    = auth()->user();
 
-        // Dispatch Pool: Deliveries that are pending and have no courier assigned yet
+        // Dispatch Pool: Deliveries that are scheduled (packed, awaiting courier) with no courier assigned yet
         $availableDeliveries = Delivery::with(['order.distributor', 'order.items.product', 'order.customer'])
             ->whereNull('courier_id')
-            ->where('status', 'pending')
+            ->where('status', 'scheduled')
             ->latest()
             ->get();
+
 
         // Active Deliveries: assigned to this courier, not yet completed
         $myDeliveries = Delivery::with(['order.distributor', 'order.customer', 'order.items.product'])

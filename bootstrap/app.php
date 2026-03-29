@@ -21,11 +21,20 @@ return Application::configure(basePath: dirname(__DIR__))
         // Exempt PayMongo webhook from CSRF — PayMongo POSTs without a session token
         $middleware->validateCsrfTokens(except: [
             'payments/webhook',
+            'courier/deliveries/*/accept',
+            'courier/deliveries/*/status',
+            'courier/scan',
+            'cart/*',
+            'checkout',
+            'logout',
         ]);
 
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+    })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $schedule->command('accounts:purge-deactivated')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

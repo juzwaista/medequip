@@ -1,5 +1,6 @@
 <template>
     <Head title="Create Account · MedEquip" />
+    <TermsModal :show="showTermsModal" :role="form.role" @close="showTermsModal = false" />
     <div class="min-h-screen flex">
         <!-- Left: Brand Panel (hidden on mobile) -->
         <div class="hidden lg:flex lg:w-[40%] xl:w-[42%] bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 flex-col justify-between p-10 relative overflow-hidden flex-shrink-0">
@@ -171,7 +172,26 @@
                             </div>
                         </div>
 
-                        <button type="submit" :disabled="form.processing"
+                        <!-- Terms & Conditions -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" v-model="form.terms_accepted" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0">
+                                <div>
+                                    <span class="text-sm text-gray-700">
+                                        I agree to the
+                                        <button type="button" @click="showTermsModal = true" class="text-blue-600 hover:underline font-semibold">Terms and Conditions</button>
+                                        of MedEquip, including the
+                                        <span v-if="form.role === 'customer'" class="font-semibold text-gray-800">Customer Terms</span>
+                                        <span v-else-if="form.role === 'distributor'" class="font-semibold text-gray-800">Distributor Terms</span>
+                                        <span v-else class="font-semibold text-gray-800">Platform Terms</span>.
+                                    </span>
+                                    <p class="text-xs text-gray-400 mt-0.5">You must read and accept these terms to create an account.</p>
+                                </div>
+                            </label>
+                            <p v-if="form.errors.terms_accepted" class="text-red-600 text-xs mt-2 ml-7">{{ form.errors.terms_accepted }}</p>
+                        </div>
+
+                        <button type="submit" :disabled="form.processing || !form.terms_accepted"
                             class="w-full bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 transition-all font-bold text-sm shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                             <svg v-if="form.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                             {{ form.processing ? 'Creating account…' : 'Create Account' }}
@@ -191,6 +211,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import TermsModal from '@/Components/TermsModal.vue';
 
 const props = defineProps({
     cities: Object,
@@ -198,6 +219,7 @@ const props = defineProps({
 });
 
 const showPassword = ref(false);
+const showTermsModal = ref(false);
 const selectedBarangay = ref('');
 const manualBarangay = ref('');
 const zipCode = ref('');
@@ -212,6 +234,7 @@ const form = useForm({
     address_line: '',
     city: '',
     barangay: '',
+    terms_accepted: false,
 });
 
 const sanitizeContactNumber = (e) => {

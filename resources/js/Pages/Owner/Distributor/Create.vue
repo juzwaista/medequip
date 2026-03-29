@@ -1,161 +1,248 @@
 <template>
-    <MainLayout>
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Become a Distributor</h1>
-                <p class="text-gray-600 mt-2">Register your business to start selling on MedEquip</p>
+    <OnboardingLayout title="Distributor Application — MedEquip">
+        <div class="w-full max-w-2xl">
+
+            <!-- Step indicator -->
+            <div class="flex items-center justify-center gap-0 mb-8">
+                <template v-for="(s, i) in steps" :key="i">
+                    <div class="flex flex-col items-center">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2"
+                            :class="currentStep > i
+                                ? 'bg-blue-600 border-blue-600 text-white'
+                                : currentStep === i
+                                    ? 'bg-white border-blue-600 text-blue-600'
+                                    : 'bg-white border-gray-200 text-gray-400'">
+                            <svg v-if="currentStep > i" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span v-else>{{ i + 1 }}</span>
+                        </div>
+                        <p class="text-[10px] font-semibold mt-1 text-center max-w-[60px] leading-tight"
+                            :class="currentStep === i ? 'text-blue-600' : 'text-gray-400'">
+                            {{ s.label }}
+                        </p>
+                    </div>
+                    <div v-if="i < steps.length - 1"
+                        class="flex-1 h-0.5 mx-1 mb-5 transition-all duration-300"
+                        :class="currentStep > i ? 'bg-blue-600' : 'bg-gray-200'">
+                    </div>
+                </template>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <form @submit.prevent="submit" class="space-y-6">
-                    <!-- Business Info -->
-                    <div>
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b">Business Information</h2>
-                        
-                        <div class="grid grid-cols-1 gap-6">
+            <!-- Flash errors -->
+            <div v-if="Object.keys(form.errors).length" class="mb-5 bg-red-50 border border-red-200 rounded-xl p-4">
+                <p class="text-sm font-semibold text-red-700 mb-1">Please fix the following:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <li v-for="(err, key) in form.errors" :key="key" class="text-sm text-red-600">{{ err }}</li>
+                </ul>
+            </div>
+
+            <!-- Card -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+
+                <!-- ========= STEP 1: Welcome ========= -->
+                <div v-if="currentStep === 0" class="p-8">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-900 mb-2">Become a MedEquip Distributor</h1>
+                        <p class="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
+                            Join our network of trusted medical equipment distributors. The process takes about 5 minutes and requires a few business documents.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                        <div v-for="item in requirements" :key="item.title" class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+                            <div class="text-2xl mb-2">{{ item.icon }}</div>
+                            <p class="text-xs font-bold text-gray-700">{{ item.title }}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5">{{ item.desc }}</p>
+                        </div>
+                    </div>
+
+                    <button @click="currentStep = 1"
+                        class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md">
+                        Get Started →
+                    </button>
+                </div>
+
+                <!-- ========= STEP 2: Business Info ========= -->
+                <div v-else-if="currentStep === 1" class="p-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-1">Business Information</h2>
+                    <p class="text-sm text-gray-500 mb-6">Tell us about your company.</p>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company / Business Name <span class="text-red-500">*</span></label>
+                            <input v-model="form.company_name" type="text" placeholder="e.g. Acme Medical Supplies Co."
+                                class="w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                :class="form.errors.company_name ? 'border-red-300 bg-red-50' : 'border-gray-300'"/>
+                            <p v-if="form.errors.company_name" class="text-red-500 text-xs mt-1">{{ form.errors.company_name }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Address <span class="text-red-500">*</span></label>
+                            <textarea v-model="form.address" rows="3" placeholder="Unit, Street, Barangay, City, Province"
+                                class="w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                                :class="form.errors.address ? 'border-red-300 bg-red-50' : 'border-gray-300'"></textarea>
+                            <p v-if="form.errors.address" class="text-red-500 text-xs mt-1">{{ form.errors.address }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Company Name *</label>
-                                <input 
-                                    v-model="form.company_name" 
-                                    type="text" 
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                <p v-if="form.errors.company_name" class="text-red-500 text-sm mt-1">{{ form.errors.company_name }}</p>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contact Number <span class="text-red-500">*</span></label>
+                                <input v-model="form.contact_number" @input="sanitizeContactNumber"
+                                    type="tel" inputmode="numeric" maxlength="11" placeholder="09XXXXXXXXX"
+                                    class="w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    :class="form.errors.contact_number ? 'border-red-300 bg-red-50' : 'border-gray-300'"/>
+                                <p v-if="form.errors.contact_number" class="text-red-500 text-xs mt-1">{{ form.errors.contact_number }}</p>
                             </div>
-
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Business Address *</label>
-                                <textarea 
-                                    v-model="form.address" 
-                                    rows="3"
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                ></textarea>
-                                <p v-if="form.errors.address" class="text-red-500 text-sm mt-1">{{ form.errors.address }}</p>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Number *</label>
-                                    <input 
-                                        v-model="form.contact_number" 
-                                        @input="sanitizeContactNumber"
-                                        type="tel" 
-                                        required
-                                        inputmode="numeric"
-                                        pattern="09[0-9]{9}"
-                                        maxlength="11"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    <p v-if="form.errors.contact_number" class="text-red-500 text-sm mt-1">{{ form.errors.contact_number }}</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Business Email *</label>
-                                    <input 
-                                        v-model="form.email" 
-                                        type="email" 
-                                        required
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    <p v-if="form.errors.email" class="text-red-500 text-sm mt-1">{{ form.errors.email }}</p>
-                                </div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Email <span class="text-red-500">*</span></label>
+                                <input v-model="form.email" type="email" placeholder="contact@yourbusiness.com"
+                                    class="w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    :class="form.errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'"/>
+                                <p v-if="form.errors.email" class="text-red-500 text-xs mt-1">{{ form.errors.email }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Documents -->
-                    <div>
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b">Standard Business Verification</h2>
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">DTI Certificate or SEC Registration *</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.dti_sec = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" required class="w-full" />
-                                </div>
-                                <p v-if="form.errors.dti_sec" class="text-red-500 text-sm mt-1">{{ form.errors.dti_sec }}</p>
-                            </div>
+                    <div class="flex gap-3 mt-8">
+                        <button @click="currentStep = 0" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm">← Back</button>
+                        <button @click="validateStep1" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm">Continue →</button>
+                    </div>
+                </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Business Permit *</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.business_license = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" required class="w-full" />
-                                </div>
-                                <p v-if="form.errors.business_license" class="text-red-500 text-sm mt-1">{{ form.errors.business_license }}</p>
-                            </div>
+                <!-- ========= STEP 3: Documents ========= -->
+                <div v-else-if="currentStep === 2" class="p-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-1">Upload Documents</h2>
+                    <p class="text-sm text-gray-500 mb-6">PDF, JPG, or PNG — max 5 MB per file.</p>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">BIR Form (e.g. 2303) *</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.bir_form = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" required class="w-full" />
+                    <div class="space-y-4">
+                        <template v-for="doc in docFields" :key="doc.key">
+                            <div class="rounded-xl border p-4 transition"
+                                :class="form[doc.key] ? 'border-blue-200 bg-blue-50/50' : (form.errors[doc.key] ? 'border-red-200 bg-red-50' : 'border-gray-200 hover:border-gray-300')">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <label :for="doc.key" class="block text-sm font-semibold text-gray-800 mb-0.5 cursor-pointer">
+                                            {{ doc.label }}
+                                            <span v-if="!doc.optional" class="text-red-500"> *</span>
+                                            <span v-else class="text-gray-400 font-normal"> (optional)</span>
+                                        </label>
+                                        <p v-if="doc.hint" class="text-xs text-gray-500">{{ doc.hint }}</p>
+                                        <p v-if="form.errors[doc.key]" class="text-xs text-red-600 mt-1">{{ form.errors[doc.key] }}</p>
+                                    </div>
+                                    <div class="flex-shrink-0 flex items-center gap-2">
+                                        <span v-if="form[doc.key]" class="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                                            ✓ {{ form[doc.key].name }}
+                                        </span>
+                                        <label :for="doc.key" class="cursor-pointer bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition flex-shrink-0">
+                                            {{ form[doc.key] ? 'Change' : 'Upload' }}
+                                        </label>
+                                        <input :id="doc.key" type="file" accept=".pdf,.jpg,.jpeg,.png"
+                                            @change="e => form[doc.key] = e.target.files[0]"
+                                            class="sr-only"/>
+                                    </div>
                                 </div>
-                                <p v-if="form.errors.bir_form" class="text-red-500 text-sm mt-1">{{ form.errors.bir_form }}</p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="flex gap-3 mt-8">
+                        <button @click="currentStep = 1" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm">← Back</button>
+                        <button @click="validateStep2" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm">Review & Submit →</button>
+                    </div>
+                </div>
+
+                <!-- ========= STEP 4: Review ========= -->
+                <div v-else-if="currentStep === 3" class="p-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-1">Review your Application</h2>
+                    <p class="text-sm text-gray-500 mb-6">Everything look good? You can go back to make changes.</p>
+
+                    <div class="space-y-3 mb-6">
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Business Info</p>
+                            <div class="space-y-1.5 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-500">Company</span><span class="font-semibold text-gray-800">{{ form.company_name }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Address</span><span class="font-semibold text-gray-800 text-right max-w-[200px]">{{ form.address }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Phone</span><span class="font-semibold text-gray-800">{{ form.contact_number }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Email</span><span class="font-semibold text-gray-800">{{ form.email }}</span></div>
                             </div>
                         </div>
-
-                        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4 pb-2 border-b">Medical Regulatory Compliance</h2>
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">FDA License to Operate (LTO) *</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.fda_license = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" required class="w-full" />
-                                </div>
-                                <p v-if="form.errors.fda_license" class="text-red-500 text-sm mt-1">{{ form.errors.fda_license }}</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Pharmacist / Qualified Person PRC ID *</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.prc_id = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" required class="w-full" />
-                                </div>
-                                <p v-if="form.errors.prc_id" class="text-red-500 text-sm mt-1">{{ form.errors.prc_id }}</p>
-                            </div>
-                        </div>
-
-                        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4 pb-2 border-b">Personal Verification</h2>
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Primary Valid Government ID *</label>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.valid_id = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" required class="w-full" />
-                                    <p class="text-xs text-gray-500 mt-2">Driver's License, Passport, UMID, etc.</p>
-                                </div>
-                                <p v-if="form.errors.valid_id" class="text-red-500 text-sm mt-1">{{ form.errors.valid_id }}</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Authorization Letter (Optional)</label>
-                                <p class="text-xs text-gray-500 mb-2">Required ONLY if the person registering is not the business owner. Must be signed by the owner.</p>
-                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                                    <input type="file" @change="e => form.authorization_letter = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png" class="w-full" />
-                                </div>
-                                <p v-if="form.errors.authorization_letter" class="text-red-500 text-sm mt-1">{{ form.errors.authorization_letter }}</p>
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Documents</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <template v-for="doc in docFields" :key="doc.key">
+                                    <div v-if="form[doc.key] || !doc.optional" class="flex items-center gap-2 text-sm">
+                                        <span :class="form[doc.key] ? 'text-green-500' : 'text-red-400'">
+                                            {{ form[doc.key] ? '✓' : '✗' }}
+                                        </span>
+                                        <span :class="form[doc.key] ? 'text-gray-700' : 'text-red-500 font-medium'">{{ doc.short }}</span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
 
-                    <div class="pt-4">
-                        <button 
-                            type="submit" 
-                            :disabled="form.processing"
-                            class="w-full bg-blue-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {{ form.processing ? 'Submitting Application...' : 'Submit Application' }}
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
+                        <span class="text-amber-500 text-lg flex-shrink-0">⚠️</span>
+                        <p class="text-xs text-amber-700 leading-relaxed">By submitting, you confirm that all information is accurate and all documents are authentic. False submissions may result in permanent account termination.</p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button @click="currentStep = 2" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm">← Back</button>
+                        <button @click="submit" :disabled="form.processing"
+                            class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            <svg v-if="form.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            {{ form.processing ? 'Submitting...' : '🚀 Submit Application' }}
                         </button>
                     </div>
-                </form>
+                </div>
+
             </div>
+
+            <!-- Support note -->
+            <p class="text-center text-xs text-gray-400 mt-5">
+                Need help? Email us at <a href="mailto:support@medequip.ph" class="text-blue-500 hover:underline">support@medequip.ph</a>
+            </p>
         </div>
-    </MainLayout>
+    </OnboardingLayout>
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import MainLayout from '@/Layouts/MainLayout.vue';
+import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
+
+const currentStep = ref(0);
+
+const steps = [
+    { label: 'Welcome' },
+    { label: 'Business Info' },
+    { label: 'Documents' },
+    { label: 'Review' },
+];
+
+const requirements = [
+    { icon: '📋', title: 'Business Documents', desc: 'DTI/SEC, Business Permit, BIR Form' },
+    { icon: '🏥', title: 'FDA Compliance', desc: 'License to Operate (LTO) & PRC ID' },
+    { icon: '🪪', title: 'Personal ID', desc: 'Valid government-issued ID' },
+];
+
+const docFields = [
+    { key: 'dti_sec',              label: 'DTI Certificate or SEC Registration', short: 'DTI/SEC',         hint: null,             optional: false },
+    { key: 'business_license',     label: 'Business Permit',                      short: 'Business Permit', hint: null,             optional: false },
+    { key: 'bir_form',             label: 'BIR Form (e.g. 2303)',                 short: 'BIR Form',        hint: null,             optional: false },
+    { key: 'fda_license',          label: 'FDA License to Operate (LTO)',         short: 'FDA LTO',         hint: null,             optional: false },
+    { key: 'prc_id',               label: 'Pharmacist / Qualified Person PRC ID', short: 'PRC ID',          hint: null,             optional: false },
+    { key: 'valid_id',             label: 'Primary Valid Government ID',           short: 'Gov\'t ID',       hint: 'Driver\'s License, Passport, UMID, etc.', optional: false },
+    { key: 'authorization_letter', label: 'Authorization Letter',                  short: 'Auth Letter',     hint: 'Required only if you are not the business owner.', optional: true },
+];
 
 const form = useForm({
     company_name: '',
@@ -175,9 +262,40 @@ const sanitizeContactNumber = () => {
     form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
 };
 
+const validateStep1 = () => {
+    if (!form.company_name.trim()) { form.errors.company_name = 'Company name is required.'; return; }
+    if (!form.address.trim())      { form.errors.address = 'Address is required.'; return; }
+    if (!/^09[0-9]{9}$/.test(form.contact_number)) { form.errors.contact_number = 'Must be 11 digits starting with 09.'; return; }
+    if (!form.email.trim())        { form.errors.email = 'Email is required.'; return; }
+    // Clear manual errors
+    delete form.errors.company_name;
+    delete form.errors.address;
+    delete form.errors.contact_number;
+    delete form.errors.email;
+    currentStep.value = 2;
+};
+
+const validateStep2 = () => {
+    const required = docFields.filter(d => !d.optional);
+    const missing = required.find(d => !form[d.key]);
+    if (missing) {
+        form.errors[missing.key] = `${missing.label} is required.`;
+        return;
+    }
+    currentStep.value = 3;
+};
+
 const submit = () => {
     form.post('/owner/distributor/store', {
         forceFormData: true,
+        onError: () => {
+            // If there are validation errors from server, jump to the relevant step
+            const step1Keys = ['company_name', 'address', 'contact_number', 'email'];
+            const hasStep1Err = step1Keys.some(k => form.errors[k]);
+            if (hasStep1Err) { currentStep.value = 1; return; }
+            const hasDocErr = docFields.some(d => form.errors[d.key]);
+            if (hasDocErr) { currentStep.value = 2; }
+        },
     });
 };
 </script>

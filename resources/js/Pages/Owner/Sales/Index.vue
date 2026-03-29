@@ -45,6 +45,20 @@
                     <p class="text-gray-400 text-xs mt-1">Delivered orders</p>
                 </div>
 
+                <!-- Pending Payment Release -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-orange-500 text-sm font-medium">Pending Release</p>
+                        <div class="bg-orange-50 rounded-lg p-2">
+                            <svg class="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-black text-gray-900">₱{{ Number(stats.escrow_held).toLocaleString() }}</p>
+                    <p class="text-gray-400 text-xs mt-1">Pending delivery completion</p>
+                </div>
+
                 <!-- Avg Order Value -->
                 <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
                     <div class="flex items-center justify-between mb-3">
@@ -130,6 +144,7 @@
                         <thead>
                             <tr class="bg-gray-50 border-b border-gray-200">
                                 <th class="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Order</th>
+                                <th class="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Invoice #</th>
                                 <th class="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer</th>
                                 <th class="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Products</th>
                                 <th class="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Total</th>
@@ -147,53 +162,112 @@
                                     No orders found
                                 </td>
                             </tr>
-                            <tr v-for="order in orders.data" :key="order.id" class="hover:bg-gray-50 transition group">
-                                <td class="px-6 py-4">
-                                    <Link :href="`/owner/orders/${order.id}`"
-                                        class="font-mono text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">
-                                        {{ order.order_number }}
-                                    </Link>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="font-semibold text-gray-900 text-sm">{{ order.customer?.name }}</p>
-                                    <p class="text-xs text-gray-500">{{ order.customer?.email }}</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-sm text-gray-700 max-w-xs truncate">
-                                        {{ order.items?.map(i => i.product?.name).join(', ') }}
-                                    </p>
-                                    <p class="text-xs text-gray-400">{{ order.items?.length }} item(s)</p>
-                                </td>
-                                <td class="px-6 py-4 text-right font-bold text-gray-900">
-                                    ₱{{ Number(order.total_amount).toLocaleString() }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span :class="{
-                                        'bg-yellow-100 text-yellow-800':  order.status === 'pending',
-                                        'bg-blue-100 text-blue-800':      order.status === 'approved',
-                                        'bg-purple-100 text-purple-800':  order.status === 'packed',
-                                        'bg-indigo-100 text-indigo-800':  order.status === 'shipped',
-                                        'bg-green-100 text-green-800':    order.status === 'delivered',
-                                        'bg-red-100 text-red-800':        ['cancelled','rejected'].includes(order.status),
-                                    }" class="px-3 py-1 rounded-full text-xs font-bold capitalize">
-                                        {{ order.status }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span v-if="order.invoice" :class="{
-                                        'bg-yellow-100 text-yellow-800': order.invoice.status === 'unpaid',
-                                        'bg-green-100 text-green-800':  order.invoice.status === 'paid',
-                                        'bg-blue-100 text-blue-800':    order.invoice.status === 'partial',
-                                        'bg-red-100 text-red-800':      order.invoice.status === 'overdue',
-                                    }" class="px-3 py-1 rounded-full text-xs font-bold capitalize">
-                                        {{ order.invoice.status }}
-                                    </span>
-                                    <span v-else class="text-xs text-gray-400">—</span>
-                                </td>
-                                <td class="px-6 py-4 text-center text-xs text-gray-500">
-                                    {{ new Date(order.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) }}
-                                </td>
-                            </tr>
+                            <template v-for="order in orders.data" :key="order.id">
+                                <tr class="hover:bg-gray-50 transition group cursor-pointer" @click="toggleRow(order.id)">
+                                    <td class="px-6 py-4 relative">
+                                        <div class="flex items-center gap-2">
+                                            <svg :class="['h-4 w-4 text-gray-400 transition-transform', expandedRows.includes(order.id) ? 'rotate-90 text-blue-500' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                            <Link :href="`/owner/orders/${order.id}`" @click.stop
+                                                class="font-mono text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                                                {{ order.order_number }}
+                                            </Link>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 font-mono text-sm text-gray-600">
+                                        {{ order.invoice?.invoice_number || '—' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-semibold text-gray-900 text-sm">{{ order.customer?.name }}</p>
+                                        <p class="text-xs text-gray-500">{{ order.customer?.email }}</p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-sm text-gray-700 max-w-xs truncate">
+                                            {{ order.items?.map(i => i.product?.name).join(', ') }}
+                                        </p>
+                                        <p class="text-xs text-gray-400">{{ order.items?.length }} item(s)</p>
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-bold text-gray-900">
+                                        ₱{{ Number(order.total_amount).toLocaleString() }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span :class="{
+                                            'bg-yellow-100 text-yellow-800':  order.status === 'pending',
+                                            'bg-blue-100 text-blue-800':      order.status === 'approved',
+                                            'bg-purple-100 text-purple-800':  order.status === 'packed',
+                                            'bg-indigo-100 text-indigo-800':  order.status === 'shipped',
+                                            'bg-green-100 text-green-800':    order.status === 'delivered',
+                                            'bg-red-100 text-red-800':        ['cancelled','rejected'].includes(order.status),
+                                        }" class="px-3 py-1 rounded-full text-xs font-bold capitalize">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span v-if="order.invoice" :class="{
+                                            'bg-yellow-100 text-yellow-800': order.invoice.status === 'unpaid',
+                                            'bg-green-100 text-green-800':  order.invoice.status === 'paid',
+                                            'bg-blue-100 text-blue-800':    order.invoice.status === 'partial',
+                                            'bg-red-100 text-red-800':      order.invoice.status === 'overdue',
+                                        }" class="px-3 py-1 rounded-full text-xs font-bold capitalize">
+                                            {{ order.invoice.status }}
+                                        </span>
+                                        <span v-else class="text-xs text-gray-400">—</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-xs text-gray-500">
+                                        {{ new Date(order.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+                                    </td>
+                                </tr>
+
+                                <!-- Expanded Row Details -->
+                                <tr v-if="expandedRows.includes(order.id)" class="bg-gray-50 border-b border-gray-100 shadow-inner block w-full table-row">
+                                    <td colspan="8" class="px-8 py-5">
+                                        <div class="grid md:grid-cols-2 gap-8">
+                                            <!-- Invoice Breakdown -->
+                                            <div>
+                                                <h4 class="text-sm font-bold text-gray-700 uppercase tracking-widest mb-3 border-b pb-2">Invoice Breakdown</h4>
+                                                <div class="space-y-2 text-sm text-gray-600">
+                                                    <div class="flex justify-between">
+                                                        <span>Items Subtotal</span>
+                                                        <span class="font-medium text-gray-900">₱{{ (order.total_amount - (order.shipping_fee || 0)).toLocaleString() }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Shipping Fee</span>
+                                                        <span class="font-medium text-gray-900">₱{{ Number(order.shipping_fee || 0).toLocaleString() }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between pt-2 border-t">
+                                                        <span class="font-semibold text-gray-800">Gross Total</span>
+                                                        <span class="font-bold text-gray-900">₱{{ Number(order.total_amount).toLocaleString() }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Payout Details (if any valid payments) -->
+                                            <div v-if="order.invoice?.payments?.length > 0">
+                                                <h4 class="text-sm font-bold text-gray-700 uppercase tracking-widest mb-3 border-b pb-2">Platform Settlement</h4>
+                                                <div v-for="payment in order.invoice.payments" :key="payment.id" class="space-y-2 text-sm text-gray-600 mb-4 bg-white p-3 rounded shadow-sm border border-gray-100">
+                                                    <div class="flex justify-between">
+                                                        <span>Status</span>
+                                                        <span :class="{'text-emerald-600 font-bold': payment.status === 'verified', 'text-yellow-600': payment.status === 'pending'}" class="capitalize">{{ payment.status }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between">
+                                                        <span>Platform Fee</span>
+                                                        <span class="font-medium text-red-600">- ₱{{ Number(payment.platform_fee_amount || 0).toLocaleString() }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between pt-2 border-t font-semibold">
+                                                        <span class="text-emerald-700">Net Seller Payout</span>
+                                                        <span class="font-bold text-emerald-700">₱{{ Number(payment.net_seller_amount || 0).toLocaleString() }}</span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-400 mt-2 text-right italic font-normal">If COD, you are keeping cash, and the platform fee is a recorded debt.</p>
+                                                </div>
+                                            </div>
+                                            <div v-else class="flex items-center text-sm text-gray-500 bg-white p-3 rounded border border-gray-100">
+                                                No payments recorded against this invoice yet.
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>
@@ -232,6 +306,16 @@ const filterDateTo   = ref(props.filters?.date_to   || '');
 const filterStatus   = ref(props.filters?.status    || '');
 const filterSearch   = ref(props.filters?.search    || '');
 const tableRef       = ref(null);
+const expandedRows   = ref([]);
+
+const toggleRow = (orderId) => {
+    const index = expandedRows.value.indexOf(orderId);
+    if (index === -1) {
+        expandedRows.value.push(orderId);
+    } else {
+        expandedRows.value.splice(index, 1);
+    }
+};
 
 const applyFilters = () => {
     router.get('/owner/sales', {
@@ -254,6 +338,7 @@ const clearFilters = () => {
 const exportCSV = () => {
     const rows = props.orders.data.map(o => [
         o.order_number,
+        o.invoice?.invoice_number,
         o.customer?.name,
         o.customer?.email,
         o.items?.map(i => i.product?.name).join(' | '),
@@ -264,7 +349,7 @@ const exportCSV = () => {
         new Date(o.created_at).toLocaleDateString('en-PH'),
     ]);
 
-    const header = ['Order #','Customer','Email','Products','Items','Total','Order Status','Payment Status','Date'];
+    const header = ['Order #','Invoice #','Customer','Email','Products','Items','Total','Order Status','Payment Status','Date'];
     const csv = [header, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });

@@ -48,12 +48,15 @@ class RegisteredUserController extends Controller
             'barangay' => ['required_if:role,customer', 'nullable', 'string', 'max:100'],
             'label' => ['nullable', 'string', 'max:50'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
+            'terms_accepted' => ['required', 'accepted'],
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09 and contain only numbers.',
             'contact_number.required_if' => 'Contact number is required.',
             'address_line.required_if' => 'Complete Address is required.',
             'city.required_if' => 'City is required.',
             'barangay.required_if' => 'Barangay is required.',
+            'terms_accepted.required' => 'You must accept the Terms and Conditions to create an account.',
+            'terms_accepted.accepted' => 'You must accept the Terms and Conditions to create an account.',
         ]);
 
         $user = User::create([
@@ -61,6 +64,8 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->input('role', 'customer'),
+            'terms_accepted_at' => now(),
+            'terms_version' => User::CURRENT_TERMS_VERSION,
         ]);
 
         if ($user->role === 'customer') {
@@ -92,3 +97,4 @@ class RegisteredUserController extends Controller
         return redirect(route('dashboard', absolute: false));
     }
 }
+

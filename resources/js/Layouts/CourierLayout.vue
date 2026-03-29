@@ -1,5 +1,10 @@
 <template>
     <div class="min-h-screen bg-gray-50 flex flex-col">
+        <TermsBanner
+            v-if="$page.props.auth.user"
+            :needs-acceptance="$page.props.needsTermsAcceptance"
+            :user-role="$page.props.auth.user?.role || 'courier'"
+        />
         <!-- Top Navigation -->
         <nav class="bg-blue-600 border-b border-blue-700 pb-20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,23 +49,32 @@
                     <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                     </svg>
-                    <span class="text-xs font-semibold">Wallet</span>
+                    <span class="text-xs font-semibold">Earnings</span>
                 </Link>
-                <form @submit.prevent="logout" class="w-full h-full">
-                    <button type="submit" class="flex flex-col items-center justify-center w-full h-full text-center text-gray-500 hover:bg-gray-50 transition hover:text-red-500">
-                        <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                        </svg>
-                        <span class="text-xs font-semibold">Logout</span>
-                    </button>
-                </form>
+                <Link href="/settings"
+                    class="flex flex-col items-center justify-center w-full h-full text-center hover:bg-gray-50 transition"
+                    :class="$page.url.startsWith('/settings') || $page.url.startsWith('/profile') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <span class="text-xs font-semibold">Account</span>
+                </Link>
+                <button
+                    @click="logout"
+                    class="flex flex-col items-center justify-center w-full h-full text-center text-gray-500 hover:bg-gray-50 transition hover:text-red-500">
+                    <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span class="text-xs font-semibold">Sign Out</span>
+                </button>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import TermsBanner from '@/Components/TermsBanner.vue';
 
 const logout = () => {
     router.post('/logout');

@@ -75,7 +75,7 @@ class OrderController extends Controller
             'items.productVariation',
             'items.inventory.branch',
             'invoice.payments',
-            'delivery'
+            'delivery.courier.user',
         ]);
 
         $paymentSettlement = [
@@ -253,9 +253,10 @@ class OrderController extends Controller
                     'delivery_address' => $order->delivery_address ?? 'No address provided',
                     'courier_fee'      => round((float) $order->shipping_fee * (float) config('services.shipping.courier_share_rate', 0.8), 2),
                     'courier_payout_status' => 'pending',
-                    'status'           => 'pending',
+                    'status'           => 'scheduled', // 'pending' is not a valid ENUM value — use 'scheduled' for pool
                 ]
             );
+
         }
 
         // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).
@@ -322,6 +323,7 @@ class OrderController extends Controller
 
     /**
      * Distributor confirms they received the COD cash remittance from the courier.
+     * This is the final step — it releases the courier's shipping fee payout.
      */
     public function confirmCodRemittance(Order $order)
     {
@@ -338,26 +340,44 @@ class OrderController extends Controller
         $delivery = $order->delivery;
 
         if (!$delivery || !$delivery->cod_collected_at) {
-            return back()->withErrors(['error' => 'Courier has not yet confirmed cash collection.']);
+            return back()->withErrors(['error' => 'Courier has not yet confirmed cash collection from the customer.']);
+        }
+
+        if (!$delivery->cod_remittance_sent_at) {
+            return back()->withErrors(['error' => 'Courier has not yet marked the cash as sent. Please wait for the courier to hand over the cash.']);
         }
 
         if ($delivery->cod_remitted_at) {
             return back()->with('info', 'COD remittance already confirmed.');
         }
 
-        $delivery->update([
-            'cod_remitted_at' => now(),
-        ]);
+        // Confirm remittance received from courier
+        $delivery->update(['cod_remitted_at' => now()]);
 
-        // Mark order as completed once remittance is confirmed
-        if ($order->status === 'delivered') {
-            $order->update([
-                'status'      => 'completed',
-                'received_at' => now(),
+        // Release courier payout — held until now for COD orders
+        if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
+            $courierUser = $delivery->courier?->user;
+            if ($courierUser && $courierUser->wallet) {
+                $courierUser->wallet->credit(
+                    (float) $delivery->courier_fee,
+                    'delivery_fee',
+                    (string) $delivery->id,
+                    "Courier fee for {$delivery->tracking_number}"
+                );
+            }
+            $delivery->update([
+                'courier_payout_status' => 'paid',
+                'courier_paid_at'       => now(),
             ]);
         }
 
-        return back()->with('success', 'COD remittance confirmed. Order is now complete.');
+        // Mark order completed
+        $order->update([
+            'status'      => 'completed',
+            'received_at' => now(),
+        ]);
+
+        return back()->with('success', 'COD remittance confirmed. Courier payout released. Order is now complete.');
     }
 
     /**

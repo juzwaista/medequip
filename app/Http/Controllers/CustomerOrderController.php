@@ -108,7 +108,7 @@ class CustomerOrderController extends Controller
             'items.inventory.branch',
             'distributor',
             'invoice.payments',
-            'delivery'
+            'delivery.courier.user',
         ]);
         $order->can_pay_now = $this->canPayNow($order);
         $order->customer_payment_status = $this->getCustomerPaymentStatus($order);

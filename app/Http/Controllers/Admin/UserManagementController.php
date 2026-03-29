@@ -37,7 +37,7 @@ class UserManagementController extends Controller
 
         $platformUsers = User::whereIn('role', ['customer', 'courier'])
             ->orderBy('created_at', 'desc')
-            ->get(['id', 'name', 'email', 'role', 'created_at']);
+            ->get(['id', 'name', 'email', 'role', 'created_at', 'banned_at', 'ban_reason']);
 
         return Inertia::render('Admin/UserManagement/Index', [
             'admins'        => $admins,
@@ -101,5 +101,51 @@ class UserManagementController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'User role updated successfully.');
+    }
+
+    /**
+     * Ban a user with a reason.
+     */
+    public function ban(Request $request, User $user)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+        if (!$currentUser || !in_array($currentUser->role, ['admin', 'super_admin'])) {
+            abort(403, 'Not authorized.');
+        }
+
+        if ($user->role === 'super_admin') {
+            return redirect()->back()->with('error', 'Super Admins cannot be banned.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $user->update([
+            'banned_at'  => now(),
+            'ban_reason' => $validated['reason'],
+        ]);
+
+        return redirect()->back()->with('success', "User \"{$user->name}\" has been banned.");
+    }
+
+    /**
+     * Unban a user.
+     */
+    public function unban(User $user)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+        if (!$currentUser || !in_array($currentUser->role, ['admin', 'super_admin'])) {
+            abort(403, 'Not authorized.');
+        }
+
+        $user->update([
+            'banned_at'  => null,
+            'ban_reason' => null,
+        ]);
+
+        return redirect()->back()->with('success', "User \"{$user->name}\" has been unbanned.");
     }
 }

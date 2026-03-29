@@ -25,6 +25,28 @@ class EnsureDistributorVerified
                 return redirect()->route('owner.distributors.create');
             }
 
+            // If banned, force logout immediately
+            if ($distributor->status === 'banned') {
+                \Illuminate\Support\Facades\Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')
+                    ->with('error', 'Your distributor account has been permanently banned.');
+            }
+
+            // If suspended, force logout immediately
+            if ($distributor->suspended_until && \Carbon\Carbon::parse($distributor->suspended_until)->isFuture()) {
+                $reason = $distributor->suspension_reason ?? 'Administrative action';
+                $endDate = \Carbon\Carbon::parse($distributor->suspended_until)->format('M d, Y g:i A');
+                
+                \Illuminate\Support\Facades\Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                return redirect()->route('login')
+                    ->with('error', "Your distributor account is suspended until {$endDate}. Reason: {$reason}");
+            }
+
             // If pending or rejected, block access and redirect to the pending page
             // Allow access to pending/create routes to avoid infinite loops
             $allowedRoutes = ['owner.distributors.pending', 'owner.distributors.create', 'owner.distributors.store'];

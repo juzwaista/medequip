@@ -33,6 +33,15 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
+        // Block banned users immediately after authentication
+        if ($user && !is_null($user->banned_at)) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')
+                ->with('error', 'Your account has been suspended. Please contact support for assistance.');
+        }
+
         if ($user) {
             switch ($user->role) {
                 case 'super_admin':
