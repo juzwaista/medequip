@@ -33,6 +33,10 @@ class Distributor extends Model
         'fda_license_path',
         'prc_id_path',
         'authorization_letter_path',
+        'suspended_until',
+        'suspension_reason',
+        'warning_reason',
+        'warning_message',
         'auto_approve_orders',
     ];
 
@@ -41,7 +45,10 @@ class Distributor extends Model
         'auto_approve_orders' => 'boolean',
         'business_hours' => 'array',
         'social_links' => 'array',
+        'suspended_until' => 'datetime',
     ];
+
+    protected $appends = ['is_suspended', 'unread_alerts_count'];
 
     /**
      * Get the user/owner
@@ -133,5 +140,17 @@ class Distributor extends Model
     public function getUnreadAlertsCountAttribute(): int
     {
         return $this->dssAlerts()->where('is_read', false)->count();
+    }
+
+    /**
+     * Check if distributor is currently suspended
+     */
+    public function getIsSuspendedAttribute(): bool
+    {
+        if (!$this->suspended_until) {
+            return false;
+        }
+
+        return $this->suspended_until->isFuture();
     }
 }

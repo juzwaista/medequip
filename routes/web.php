@@ -308,6 +308,7 @@ Route::middleware(['auth', 'role:admin,super_admin'])
         
         // DSS Risk Actions
         Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');
+        Route::post('/distributors/{id}/lift-suspension', [\App\Http\Controllers\Admin\DashboardController::class, 'liftSuspension'])->name('distributors.lift-suspension');
         Route::post('/distributors/{id}/ban', [\App\Http\Controllers\Admin\DashboardController::class, 'banDistributor'])->name('distributors.ban');
         Route::post('/distributors/{id}/warn', [\App\Http\Controllers\Admin\DashboardController::class, 'warnDistributor'])->name('distributors.warn');
         

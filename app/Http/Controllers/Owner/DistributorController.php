@@ -31,7 +31,6 @@ class DistributorController extends Controller
                 // Don't delete — reset in place to avoid FK constraint failures (orders etc.)
                 // Clear the old document paths and reset status so the form can re-submit
                 $existing->update([
-                    'status'           => null,   // temporarily nulled; store() sets to pending
                     'rejection_reason' => null,
                     'valid_id_path'    => null,
                     'business_license_path' => null,

@@ -207,7 +207,7 @@
         v-model="filters.sort" 
         @change="applyFilters"
         class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
-    >
+    >   <option disabled value="">Sort By</option>
         <option value="newest">Newest First</option>
         <option value="price_low">Price: Low to High</option>
         <option value="price_high">Price: High to Low</option>
@@ -240,6 +240,13 @@
                     
                     <div v-if="product.wholesale_price" class="absolute top-3 left-3 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] uppercase tracking-wide px-2 py-1 rounded font-bold shadow-sm">
                         Wholesale
+                    </div>
+
+                    <!-- Suspension Badge -->
+                    <div v-if="product.distributor.is_suspended" class="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 transition-opacity group-hover:bg-white/40">
+                        <span class="bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg transform -rotate-12 border-2 border-white">
+                            Seller Suspended
+                        </span>
                     </div>
                 </div>
             </Link>
@@ -282,7 +289,7 @@
                 <div class="pt-4 border-t border-slate-100 flex items-center gap-2">
                     <button
                         @click="addToCart(product.id)"
-                        :disabled="addingToCart === product.id"
+                        :disabled="addingToCart === product.id || product.distributor.is_suspended"
                         class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
                     >
                         <svg v-if="addingToCart === product.id" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">

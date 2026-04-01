@@ -186,6 +186,24 @@ class DashboardController extends Controller
     }
 
     /**
+     * Lift suspension of a distributor
+     */
+    public function liftSuspension(\Illuminate\Http\Request $request, $id)
+    {
+        \Illuminate\Support\Facades\Log::info("Admin attempt to lift suspension for Distributor ID: {$id}");
+
+        $distributor = Distributor::findOrFail($id);
+        
+        $distributor->update([
+            'suspended_until' => null,
+            'suspension_reason' => null,
+        ]);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Suspension lifted for {$distributor->company_name}.");
+    }
+
+    /**
      * Ban a distributor
      */
     public function banDistributor(Request $request, $id)

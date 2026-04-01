@@ -59,7 +59,12 @@ class CartController extends Controller
             'product_variation_id' => 'nullable|integer|exists:product_variations,id',
         ]);
 
-        $product = Product::with(['inventory', 'variations'])->findOrFail($request->product_id);
+        $product = Product::with(['inventory', 'variations', 'distributor'])->findOrFail($request->product_id);
+        
+        // Prevent adding products from suspended distributors
+        if ($product->distributor->is_suspended) {
+            return back()->with('error', 'This seller is currently suspended and cannot accept new orders at this time.');
+        }
 
         $hasVariations = $product->variations()->where('is_active', true)->exists();
         $variationId = $request->input('product_variation_id');

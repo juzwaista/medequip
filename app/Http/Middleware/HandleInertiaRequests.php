@@ -52,6 +52,7 @@ class HandleInertiaRequests extends Middleware
                     'name'               => $user->name,
                     'email'              => $user->email,
                     'role'               => $user->role,
+                    'is_suspended'       => $user->distributor?->is_suspended ?? false,
                     'distributor_status' => $distributorStatus,
                     'suspended_until'    => $suspendedUntil,
                     'suspension_reason'  => $suspensionReason,

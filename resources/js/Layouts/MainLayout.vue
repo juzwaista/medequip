@@ -165,9 +165,9 @@
                 </Link>
 
                 <!-- Orders -->
-                <Link href="/orders"
+                <Link :href="ordersUrl"
                     class="flex flex-col items-center justify-center gap-1 transition-colors"
-                    :class="$page.url.startsWith('/orders') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'"
+                    :class="$page.url.startsWith('/orders') || $page.url.startsWith('/my-orders') || $page.url.startsWith('/owner/orders') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'"
                 >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
@@ -204,6 +204,14 @@ const csrfToken = computed(() => {
     return page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.content;
 });
 const cartCount = ref(0);
+
+const ordersUrl = computed(() => {
+    const role = page.props.auth.user?.role;
+    if (role === 'distributor' || role === 'staff') {
+        return '/owner/orders';
+    }
+    return '/my-orders';
+});
 
 const updateCartCount = async () => {
     try {

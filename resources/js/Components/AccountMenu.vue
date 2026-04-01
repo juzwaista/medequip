@@ -97,6 +97,7 @@
                                 Dashboard
                             </a>
                             <a 
+                                v-if="!isSuspended"
                                 href="/owner/profile/edit"
                                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                             >
@@ -106,6 +107,7 @@
                                 Business Profile
                             </a>
                             <a 
+                                v-if="!isSuspended"
                                 href="/owner/inventory"
                                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                             >
@@ -201,6 +203,8 @@ const isDistributorPending = computed(() =>
     props.userRole === 'distributor' &&
     (distributorStatus.value === 'pending' || distributorStatus.value === 'rejected')
 );
+
+const isSuspended = computed(() => $page.props.auth?.user?.is_suspended ?? false);
 
 const dashboardRoute = computed(() => {
     switch (props.userRole) {

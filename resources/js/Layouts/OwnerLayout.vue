@@ -169,7 +169,7 @@
         <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-gray-50">
             <div v-if="isSuspended" class="bg-rose-600 text-white px-4 py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                ACCOUNT SUSPENDED. You are restricted to processing existing orders.
+                ACCOUNT SUSPENDED. New orders are currently blocked. You are restricted to processing existing orders only.
             </div>
             <div v-else-if="hasWarning" class="bg-blue-600 text-white px-4 py-3 text-sm shadow-sm shrink-0 flex items-start gap-3">
                 <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -199,7 +199,7 @@
             </header>
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto">
+            <main class="flex-1 overflow-y-auto pb-20 lg:pb-0">
                 <div v-if="$slots.header" class="bg-white shadow-sm px-4 py-6 sm:px-6 lg:px-8 shrink-0">
                     <slot name="header" />
                 </div>
@@ -208,6 +208,57 @@
                     <slot />
                 </div>
             </main>
+            
+            <!-- Mobile Bottom Navigation (Distributor/Staff) -->
+            <nav v-if="!isSuspended" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg">
+                <div class="grid grid-cols-4 h-16">
+                    <!-- Dashboard -->
+                    <Link href="/owner/dashboard"
+                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        :class="isActive('/owner/dashboard') && !isActive('/owner/dashboard/') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'"
+                    >
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        </svg>
+                        <span class="text-[10px] font-semibold">Home</span>
+                    </Link>
+
+                    <!-- POS -->
+                    <Link href="/owner/pos"
+                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        :class="isActive('/owner/pos') ? 'text-indigo-600' : 'text-gray-400'"
+                    >
+                        <div class="p-1 px-3 rounded-full" :class="isActive('/owner/pos') ? 'bg-indigo-50 border border-indigo-100' : ''">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-bold" :class="isActive('/owner/pos') ? 'text-indigo-600' : ''">POS</span>
+                    </Link>
+
+                    <!-- Inventory -->
+                    <Link href="/owner/inventory"
+                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        :class="isActive('/owner/inventory') ? 'text-blue-600' : 'text-gray-400'"
+                    >
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        <span class="text-[10px] font-semibold">Inventory</span>
+                    </Link>
+
+                    <!-- Orders -->
+                    <Link href="/owner/orders"
+                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        :class="isActive('/owner/orders') ? 'text-blue-600' : 'text-gray-400'"
+                    >
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <span class="text-[10px] font-semibold">Orders</span>
+                    </Link>
+                </div>
+            </nav>
         </div>
     </div>
 </template>
@@ -229,8 +280,7 @@ const suspendedUntilDate = computed(() => {
 });
 
 const isSuspended = computed(() => {
-    if (!suspendedUntilDate.value) return false;
-    return suspendedUntilDate.value > new Date();
+    return page.props.auth?.user?.is_suspended ?? false;
 });
 
 const warningReason = computed(() => {

@@ -73,8 +73,11 @@
                                 <button v-if="!distributor.is_suspended" @click="banDistributor(distributor.id)" class="w-full md:w-48 bg-rose-700 text-white px-4 py-2.5 rounded-lg hover:bg-rose-800 transition shadow-sm font-bold text-sm">
                                     Permanent Ban
                                 </button>
-                                <div v-if="distributor.is_suspended" class="w-full md:w-48 bg-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-center font-bold text-sm border border-gray-300">
-                                    Action Applied
+                                <button v-if="distributor.is_suspended" @click="liftSuspension(distributor.id)" class="w-full md:w-48 bg-emerald-600 text-white px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition shadow-sm font-bold text-sm mb-2 drop-shadow-sm">
+                                    Lift Suspension
+                                </button>
+                                <div v-if="distributor.is_suspended" class="w-full md:w-48 bg-gray-100 text-gray-400 px-4 py-2.5 rounded-lg text-center font-bold text-xs border border-gray-200 uppercase tracking-tighter">
+                                    Currently Restricted
                                 </div>
                             </div>
                         </div>
@@ -245,47 +248,47 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Enhanced Suspend Dialog -->
-            <div v-if="showSuspendModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm transition-opacity">
-                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div class="px-6 py-5 border-b border-gray-100 bg-orange-50/50">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-orange-100 p-2 rounded-xl text-orange-600">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-black text-gray-900 leading-tight">Suspend Distributor</h3>
-                                <p class="text-xs text-orange-700 font-medium">Temporarily restrict account access</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">Reason for Suspension <span class="text-rose-500">*</span></label>
-                            <select v-model="suspendData.reason" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-2.5" required>
-                                <option value="" disabled>Select the primary reason</option>
-                                <option value="Sustained High Cancellation Rate">Repeated Order Cancellations</option>
-                                <option value="Severe Fulfillment Delays">Failure to Fulfill Orders on Time</option>
-                                <option value="Policy Violation">Platform Policy Violation</option>
-                                <option value="Customer Complaints">High Volume of Customer Complaints</option>
-                                <option value="Regulatory Action (FDA)">Pending FDA/Regulatory Verification</option>
-                                <option value="Other/Administrative">Other Administrative Action</option>
-                            </select>
+        <!-- Enhanced Suspend Dialog -->
+        <div v-if="showSuspendModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm transition-opacity">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div class="px-6 py-5 border-b border-gray-100 bg-orange-50/50">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-orange-100 p-2 rounded-xl text-orange-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">Duration (Days) <span class="text-rose-500">*</span></label>
-                            <input type="number" min="1" max="365" v-model="suspendData.days" placeholder="7" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-2.5" required>
+                            <h3 class="text-lg font-black text-gray-900 leading-tight">Suspend Distributor</h3>
+                            <p class="text-xs text-orange-700 font-medium">Temporarily restrict account access</p>
                         </div>
                     </div>
-                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 rounded-b-2xl">
-                        <button type="button" @click="showSuspendModal = false" class="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 transition mt-2 sm:mt-0">
-                            Cancel
-                        </button>
-                        <button type="button" @click="submitSuspension" :disabled="!suspendData.reason || !suspendData.days" class="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-white bg-orange-600 border border-transparent rounded-xl shadow-sm hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                            Finalize Suspension
-                        </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Reason for Suspension <span class="text-rose-500">*</span></label>
+                        <select v-model="suspendData.reason" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-2.5" required>
+                            <option value="" disabled>Select the primary reason</option>
+                            <option value="Sustained High Cancellation Rate">Repeated Order Cancellations</option>
+                            <option value="Severe Fulfillment Delays">Failure to Fulfill Orders on Time</option>
+                            <option value="Policy Violation">Platform Policy Violation</option>
+                            <option value="Customer Complaints">High Volume of Customer Complaints</option>
+                            <option value="Regulatory Action (FDA)">Pending FDA/Regulatory Verification</option>
+                            <option value="Other/Administrative">Other Administrative Action</option>
+                        </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Duration (Days) <span class="text-rose-500">*</span></label>
+                        <input type="number" min="1" max="365" v-model="suspendData.days" placeholder="7" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-2.5" required>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 rounded-b-2xl">
+                    <button type="button" @click="showSuspendModal = false" class="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 transition mt-2 sm:mt-0">
+                        Cancel
+                    </button>
+                    <button type="button" @click="submitSuspension" :disabled="!suspendData.reason || !suspendData.days" class="w-full sm:w-auto px-5 py-2.5 text-sm font-bold text-white bg-orange-600 border border-transparent rounded-xl shadow-sm hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        Finalize Suspension
+                    </button>
                 </div>
             </div>
         </div>
@@ -323,6 +326,17 @@ const submitSuspension = () => {
             onSuccess: () => {
                 showSuspendModal.value = false;
             }
+        });
+    }
+};
+
+const liftSuspension = (id) => {
+    console.log('Attempting to lift suspension for ID:', id);
+    if (confirm('Are you sure you want to lift the suspension for this distributor? They will be able to accept new orders immediately.')) {
+        router.post(route('admin.distributors.lift-suspension', id), {}, {
+            onStart: () => console.log('Lift suspension request started'),
+            onSuccess: () => console.log('Lift suspension request successful'),
+            onError: (errors) => console.error('Lift suspension request failed:', errors)
         });
     }
 };
