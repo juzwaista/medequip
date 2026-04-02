@@ -224,7 +224,7 @@
             class="group bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col"
         >
             <Link :href="`/products/${product.id}`" class="block flex-shrink-0 relative border-b border-slate-100">
-                <div class="relative h-48 bg-slate-50 overflow-hidden p-4 flex items-center justify-center">
+                <div class="relative h-60 bg-slate-50 overflow-hidden p-6 flex items-center justify-center">
                     <img
                         v-if="product.image_url"
                         :src="product.image_url"
@@ -238,8 +238,8 @@
                         <span class="text-xs font-medium">No Image</span>
                     </div>
                     
-                    <div v-if="product.wholesale_price" class="absolute top-3 left-3 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] uppercase tracking-wide px-2 py-1 rounded font-bold shadow-sm">
-                        Wholesale
+                    <div v-if="product.wholesale_price" class="absolute top-3 left-3 bg-indigo-600 text-white text-[9px] uppercase tracking-widest px-2 py-1 rounded-md font-black shadow-md border border-indigo-400/30">
+                        Wholesale Rate
                     </div>
 
                     <!-- Suspension Badge -->
@@ -251,37 +251,37 @@
                 </div>
             </Link>
 
-            <div class="p-5 flex flex-col flex-1">
-                <p class="text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">{{ product.brand || 'Generic' }}</p>
+            <div class="p-4 flex flex-col flex-1">
+                <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">{{ product.brand || 'Generic' }}</p>
                 
                 <Link :href="`/products/${product.id}`" class="block mb-1 group/title">
-                    <h3 class="font-bold text-slate-900 group-hover/title:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    <h3 class="font-bold text-slate-900 group-hover/title:text-blue-600 transition-colors line-clamp-2 leading-snug text-sm">
                         {{ product.name }}
                     </h3>
                 </Link>
                 
-                <div class="text-sm text-slate-500 mb-4 flex items-center gap-1">
-                    <span>Distributor:</span>
+                <div class="text-[11px] text-slate-500 mb-4 flex items-center gap-1.5 mt-1">
+                    <span class="text-slate-400">Sold by:</span>
                     <Link
                         :href="`/seller/${product.distributor.slug}`"
-                        class="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate"
+                        class="font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
                     >
                         {{ product.distributor.company_name }}
                     </Link>
                 </div>
 
-                <div class="flex items-end justify-between mb-5 mt-auto">
+                <div class="flex items-end justify-between mb-4 mt-auto">
                     <div>
-                        <span class="text-2xl font-extrabold text-slate-900">
+                        <span class="text-xl font-black text-slate-900">
                             ₱{{ Number(product.base_price).toLocaleString() }}
                         </span>
-                        <p v-if="product.wholesale_price" class="text-xs text-slate-500 mt-1 font-medium">
-                            ₱{{ Number(product.wholesale_price).toLocaleString() }} for {{ product.wholesale_min_qty }}+
+                        <p v-if="product.wholesale_price" class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                            <span class="font-bold text-indigo-600">₱{{ Number(product.wholesale_price).toLocaleString() }}</span> wholesale price for min. order of {{ product.wholesale_min_qty }}
                         </p>
                     </div>
                     
-                    <span class="flex items-center text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded font-semibold border border-emerald-200">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>
+                    <span class="flex items-center text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-100">
+                        <span class="w-1 h-1 bg-emerald-500 rounded-full mr-1.5"></span>
                         In Stock
                     </span>
                 </div>
