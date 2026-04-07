@@ -201,7 +201,28 @@ class OrderController extends Controller
             $createdOrders = [];
 
             foreach ($ordersByDistributor as $distributorData) {
+                $distributor = \App\Models\Distributor::findOrFail($distributorData['distributor_id']);
                 $shippingReq = $this->calculateShippingRequirement($distributorData['items']);
+                
+                $itemSubtotal = 0;
+                foreach ($distributorData['items'] as $item) {
+                    $product = $item['product'];
+                    $quantity = $item['quantity'];
+                    $variation = $item['variation'] ?? null;
+                    $isWholesale = $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
+                    $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
+                    $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
+                    $itemSubtotal += round($base + $adjustment, 2) * $quantity;
+                }
+                
+                $orderTotal = $itemSubtotal + $shippingReq['fee'];
+
+                // Enforce Distributor COD Limit
+                if ($isCod && $distributor->max_cod_amount > 0 && $orderTotal > $distributor->max_cod_amount) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'payment_method' => ["Cash on delivery is not available for {$distributor->company_name} because the order total (₱" . number_format($orderTotal, 2) . ") exceeds their COD limit of ₱" . number_format($distributor->max_cod_amount, 2) . ". Please choose another payment method."],
+                    ]);
+                }
 
                 $order = Order::create([
                     'customer_id' => auth()->id(),

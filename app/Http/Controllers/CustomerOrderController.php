@@ -207,6 +207,9 @@ class CustomerOrderController extends Controller
             return false;
         }
 
+        // We relax this to allow retrying even if a previous session exists but didn't verify.
+        // This fixes the "missing button" after clicking browser Back button.
+        /*
         $hasActiveCheckoutSession = $payments->contains(
             fn ($payment) => in_array($payment->paymongo_status, ['active', 'processing'], true)
         );
@@ -214,6 +217,7 @@ class CustomerOrderController extends Controller
         if ($hasActiveCheckoutSession) {
             return false;
         }
+        */
 
         return true;
     }

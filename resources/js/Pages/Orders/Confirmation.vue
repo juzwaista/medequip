@@ -106,7 +106,15 @@
                 class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-6 mb-6"
             >
                 <p class="text-sm text-gray-700">
-                    Your online payments totaling <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> are held by the platform per order until you confirm delivery.
+                    Your online payments totaling <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> were received and are held by the platform per order until you confirm delivery.
+                </p>
+            </div>
+            <div
+                v-else-if="hasUnpaidOnlineOrders"
+                class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 sm:p-6 mb-6"
+            >
+                <p class="text-sm text-yellow-900">
+                    <strong>Payment Pending:</strong> Your online payment for <strong>₱{{ Number(onlineOrdersTotal).toLocaleString() }}</strong> is currently pending. You can complete the payment from the "My Orders" page.
                 </p>
             </div>
 
@@ -155,7 +163,18 @@ const allOrdersCod = computed(() => {
 });
 
 const hasOnlinePaidOrders = computed(() => {
-    return normalizedOrders.value.some((o) => o.payment_method && o.payment_method !== 'cod');
+    return normalizedOrders.value.some((o) => {
+        if (o.payment_method === 'cod') return false;
+        return o.invoice?.status === 'paid' || 
+               o.invoice?.payments?.some(p => p.status === 'verified');
+    });
+});
+
+const hasUnpaidOnlineOrders = computed(() => {
+    return normalizedOrders.value.some((o) => {
+        if (o.payment_method === 'cod') return false;
+        return !o.invoice || (o.invoice.status !== 'paid' && !o.invoice.payments?.some(p => p.status === 'verified'));
+    });
 });
 
 const mixedPaymentTypes = computed(() => {

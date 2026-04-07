@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\AdminModerationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -263,11 +264,9 @@ class DashboardController extends Controller
         $title = $validated['title'];
         $message = $validated['message'];
 
-        // Batch processing to avoid server timeout/memory issues
-        User::chunk(100, function ($users) use ($title, $message, $admin) {
-            foreach ($users as $user) {
-                $user->notify(new \App\Notifications\SystemAnnouncement($title, $message, $admin->name));
-            }
+        // Efficient batch processing (still chunked to avoid memory spikes, but using Notification facade for speed)
+        User::chunk(200, function ($users) use ($title, $message, $admin) {
+            NotificationFacade::send($users, new \App\Notifications\SystemAnnouncement($title, $message, $admin->name));
         });
 
         // Also log this for audit

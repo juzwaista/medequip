@@ -20,30 +20,47 @@ class StorageFixController extends Controller
             abort(403);
         }
 
-        $link = public_path('storage');
+        // Target is always the same
         $target = storage_path('app/public');
+        
+        // Potential public folder candidates for shared hosting
+        $publicPaths = [
+            base_path('public'),
+            base_path('public_html'),
+            $_SERVER['DOCUMENT_ROOT'] ?? null,
+        ];
+        
+        $results = [];
 
-        try {
-            if (file_exists($link)) {
-                // Remove existing link if broken or a directory
-                if (is_link($link)) {
-                    unlink($link);
-                } else {
-                    // If it's a real folder, rename it as backup
-                    rename($link, $link . '_backup_' . time());
+        foreach (array_filter(array_unique($publicPaths)) as $path) {
+            $link = $path . DIRECTORY_SEPARATOR . 'storage';
+            
+            try {
+                if (file_exists($link)) {
+                    if (is_link($link)) {
+                        unlink($link);
+                    } else if (is_dir($link)) {
+                        // Rename real folder to backup
+                        rename($link, $link . '_backup_' . time());
+                    }
                 }
-            }
 
-            // Create new symlink
-            if (symlink($target, $link)) {
-                Log::info('Storage symlink repaired via Admin Dashboard', ['user_id' => $user->id]);
-                return redirect()->back()->with('success', 'Storage link has been successfully repaired! Product images should now load correctly.');
+                if (symlink($target, $link)) {
+                    $results[] = "Successfully created symlink in: $path";
+                    \Illuminate\Support\Facades\Log::info("Storage symlink repaired in: $path", ['user_id' => $user->id]);
+                } else {
+                    $results[] = "Failed to create symlink in: $path (Permission error?)";
+                }
+            } catch (\Exception $e) {
+                $results[] = "Error in $path: " . $e->getMessage();
             }
-
-            return redirect()->back()->with('error', 'Failed to create symlink. Please check folder permissions.');
-        } catch (\Exception $e) {
-            Log::error('Storage symlink repair failed', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Repair failed: ' . $e->getMessage());
         }
+
+        if (empty($results)) {
+            return redirect()->back()->with('error', 'No valid public directories found to repair.');
+        }
+
+        $success = count(array_filter($results, fn($r) => str_contains($r, 'Successfully'))) > 0;
+        return redirect()->back()->with($success ? 'success' : 'error', 'Repair Results: ' . implode(' | ', $results));
     }
 }

@@ -2,15 +2,11 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SystemAnnouncement extends Notification implements ShouldQueue
+class SystemAnnouncement extends Notification
 {
-    use Queueable;
-
     protected $title;
     protected $message;
     protected $adminName;

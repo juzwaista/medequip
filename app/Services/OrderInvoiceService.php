@@ -49,7 +49,7 @@ class OrderInvoiceService
                 // No escrow, no platform fee yet — marked verified when distributor confirms remittance.
                 $payment = Payment::create([
                     'invoice_id'           => $invoice->id,
-                    'payment_method'       => 'cod',
+                    'payment_method'       => 'cash',
                     'amount'               => $totalAmount,
                     'status'               => 'pending',
                     'escrow_status'        => 'held',

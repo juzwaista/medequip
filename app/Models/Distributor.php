@@ -44,6 +44,7 @@ class Distributor extends Model
         'shop_profile_onboarding_completed_at',
         'latitude',
         'longitude',
+        'max_cod_amount',
     ];
 
     protected $casts = [
@@ -55,6 +56,7 @@ class Distributor extends Model
         'shop_profile_onboarding_completed_at' => 'datetime',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'max_cod_amount' => 'decimal:2',
     ];
 
     protected $appends = ['is_suspended', 'unread_alerts_count'];

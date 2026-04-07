@@ -54,6 +54,11 @@
                                         <label class="block text-sm font-medium text-gray-700">Website</label>
                                         <input v-model="form.website" type="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                                     </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Maximum COD Amount (₱)</label>
+                                        <input v-model="form.max_cod_amount" type="number" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00 (Leave empty for no limit)" />
+                                        <p class="text-xs text-gray-500 mt-1">Orders exceeding this amount will not have COD as a payment option.</p>
+                                    </div>
                                 </div>
                             </section>
 
@@ -438,6 +443,7 @@ const form = useForm({
     chat_template_order_shipped: props.distributor.chat_template_order_shipped || '',
     chat_auto_reply: props.distributor.chat_auto_reply || '',
     featured_product_ids: props.products.filter(p => p.is_featured).map(p => p.id),
+    max_cod_amount: props.distributor.max_cod_amount,
     logo: null,
     cover_photo: null,
     _method: 'PUT',

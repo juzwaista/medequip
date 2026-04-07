@@ -73,6 +73,7 @@ class ProfileController extends Controller
             'chat_auto_reply' => 'nullable|string|max:5000',
             'featured_product_ids' => 'nullable|array|max:8',
             'featured_product_ids.*' => 'integer|exists:products,id',
+            'max_cod_amount' => 'nullable|numeric|min:0',
         ], [
             'phone.regex' => 'Phone number must be 11 digits, start with 09, and contain numbers only.',
         ]);

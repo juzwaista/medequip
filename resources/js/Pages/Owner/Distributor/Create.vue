@@ -132,7 +132,7 @@
                 <!-- ========= STEP 3: Documents ========= -->
                 <div v-else-if="currentStep === 2" class="p-8">
                     <h2 class="text-xl font-bold text-gray-900 mb-1">Upload Documents</h2>
-                    <p class="text-sm text-gray-500 mb-6">PDF, JPG, or PNG — max 5 MB per file.</p>
+                    <p class="text-sm text-gray-500 mb-6">PDF, JPG, or PNG — max 10 MB per file.</p>
 
                     <div class="space-y-4">
                         <template v-for="doc in docFields" :key="doc.key">
@@ -157,7 +157,7 @@
                                             {{ form[doc.key] ? 'Change' : 'Upload' }}
                                         </label>
                                         <input :id="doc.key" type="file" accept=".pdf,.jpg,.jpeg,.png"
-                                            @change="e => form[doc.key] = e.target.files[0]"
+                                            @change="e => handleFileChange(doc.key, e.target.files[0])"
                                             class="sr-only"/>
                                     </div>
                                 </div>
@@ -278,6 +278,23 @@ const uploadedDocCount = computed(() => docFields.filter((d) => !d.optional && f
 
 const sanitizeContactNumber = () => {
     form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
+};
+
+const handleFileChange = (key, file) => {
+    if (!file) {
+        form[key] = null;
+        return;
+    }
+    
+    // 10MB Limit for client-side check
+    if (file.size > 10 * 1024 * 1024) {
+        form.errors[key] = 'File is too large (max 10MB).';
+        form[key] = null;
+        return;
+    }
+    
+    delete form.errors[key];
+    form[key] = file;
 };
 
 const validateStep1 = () => {
