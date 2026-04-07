@@ -20,6 +20,7 @@ class DistributorProfileController extends Controller
             ->whereRaw('LOWER(slug) = ?', [$slugKey])
             ->firstOrFail();
 
+        /** @var Distributor $distributor */
         $distributorId = $distributor->id;
         $tab = strtolower(trim((string) $request->query('tab', 'shop')));
 
@@ -60,18 +61,6 @@ class DistributorProfileController extends Controller
             'reviews' => $payload = array_merge($payload, $this->reviewsTabData($request, $distributorId)),
             default => null,
         };
-
-        // Diagnostic logging for visibility bug
-        if (app()->environment('local')) {
-            \Illuminate\Support\Facades\Log::info('Public Profile Visit Diagnostics', [
-                'slug' => $slug,
-                'isOwner' => $isOwner,
-                'tab' => $tab,
-                'categories_count' => count($shopCategories),
-                'recommended_count' => isset($payload['recommendedProducts']) ? count($payload['recommendedProducts']) : 'N/A',
-                'products_count' => isset($payload['products']) ? $payload['products']->count() : 'N/A',
-            ]);
-        }
 
         return Inertia::render('Seller/Profile', $payload);
     }
