@@ -78,10 +78,11 @@
                                         v-model="form.vehicle_type"
                                         class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm"
                                     >
-                                        <option value="Motorcycle">Motorcycle</option>
-                                        <option value="Van">Van</option>
-                                        <option value="Truck">Truck</option>
-                                        <option value="Bicycle">Bicycle</option>
+                                        <option value="motorcycle">Motorcycle</option>
+                                        <option value="car_sedan">Sedan</option>
+                                        <option value="car_hatchback">Hatchback / SUV</option>
+                                        <option value="pickup_truck">Pickup Truck</option>
+                                        <option value="box_truck">Box Truck</option>
                                     </select>
                                     <p v-if="form.errors.vehicle_type" class="mt-1 text-sm text-red-600">{{ form.errors.vehicle_type }}</p>
                                 </div>
@@ -162,8 +163,7 @@
                                 <div v-if="driver.courier" class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
                                     <div class="flex space-x-6">
                                         <div>
-                                            <span class="text-gray-500 font-medium">Vehicle:</span> 
-                                            <span class="ml-1 text-gray-900 font-semibold">{{ driver.courier.vehicle_type || 'N/A' }}</span>
+                                            <span class="ml-1 text-gray-900 font-semibold">{{ formatVehicleType(driver.courier.vehicle_type) }}</span>
                                         </div>
                                         <div>
                                             <span class="text-gray-500 font-medium">Plate:</span> 
@@ -205,12 +205,17 @@ const form = useForm({
     username: '',
     email: '',
     phone_number: '',
-    vehicle_type: 'Motorcycle',
+    vehicle_type: 'motorcycle',
     plate_number: '',
 });
 
 const sanitizePhoneNumber = () => {
     form.phone_number = String(form.phone_number || '').replace(/\D/g, '').slice(0, 11);
+};
+
+const formatVehicleType = (type) => {
+    if (!type) return 'N/A';
+    return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
 
 const submit = () => {
