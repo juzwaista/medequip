@@ -123,7 +123,7 @@ class InventoryController extends Controller
         $products = $query->latest()->paginate(12)->withQueryString();
 
         // Add computed stock data
-        $products->getCollection()->transform(function ($product) {
+        $products->getCollection()->transform(function ($product) use ($expiryWarningDays) {
             $totals = $product->stockTotals();
             $totalStock = $totals['quantity'];
             $totalReserved = $totals['reserved'];
