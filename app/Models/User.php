@@ -34,6 +34,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'terms_accepted_at',
         'terms_version',
         'deactivated_at',
+        'role',
+        'pending_email',
+        'login_otp',
+        'login_otp_expires_at',
     ];
 
     /**
@@ -58,6 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'terms_accepted_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'login_otp_expires_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -211,7 +216,10 @@ class User extends Authenticatable implements MustVerifyEmail
         });
 
         static::created(function (User $user) {
-            $user->wallet()->create();
+            // Check if user already has a wallet (e.g. from social login or seeder)
+            if (!$user->wallet()->exists()) {
+                $user->wallet()->create();
+            }
             $user->notify(new WelcomeToMedequip);
         });
     }

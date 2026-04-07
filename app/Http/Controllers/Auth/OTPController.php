@@ -50,7 +50,7 @@ class OTPController extends Controller
         }
 
         // Check if OTP is correct and not expired
-        if ($user->login_otp === $request->otp && 
+        if ($user->login_otp == $request->otp && 
             $user->login_otp_expires_at && 
             now()->isBefore($user->login_otp_expires_at)) {
             

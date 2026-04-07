@@ -138,7 +138,7 @@ class ProfileController extends Controller
 
         // Check if OTP matches and pending email exists
         if ($user->pending_email && 
-            $user->login_otp === $request->otp && 
+            $user->login_otp == $request->otp && 
             $user->login_otp_expires_at && 
             now()->isBefore($user->login_otp_expires_at)) {
             

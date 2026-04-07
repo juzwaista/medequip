@@ -6,14 +6,14 @@
             <div class="flex justify-center mb-6">
                 <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
                     <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
             </div>
             <h2 class="text-center text-3xl font-black text-slate-900 tracking-tight">
                 Security Verification
             </h2>
-            <p class="mt-2 text-center text-sm text-slate-500 font-medium">
+            <p class="mt-2 text-center text-sm text-slate-500 font-medium px-4">
                 We've sent a 6-digit code to your email to verify it's really you.
             </p>
         </div>
@@ -48,7 +48,6 @@
                                 @keydown.delete="handleDelete(index)"
                                 class="w-full h-14 sm:h-16 text-center text-2xl font-black text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-600 focus:ring-0 transition-all uppercase"
                                 autocomplete="off"
-                                autofocus
                             />
                         </div>
                     </div>
@@ -83,15 +82,15 @@
             </div>
 
             <div class="mt-8 text-center px-6">
-                <Link
-                    href="/login"
-                    class="text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center gap-2"
+                <button
+                    @click="logout"
+                    class="text-sm font-bold text-slate-400 hover:text-red-500 transition-all flex items-center justify-center gap-2 mx-auto"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    Back to Normal Login
-                </Link>
+                    Logout of Session
+                </button>
             </div>
         </div>
     </div>
@@ -99,7 +98,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     status: String,
@@ -121,7 +120,7 @@ const isComplete = computed(() => {
 
 const handleInput = (e, index) => {
     const val = e.target.value;
-    // Allow only alphanumeric (case insensitive)
+    // Allow only alphanumeric
     if (!/^[a-zA-Z0-9]$/.test(val)) {
         otpParts.value[index] = '';
         return;
@@ -143,24 +142,25 @@ const handleDelete = (index) => {
 
 const submit = () => {
     form.otp = otpParts.value.join('');
-    form.post(route('admin.otp.submit'), {
+    form.post('/admin/otp-verify', {
         onError: () => {
-             // Optional: reset parts on error
-             // otpParts.value = ['', '', '', '', '', ''];
-             // inputRefs.value[0]?.focus();
         }
     });
 };
 
 const resend = () => {
     isResending.value = true;
-    router.post(route('admin.otp.resend'), {}, {
+    router.post('/admin/otp-resend', {}, {
         onFinish: () => {
             isResending.value = false;
             cooldown.value = 60;
             startCooldown();
         }
     });
+};
+
+const logout = () => {
+    router.post('/logout');
 };
 
 const startCooldown = () => {
