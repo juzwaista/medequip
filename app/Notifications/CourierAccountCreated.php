@@ -41,13 +41,15 @@ class CourierAccountCreated extends Notification
         ], false));
 
         return (new MailMessage)
-                    ->subject('Welcome to MedEquip - Complete Your Courier Setup')
-                    ->greeting('Hello ' . $notifiable->name . '!')
-                    ->line('You have been invited to join MedEquip as part of our Courier Fleet.')
-                    ->line('Your username is: **' . $notifiable->username . '**')
-                    ->line('Click the button below to set your password and access your account. Once you log in, your email address will be automatically verified.')
+                    ->subject('Welcome to the MedEquip Delivery Team!')
+                    ->greeting('Hi ' . $notifiable->name . '!')
+                    ->line('Your courier account is ready to go. You can now log in to the delivery dashboard to view available routes and manage your shipments.')
+                    ->line('**Your Username:** ' . $notifiable->username)
+                    ->line('Before you get started, please set your password by clicking the button below:')
                     ->action('Set Password & Activate Account', $url)
-                    ->line('If you did not expect this invitation, you can safely ignore this email.');
+                    ->line('Once activated, you can always find your dashboard at: ' . url('/courier/dashboard'))
+                    ->line('Need help? Visit our [Courier FAQ & Support](/help/courier) for tips on getting started.')
+                    ->salutation('Welcome to the team, The MedEquip Fleet');
     }
 
     /**

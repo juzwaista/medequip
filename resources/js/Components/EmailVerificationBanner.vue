@@ -11,30 +11,31 @@
                 </svg>
                 <div class="min-w-0">
                     <p class="text-sm font-bold text-amber-900">Confirm your email</p>
-                    <p class="text-xs sm:text-sm text-amber-800/90 mt-0.5 leading-relaxed">
-                        We sent a link to <span class="font-semibold break-all">{{ email }}</span>.
-                        You can browse the catalog now; <strong>checkout and wallet</strong> stay locked until you verify.
-                    </p>
+                    <p class="text-xs sm:text-sm text-amber-800/90 mt-1 leading-relaxed" v-html="roleBannerText"></p>
                     <p
                         v-if="$page.props.flash?.status === 'verification-link-sent'"
-                        class="text-xs font-semibold text-emerald-800 mt-2"
+                        class="text-xs font-semibold text-emerald-800 mt-2 flex items-center gap-1.5"
                     >
-                        A fresh link was sent — check your inbox (or your log file if using local <code class="text-[11px] bg-amber-100/80 px-1 rounded">MAIL_MAILER=log</code>).
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Resent email successfully!
                     </p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
                 <button
                     type="button"
-                    :disabled="resendForm.processing"
-                    class="inline-flex justify-center items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 disabled:opacity-60 transition shadow-sm"
+                    :disabled="resendForm.processing || cooldown > 0"
+                    class="inline-flex justify-center items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 disabled:opacity-60 transition shadow-sm min-w-[120px]"
                     @click="resend"
                 >
                     <svg v-if="resendForm.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    {{ resendForm.processing ? 'Sending…' : 'Resend email' }}
+                    <span v-if="cooldown > 0">Wait {{ cooldown }}s</span>
+                    <span v-else>{{ resendForm.processing ? 'Sending…' : 'Resend email' }}</span>
                 </button>
                 <Link
                     href="/settings"
@@ -48,7 +49,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onUnmounted } from 'vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 
 const page = usePage();
@@ -61,6 +62,21 @@ const props = defineProps({
 });
 
 const email = computed(() => page.props.auth?.user?.email || '');
+const role = computed(() => page.props.auth?.user?.role || 'customer');
+
+const roleBannerText = computed(() => {
+    switch (role.value) {
+        case 'distributor':
+            return 'You can browse now; you cannot **post products or manage orders** until you verify.';
+        case 'courier':
+            return 'You can browse now; you cannot **view routes or manage shipments** until you verify.';
+        case 'admin':
+        case 'super_admin':
+            return 'You can browse now; you cannot **access administrative tools** until you verify.';
+        default:
+            return 'You can browse the catalog now; **checkout and wallet** stay locked until you verify.';
+    }
+});
 
 const show = computed(() => {
     const u = page.props.auth?.user;
@@ -74,10 +90,32 @@ const show = computed(() => {
 });
 
 const resendForm = useForm({});
+const cooldown = ref(0);
+let timer = null;
+
+function startCooldown() {
+    cooldown.value = 60;
+    timer = setInterval(() => {
+        if (cooldown.value > 0) {
+            cooldown.value--;
+        } else {
+            clearInterval(timer);
+        }
+    }, 1000);
+}
+
+onUnmounted(() => {
+    if (timer) clearInterval(timer);
+});
 
 function resend() {
+    if (cooldown.value > 0) return;
+    
     resendForm.post('/email/verification-notification', {
         preserveScroll: true,
+        onSuccess: () => {
+            startCooldown();
+        }
     });
 }
 </script>

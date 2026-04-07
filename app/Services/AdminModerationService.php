@@ -40,6 +40,29 @@ class AdminModerationService
         ])->save();
     }
 
+    public function approveDistributor(User $actor, Distributor $distributor): void
+    {
+        $this->assertStaff($actor);
+        $distributor->update(['status' => 'approved']);
+        $distributor->refresh();
+
+        $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_approved', $distributor));
+    }
+
+    public function rejectDistributor(User $actor, Distributor $distributor, ?string $reason): void
+    {
+        $this->assertStaff($actor);
+        $distributor->update([
+            'status' => 'rejected',
+            'rejection_reason' => $reason,
+        ]);
+        $distributor->refresh();
+
+        $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_rejected', $distributor, [
+            'reason' => $reason,
+        ]));
+    }
+
     public function warnDistributor(User $actor, Distributor $distributor, string $preset, ?string $customMessage): void
     {
         $this->assertStaff($actor);

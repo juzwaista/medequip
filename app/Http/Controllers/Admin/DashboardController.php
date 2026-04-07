@@ -148,10 +148,10 @@ class DashboardController extends Controller
     /**
      * Approve a distributor
      */
-    public function approveDistributor($id)
+    public function approveDistributor($id, AdminModerationService $moderation)
     {
         $distributor = Distributor::findOrFail($id);
-        $distributor->update(['status' => 'approved']);
+        $moderation->approveDistributor(request()->user(), $distributor);
 
         return redirect()->back()
             ->with('success', 'Distributor approved successfully.');
@@ -160,7 +160,7 @@ class DashboardController extends Controller
     /**
      * Reject a distributor
      */
-    public function rejectDistributor(Request $request, $id)
+    public function rejectDistributor(Request $request, $id, AdminModerationService $moderation)
     {
         $distributor = Distributor::findOrFail($id);
 
@@ -168,10 +168,7 @@ class DashboardController extends Controller
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $distributor->update([
-            'status' => 'rejected',
-            'rejection_reason' => $validated['reason'] ?? null,
-        ]);
+        $moderation->rejectDistributor($request->user(), $distributor, $validated['reason'] ?? null);
 
         return redirect()->back()
             ->with('success', 'Distributor rejected.');

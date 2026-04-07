@@ -18,7 +18,7 @@ class OrderNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
     }
 
     public function toDatabase(object $notifiable): array
@@ -33,6 +33,37 @@ class OrderNotification extends Notification
             'order_number' => $this->order->order_number,
             'action_href' => $this->resolveActionHref($notifiable),
         ];
+    }
+
+    public function toMail(object $notifiable): \Illuminate\Notifications\Messages\MailMessage
+    {
+        [$title, $body] = $this->resolveContent();
+        $num = $this->order->order_number;
+
+        $subject = match ($this->kind) {
+            'payment_confirmed' => "Success: We've received your payment!",
+            'order_shipped' => "Your MedEquip order is on its way!",
+            'order_delivered' => "Order #{$num} has been delivered",
+            default => $title,
+        };
+
+        $mail = (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject($subject)
+            ->greeting("Hi {$notifiable->name},")
+            ->line($body);
+
+        if ($this->kind === 'payment_confirmed') {
+            $mail->line('Our distributor has begun processing your items. Please allow 1-3 business days for preparation.');
+        } elseif ($this->kind === 'order_shipped') {
+            if ($this->order->tracking_number) {
+                $mail->line("Tracking Number: **{$this->order->tracking_number}**");
+            }
+        } elseif ($this->kind === 'order_delivered') {
+            $mail->line('Is everything okay? Start a chat in your order dashboard if you have any questions.');
+        }
+
+        return $mail->action('View Order Details', url($this->resolveActionHref($notifiable)))
+            ->line('Thank you for choosing MedEquip!');
     }
 
     /**
@@ -129,3 +160,4 @@ class OrderNotification extends Notification
         return "/orders/{$orderId}";
     }
 }
+

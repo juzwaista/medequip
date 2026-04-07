@@ -16,10 +16,11 @@ class WelcomeToMedequip extends Notification
 
     public function toDatabase(object $notifiable): array
     {
+        $firstName = explode(' ', $notifiable->name)[0];
         return [
             'kind' => 'welcome',
-            'title' => 'Welcome to MedEquip',
-            'body' => 'Browse verified suppliers, message sellers anytime (including product questions), track orders, and use order chat when you buy. Verify your email to checkout and use your wallet.',
+            'title' => "Welcome aboard, {$firstName}! Let’s get started.",
+            'body' => 'We’re glad to have you! Explore verified medical suppliers and message sellers directly. To unlock your wallet and start shopping, please verify your email.',
             'action_href' => '/products',
         ];
     }

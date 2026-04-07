@@ -129,6 +129,7 @@ class RegisteredUserController extends Controller
                 'recipient_name' => $request->recipient_name ?: $user->name,
                 'contact_number' => $request->contact_number,
                 'address_line' => $request->address_line,
+                'city' => $request->city,
                 'barangay' => $request->barangay,
                 'province' => 'Cavite',
                 'zip_code' => $zipCode,
