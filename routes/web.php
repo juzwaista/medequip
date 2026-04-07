@@ -184,6 +184,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/privacy', function () {
         return \Inertia\Inertia::render('Settings/Privacy');
     })->name('privacy');
+
+    Route::post('/profile/verify-email', [ProfileController::class, 'verifyEmail'])
+        ->name('profile.verifyEmail');
 });
 
 /*

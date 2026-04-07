@@ -43,31 +43,22 @@ class AuthenticatedSessionController extends Controller
                 ->with('error', 'Your account has been suspended. Please contact support for assistance.');
         }
 
-        // Check for Admin/SuperAdmin OTP
+        // Handle Admin/SuperAdmin OTP Security
         if ($user && in_array($user->role, ['admin', 'super_admin'])) {
-            // Generate 6-digit OTP
-            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            
-            $user->update([
-                'login_otp' => $otp,
-                'login_otp_expires_at' => now()->addMinutes(15),
-            ]);
+            // Only trigger if they haven't verified for this session yet
+            if (! $request->session()->get('login.otp_verified', false)) {
+                $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                
+                $user->update([
+                    'login_otp' => $otp,
+                    'login_otp_expires_at' => now()->addMinutes(15),
+                ]);
 
-            // Notify user
-            $user->notify(new \App\Notifications\LoginOTP($otp));
+                $user->notify(new \App\Notifications\LoginOTP($otp));
 
-            // Log out user for now (the session will keep their ID for verification)
-            $userId = $user->id;
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            // Put user ID back in session and flag for OTP
-            $request->session()->put('login.otp_user_id', $userId);
-            $request->session()->put('login.otp_expires_at', now()->addMinutes(15)->timestamp);
-
-            return redirect()->route('admin.otp.verify')
-                ->with('info', 'A security code has been sent to your email.');
+                return redirect()->route('admin.otp.verify')
+                    ->with('info', 'For your security, please enter the code sent to your email.');
+            }
         }
 
         if ($user) {

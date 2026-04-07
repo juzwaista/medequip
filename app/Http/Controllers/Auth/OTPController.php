@@ -8,7 +8,6 @@ use App\Notifications\LoginOTP;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class OTPController extends Controller
 {
@@ -17,8 +16,15 @@ class OTPController extends Controller
      */
     public function show(Request $request): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
-        if (! $request->session()->has('login.otp_user_id')) {
-            return redirect()->route('login');
+        $user = Auth::user();
+
+        // Redirect if not an admin or already verified
+        if (!$user || !in_array($user->role, ['admin', 'super_admin'])) {
+            return redirect()->route('landing');
+        }
+
+        if ($request->session()->get('login.otp_verified', false)) {
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return Inertia::render('Auth/VerifyOTP', [
@@ -37,13 +43,11 @@ class OTPController extends Controller
             'otp' => 'required|string|size:6',
         ]);
 
-        $userId = $request->session()->get('login.otp_user_id');
+        $user = Auth::user();
         
-        if (! $userId) {
+        if (!$user) {
             return redirect()->route('login');
         }
-
-        $user = User::findOrFail($userId);
 
         // Check if OTP is correct and not expired
         if ($user->login_otp === $request->otp && 
@@ -56,12 +60,8 @@ class OTPController extends Controller
                 'login_otp_expires_at' => null,
             ]);
 
-            // Login user
-            Auth::login($user);
-
             // Mark session as OTP verified
             $request->session()->put('login.otp_verified', true);
-            $request->session()->forget(['login.otp_user_id', 'login.otp_expires_at']);
 
             return redirect()->intended(route('admin.dashboard'))
                 ->with('success', 'Security verification successful. Welcome back, ' . $user->name . '!');
@@ -75,15 +75,12 @@ class OTPController extends Controller
      */
     public function resend(Request $request)
     {
-        $userId = $request->session()->get('login.otp_user_id');
+        $user = Auth::user();
         
-        if (! $userId) {
+        if (!$user) {
             return redirect()->route('login');
         }
 
-        $user = User::findOrFail($userId);
-
-        // Rate limit resends if needed (already handled by cooldown in UI, but good to have here)
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         
         $user->update([

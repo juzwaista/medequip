@@ -21,6 +21,8 @@ class ProfileController extends Controller
     {
         return Inertia::render('Settings/AccountSettings', [
             'user' => $request->user(),
+            'status' => session('status'),
+            'info' => session('info'),
         ]);
     }
 
@@ -30,10 +32,35 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $validated = $request->validated();
 
-        $user->fill($request->validated());
+        // Handle Email Change with Verification
+        if ($validated['email'] !== $user->email) {
+            $newEmail = $validated['email'];
+            
+            // Generate OTP for the new email
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            $user->update([
+                'pending_email' => $newEmail,
+                'login_otp' => $otp,
+                'login_otp_expires_at' => now()->addMinutes(15),
+            ]);
 
+            // Notify the NEW email address specifically
+            \Illuminate\Support\Facades\Notification::route('mail', $newEmail)
+                ->notify(new \App\Notifications\LoginOTP($otp));
+
+            // Don't update the primary email yet
+            unset($validated['email']);
+        }
+
+        $user->fill($validated);
         $user->save();
+
+        if ($user->pending_email) {
+            return Redirect::route('profile.edit')->with('info', 'A verification code has been sent to ' . $user->pending_email . '. Please verify to complete the change.');
+        }
 
         return Redirect::route('profile.edit')->with('success', 'Profile updated successfully');
     }
@@ -96,5 +123,45 @@ class ProfileController extends Controller
         }
 
         return Redirect::back()->with('success', 'Your account has been reactivated.');
+    }
+
+    /**
+     * Verify the security code for an email change.
+     */
+    public function verifyEmail(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'otp' => ['required', 'string', 'size:6'],
+        ]);
+
+        $user = $request->user();
+
+        // Check if OTP matches and pending email exists
+        if ($user->pending_email && 
+            $user->login_otp === $request->otp && 
+            $user->login_otp_expires_at && 
+            now()->isBefore($user->login_otp_expires_at)) {
+            
+            $oldEmail = $user->email;
+            $newEmail = $user->pending_email;
+
+            $user->update([
+                'email' => $newEmail,
+                'pending_email' => null,
+                'login_otp' => null,
+                'login_otp_expires_at' => null,
+                'email_verified_at' => now(), // Assume verified since they entered the OTP
+            ]);
+
+            \Illuminate\Support\Facades\Log::info('[ProfileController] Email verified and changed', [
+                'user_id' => $user->id,
+                'from' => $oldEmail,
+                'to' => $newEmail,
+            ]);
+
+            return Redirect::route('profile.edit')->with('success', 'Email updated successfully to ' . $newEmail);
+        }
+
+        return Redirect::back()->withErrors(['otp' => 'The security code is incorrect or has expired.']);
     }
 }
