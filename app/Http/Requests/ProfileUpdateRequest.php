@@ -17,14 +17,23 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
+            'username' => [
                 'required',
                 'string',
-                'lowercase',
-                'email',
-                'max:255',
+                'min:4',
+                'max:20',
+                'regex:/^[a-zA-Z0-9_]+$/',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('username')) {
+            $this->merge([
+                'username' => strtolower(trim((string) $this->input('username'))),
+            ]);
+        }
     }
 }

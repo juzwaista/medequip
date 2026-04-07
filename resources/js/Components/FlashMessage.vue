@@ -7,7 +7,7 @@
         leave-from-class="opacity-100 translate-y-0"
         leave-to-class="opacity-0 translate-y-2"
     >
-        <div v-if="show" class="fixed top-20 right-4 z-50 max-w-sm w-full">
+        <div v-if="show" class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:top-20 z-50 max-w-none sm:max-w-sm w-auto sm:w-full">
             <div 
                 :class="[
                     'rounded-lg shadow-lg p-4 flex items-start space-x-3',

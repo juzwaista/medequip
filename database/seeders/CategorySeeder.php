@@ -8,80 +8,92 @@ use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $categories = [
-            [
-                'name' => 'Medical Equipment',
-                'description' => 'General medical equipment and devices',
+        $tree = [
+            'Medicines' => [
+                'desc' => 'Pharmaceuticals, OTC and prescription medicines',
                 'children' => [
-                    ['name' => 'Diagnostic Equipment', 'description' => 'Equipment for medical diagnosis'],
-                    ['name' => 'Monitoring Devices', 'description' => 'Patient monitoring systems'],
-                    ['name' => 'Imaging Equipment', 'description' => 'X-ray, ultrasound, and imaging devices'],
-                ]
+                    'Over-the-Counter (OTC)' => 'Medicines sold without prescription where regulations allow',
+                    'Prescription Medicines' => 'Medicines that require a valid prescription',
+                    'Vitamins & Supplements' => 'Nutritional supplements',
+                ],
             ],
-            [
-                'name' => 'Surgical Instruments',
-                'description' => 'Tools and instruments for surgical procedures',
+            'Medical Devices' => [
+                'desc' => 'Diagnostic tools, monitors, respiratory equipment, and sterilizers',
                 'children' => [
-                    ['name' => 'Scissors & Forceps', 'description' => 'Surgical cutting and grasping tools'],
-                    ['name' => 'Retractors', 'description' => 'Surgical retractors'],
-                    ['name' => 'Scalpels & Blades', 'description' => 'Cutting instruments'],
-                ]
+                    'Diagnostics' => 'BP monitors, thermometers, stethoscopes, and otoscopes',
+                    'Patient Monitors' => 'Pulse oximeters, ECG machines, vital sign monitors',
+                    'Respiratory' => 'Nebulizers, oxygen concentrators, and CPAP machines',
+                    'Sterilizers & Autoclaves' => 'Autoclaves, UV sterilizers, and disinfection systems',
+                ],
             ],
-            [
-                'name' => 'Personal Protective Equipment',
-                'description' => 'PPE for medical professionals',
+            'Surgical & Dental' => [
+                'desc' => 'Precision tools for surgical, orthopedic, and dental procedures',
                 'children' => [
-                    ['name' => 'Face Masks', 'description' => 'Surgical and N95 masks'],
-                    ['name' => 'Gloves', 'description' => 'Medical examination gloves'],
-                    ['name' => 'Protective Gowns', 'description' => 'Isolation and surgical gowns'],
-                ]
+                    'General Surgery' => 'Scalpels, scissors, forceps, retractors',
+                    'Dental Instruments' => 'Extraction forceps, mirrors, scalers',
+                    'Sutures & Wound Closure' => 'Surgical sutures, needles, staples',
+                ],
             ],
-            [
-                'name' => 'Laboratory Equipment',
-                'description' => 'Medical laboratory instruments and supplies',
+            'Protective Gear (PPE)' => [
+                'desc' => 'Masks, gloves, gowns, and eyewear for healthcare safety',
                 'children' => [
-                    ['name' => 'Microscopes', 'description' => 'Laboratory microscopes'],
-                    ['name' => 'Centrifuges', 'description' => 'Laboratory centrifuges'],
-                    ['name' => 'Lab Consumables', 'description' => 'Test tubes, slides, etc.'],
-                ]
+                    'Face Masks & Shields' => 'Surgical masks, N95 respirators, and face shields',
+                    'Gloves' => 'Latex, nitrile, and vinyl examination gloves',
+                    'Gowns & Coveralls' => 'Isolation gowns, surgical gowns, and coveralls',
+                    'Eyewear' => 'Safety goggles, face shields, and protective eyewear',
+                ],
             ],
-            [
-                'name' => 'Patient Care Supplies',
-                'description' => 'Supplies for patient care and comfort',
+            'Wound Care & First Aid' => [
+                'desc' => 'Bandages, first aid kits, emergency supplies, and antiseptics',
                 'children' => [
-                    ['name' => 'Wound Care', 'description' => 'Bandages, gauze, wound dressings'],
-                    ['name' => 'Mobility Aids', 'description' => 'Wheelchairs, walkers, crutches'],
-                    ['name' => 'Hospital Furniture', 'description' => 'Hospital beds, tables, chairs'],
-                ]
+                    'Bandages & Dressings' => 'Bandages, gauze, wound dressings, and tapes',
+                    'First Aid Kits' => 'Pre-assembled kits for home, office, or field use',
+                    'Emergency & Trauma' => 'Splints, tourniquets, and burn care products',
+                    'Antiseptics & Disinfectants' => 'Alcohol, povidone-iodine, hand sanitizers, and wound cleansers',
+                ],
             ],
-            [
-                'name' => 'Consumables',
-                'description' => 'Medical consumable supplies',
+            'Everyday Supplies' => [
+                'desc' => 'Syringes, IV sets, and other single-use medical supplies',
                 'children' => [
-                    ['name' => 'Syringes & Needles', 'description' => 'Injection supplies'],
-                    ['name' => 'IV Supplies', 'description' => 'IV tubes, catheters, etc.'],
-                    ['name' => 'Disinfectants', 'description' => 'Medical disinfectants and sanitizers'],
-                ]
+                    'Syringes & Needles' => 'Disposable syringes, hypodermic needles, safety needles',
+                    'IV Sets & Catheters' => 'IV sets, catheters, cannulas, and infusion pumps',
+                    'Cotton, Gauze & Tape' => 'Cotton balls, gauze pads, medical tape, and related supplies',
+                    'Incontinence Care' => 'Adult diapers, underpads, catheter supplies',
+                ],
+            ],
+            'Lab & Testing' => [
+                'desc' => 'Test kits, specimen collection, and lab equipment',
+                'children' => [
+                    'Test Kits' => 'Rapid test kits, reagent strips, diagnostic panels',
+                    'Specimen Collection' => 'Blood collection tubes, swabs, sample containers',
+                    'Lab Equipment' => 'Microscopes, centrifuges, analyzers',
+                    'Lab Consumables' => 'Slides, petri dishes, pipette tips',
+                ],
+            ],
+            'Mobility & Furniture' => [
+                'desc' => 'Wheelchairs, hospital beds, braces, and medical carts',
+                'children' => [
+                    'Wheelchairs & Walkers' => 'Wheelchairs, walkers, crutches, and canes',
+                    'Braces & Supports' => 'Therapy bands, braces, and exercise equipment',
+                    'Hospital Beds' => 'Manual, semi-electric, and fully electric hospital beds',
+                    'Medical Carts & Tables' => 'Crash carts, trolleys, exam tables, and procedure chairs',
+                ],
             ],
         ];
 
-        foreach ($categories as $categoryData) {
-            $children = $categoryData['children'] ?? [];
-            unset($categoryData['children']);
+        foreach ($tree as $parentName => $data) {
+            $parent = Category::firstOrCreate(
+                ['slug' => Str::slug($parentName)],
+                ['name' => $parentName, 'description' => $data['desc']]
+            );
 
-            $categoryData['slug'] = Str::slug($categoryData['name']);
-
-            $parent = Category::create($categoryData);
-
-            foreach ($children as $childData) {
-                $childData['slug'] = Str::slug($childData['name']);
-                $childData['parent_id'] = $parent->id;
-                Category::create($childData);
+            foreach ($data['children'] as $childName => $childDesc) {
+                Category::firstOrCreate(
+                    ['slug' => Str::slug($childName)],
+                    ['name' => $childName, 'description' => $childDesc, 'parent_id' => $parent->id]
+                );
             }
         }
     }

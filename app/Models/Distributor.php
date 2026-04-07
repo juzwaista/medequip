@@ -38,6 +38,12 @@ class Distributor extends Model
         'warning_reason',
         'warning_message',
         'auto_approve_orders',
+        'chat_template_order_accepted',
+        'chat_template_order_shipped',
+        'chat_auto_reply',
+        'shop_profile_onboarding_completed_at',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
@@ -46,6 +52,9 @@ class Distributor extends Model
         'business_hours' => 'array',
         'social_links' => 'array',
         'suspended_until' => 'datetime',
+        'shop_profile_onboarding_completed_at' => 'datetime',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     protected $appends = ['is_suspended', 'unread_alerts_count'];
@@ -54,9 +63,10 @@ class Distributor extends Model
      * Get the user/owner
      */
     public function user()
-{
-    return $this->belongsTo(User::class, 'user_id');
-}
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -100,6 +110,11 @@ class Distributor extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
     }
 
     /**
@@ -147,7 +162,7 @@ class Distributor extends Model
      */
     public function getIsSuspendedAttribute(): bool
     {
-        if (!$this->suspended_until) {
+        if (! $this->suspended_until) {
             return false;
         }
 

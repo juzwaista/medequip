@@ -111,7 +111,7 @@ class POSController extends Controller
                 'order_number'     => 'POS-' . strtoupper(Str::random(8)),
                 'customer_id'      => $user->id,
                 'distributor_id'   => $distributor->id,
-                'status'           => $paymentMethod === 'cash' ? 'delivered' : 'pending',
+                'status'           => $paymentMethod === 'cash' ? 'completed' : 'pending',
                 'subtotal'         => $totalAmount,
                 'discount'         => 0,
                 'total_amount'     => $totalAmount,
@@ -155,7 +155,10 @@ class POSController extends Controller
                 $posPayment->creditSellerWalletOnVerification();
 
                 $change = number_format($validated['amount_paid'] - $totalAmount, 2);
-                return back()->with('success', "✅ Cash sale complete! Change: ₱{$change}");
+                return back()->with([
+                    'success' => "✅ Cash sale complete! Change: ₱{$change}",
+                    'receipt_url' => route('owner.orders.receipt', $order->id),
+                ]);
             }
 
             // ── PAYMONGO: Create checkout session and redirect ─────────────────
@@ -187,7 +190,7 @@ class POSController extends Controller
                     ->update(['paymongo_session_id' => $session['session_id']]);
 
                 // Redirect to PayMongo hosted checkout
-                return redirect()->away($session['checkout_url']);
+                return Inertia::location($session['checkout_url']);
 
             } catch (\Exception $e) {
                 Log::error('[POSController] PayMongo session failed', ['error' => $e->getMessage()]);
@@ -207,7 +210,10 @@ class POSController extends Controller
         }
 
         return redirect()->route('owner.pos.index')
-            ->with('success', "✅ Online payment received for Invoice #{$invoice->invoice_number}! Funds are in escrow.");
+            ->with([
+                'success' => "✅ Online payment received for Invoice #{$invoice->invoice_number}! Funds have been added to your balance.",
+                'receipt_url' => route('owner.orders.receipt', $invoice->order_id ?? 0),
+            ]);
     }
 
     /**

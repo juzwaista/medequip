@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Delivery;
+use App\Models\Order;
+use App\Rules\SafeUpload;
+use App\Services\OrderChatAutomationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Order;
-use App\Models\Delivery;
 
+/**
+ * @deprecated Use App\Http\Controllers\Courier\DeliveryController instead.
+ *             This controller is retained only for reference; its routes have been moved.
+ */
 class CourierController extends Controller
 {
     /**
@@ -18,11 +24,11 @@ class CourierController extends Controller
         $user = auth()->user();
         $courier = $user->courier;
 
-        if (!$courier) {
+        if (! $courier) {
             // Auto-create courier profile if missing (simplified for demo)
             $courier = $user->courier()->create([
                 'vehicle_type' => 'Motorcycle',
-                'status' => 'active'
+                'status' => 'active',
             ]);
         }
 
@@ -33,7 +39,7 @@ class CourierController extends Controller
 
         return Inertia::render('Courier/Dashboard', [
             'courier' => $courier,
-            'deliveries' => $deliveries
+            'deliveries' => $deliveries,
         ]);
     }
 
@@ -51,26 +57,22 @@ class CourierController extends Controller
     public function lookupOrder(Request $request)
     {
         $scannedNumber = $request->query('order_number');
-        \Illuminate\Support\Facades\Log::info("Scanner lookup triggered for: '{$scannedNumber}'");
 
         $order = Order::where('order_number', $scannedNumber)
             ->with(['customer', 'distributor'])
             ->first();
 
-        if (!$order) {
-            \Illuminate\Support\Facades\Log::warning("Scanner lookup failed. Order not found for: '{$scannedNumber}'");
+        if (! $order) {
             return response()->json(null, 404);
         }
 
-        \Illuminate\Support\Facades\Log::info("Scanner lookup success. Found order ID: {$order->id}");
-
         return response()->json([
-            'id'               => $order->id,
-            'order_number'     => $order->order_number,
-            'status'           => $order->status,
+            'id' => $order->id,
+            'order_number' => $order->order_number,
+            'status' => $order->status,
             'delivery_address' => $order->delivery_address,
-            'customer'         => $order->customer,
-            'distributor'      => $order->distributor,
+            'customer' => $order->customer,
+            'distributor' => $order->distributor,
         ]);
     }
 
@@ -82,23 +84,23 @@ class CourierController extends Controller
         $validated = $request->validate([
             'order_number' => 'required|string',
             'action' => 'required|in:pickup,deliver',
-            'photo' => 'nullable|required_if:action,deliver|file|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:15360'
+            'photo' => ['nullable', 'required_if:action,deliver', 'file', 'mimes:jpeg,png,jpg,gif,webp,heic,heif', 'max:15360', SafeUpload::image()],
         ]);
 
         /** @var \App\Models\User $user */
         $user = auth()->user();
         $courier = $user->courier;
 
-        if (!$courier) {
+        if (! $courier) {
             $courier = $user->courier()->create([
                 'vehicle_type' => 'Motorcycle',
-                'status' => 'active'
+                'status' => 'active',
             ]);
         }
 
         $order = Order::where('order_number', $validated['order_number'])->first();
 
-        if (!$order) {
+        if (! $order) {
             return back()->withErrors(['message' => 'Order not found.']);
         }
 
@@ -106,18 +108,20 @@ class CourierController extends Controller
         $delivery = Delivery::firstOrCreate(
             ['order_id' => $order->id],
             [
-                'tracking_number' => 'trk_' . uniqid(),
+                'tracking_number' => 'trk_'.uniqid(),
                 'delivery_address' => $order->delivery_address,
-                'status' => 'pending'
+                'status' => 'pending',
             ]
         );
 
         if ($validated['action'] === 'pickup') {
             $delivery->update([
                 'courier_id' => $courier->id,
-                'status' => 'in_transit'
+                'status' => 'in_transit',
             ]);
             $order->update(['status' => 'shipped']);
+            app(OrderChatAutomationService::class)->sendOrderShippedMessage($order->fresh());
+
             return back()->with('success', 'Order picked up successfully!');
         }
 
@@ -134,11 +138,11 @@ class CourierController extends Controller
             $delivery->update([
                 'status' => 'delivered',
                 'actual_delivery_at' => now(),
-                'proof_of_delivery_path' => $path
+                'proof_of_delivery_path' => $path,
             ]);
             $order->update([
                 'status' => 'delivered',
-                'delivered_at' => now()
+                'delivered_at' => now(),
             ]);
 
             if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
@@ -156,6 +160,7 @@ class CourierController extends Controller
                     'courier_paid_at' => now(),
                 ]);
             }
+
             return back()->with('success', 'Order delivered successfully!');
         }
 

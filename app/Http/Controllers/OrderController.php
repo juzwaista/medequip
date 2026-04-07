@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
 use App\Models\CheckoutBatch;
-use App\Models\OrderItem;
-use App\Models\Product;
+use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Product;
+use App\Notifications\OrderNotification;
+use App\Rules\SafeUpload;
 use App\Services\CartService;
+use App\Services\CustomerReliabilityService;
 use App\Services\OrderInvoiceService;
 use App\Services\PayMongoService;
+use App\Services\PrescriptionChatService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +24,48 @@ class OrderController extends Controller
         private PayMongoService $paymongo,
         private OrderInvoiceService $orderInvoiceService,
     ) {}
+
+    /**
+     * Determine shipping fee base rate and highest required vehicle for an array of cart items.
+     * Returns ['fee' => float, 'vehicle' => string]
+     */
+    private function calculateShippingRequirement(iterable $cartItems): array
+    {
+        $vehicleHierarchy = [
+            'motorcycle' => 1,
+            'car_sedan' => 2,
+            'car_hatchback' => 3,
+            'pickup_truck' => 4,
+            'box_truck' => 5,
+        ];
+
+        $shippingBases = [
+            'motorcycle' => 60,
+            'car_sedan' => 150,
+            'car_hatchback' => 150,
+            'pickup_truck' => 500,
+            'box_truck' => 1000,
+        ];
+
+        $highestWeight = 1;
+        $highestVehicle = 'motorcycle';
+
+        foreach ($cartItems as $item) {
+            // $item can be an array output from CartService or an array shaped for placeOrder
+            $product = is_array($item) ? $item['product'] : $item;
+            $req = $product->vehicle_requirement ?? 'motorcycle';
+            $weight = $vehicleHierarchy[$req] ?? 1;
+            if ($weight > $highestWeight) {
+                $highestWeight = $weight;
+                $highestVehicle = $req;
+            }
+        }
+
+        return [
+            'fee' => (float) ($shippingBases[$highestVehicle] ?? 60),
+            'vehicle' => $highestVehicle,
+        ];
+    }
 
     /**
      * Show checkout page.
@@ -36,27 +81,38 @@ class OrderController extends Controller
 
         $cartItems = CartService::enrichCartItems($cart);
         $subtotal = CartService::calculateSubtotal($cartItems);
-        $shippingFeePerOrder = (float) config('services.shipping.flat_fee', 50);
+
         $distributorCount = collect($cartItems)
             ->pluck('product.distributor_id')
             ->filter()
             ->unique()
             ->count();
-        $shippingFeeTotal = $shippingFeePerOrder * max(1, $distributorCount);
+
+        $shippingFeeTotal = 0;
+        $groupedCart = collect($cartItems)->groupBy('product.distributor_id');
+        foreach ($groupedCart as $dItems) {
+            $req = $this->calculateShippingRequirement($dItems->all());
+            $shippingFeeTotal += $req['fee'];
+        }
+
         $cartHasPrescriptionItems = collect($cartItems)->contains(fn ($line) => $line['product']->requires_prescription);
 
+        $reliability = app(CustomerReliabilityService::class);
+        $user = auth()->user();
+
         return Inertia::render('Checkout/Index', [
-            'cartItems'      => $cartItems,
+            'cartItems' => $cartItems,
             'cart_has_prescription_items' => $cartHasPrescriptionItems,
-            'subtotal'       => $subtotal,
-            'shipping_fee_per_order' => $shippingFeePerOrder,
+            'subtotal' => $subtotal,
             'shipping_fee_total' => $shippingFeeTotal,
             'estimated_total' => $subtotal + $shippingFeeTotal,
             'distributor_count' => $distributorCount,
-            'cities'         => config('cavite.cities'),
-            'barangays'      => config('cavite.barangays'),
+            'cities' => config('cavite.cities'),
+            'barangays' => config('cavite.barangays'),
             'savedAddresses' => auth()->user()->addresses()->latest()->get(),
             'wallet_balance' => (float) (auth()->user()->wallet?->balance ?? 0),
+            'cod_available' => $reliability->isCodAllowedForCustomer($user),
+            'cod_rejection_rate_percent' => $reliability->codRejectionRatePercent($user),
         ]);
     }
 
@@ -70,17 +126,19 @@ class OrderController extends Controller
     public function placeOrder(Request $request)
     {
         $validated = $request->validate([
-            'customer_name'    => 'required|string|min:2|max:100',
+            'customer_name' => 'required|string|min:2|max:100',
             'delivery_address' => 'required|string|max:500|min:5',
-            'contact_number'   => ['required', 'regex:/^09[0-9]{9}$/'],
-            'notes'            => 'nullable|string|max:1000',
-            'payment_method'   => 'required|in:card,gcash,paymaya,wallet,cod',
+            'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
+            'delivery_latitude' => 'nullable|numeric|between:-90,90',
+            'delivery_longitude' => 'nullable|numeric|between:-180,180',
+            'notes' => 'nullable|string|max:1000',
+            'payment_method' => 'required|in:card,gcash,paymaya,wallet,cod',
         ], [
-            'customer_name.required'    => 'Please provide the recipient name',
+            'customer_name.required' => 'Please provide the recipient name',
             'delivery_address.required' => 'Please provide a delivery address',
-            'contact_number.required'   => 'Contact number is required for delivery',
-            'contact_number.regex'      => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
-            'payment_method.required'   => 'Please choose a payment method',
+            'contact_number.required' => 'Contact number is required for delivery',
+            'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
+            'payment_method.required' => 'Please choose a payment method',
         ]);
 
         $cart = CartService::pruneCart(session()->get('cart', []));
@@ -91,9 +149,14 @@ class OrderController extends Controller
         }
 
         $isPaymongo = in_array($validated['payment_method'], Payment::paymongoMethods());
-        $isWallet   = $validated['payment_method'] === 'wallet';
-        $isCod      = $validated['payment_method'] === 'cod';
-        $shippingFeePerOrder = (float) config('services.shipping.flat_fee', 50);
+        $isWallet = $validated['payment_method'] === 'wallet';
+        $isCod = $validated['payment_method'] === 'cod';
+
+        if ($isCod && ! app(CustomerReliabilityService::class)->isCodAllowedForCustomer($request->user())) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment_method' => ['Cash on delivery is not available for your account based on past order outcomes. Please choose another payment method.'],
+            ]);
+        }
 
         try {
             DB::beginTransaction();
@@ -114,7 +177,7 @@ class OrderController extends Controller
                         throw new \Exception('Invalid product option in cart. Please refresh and try again.');
                     }
                 } elseif ($product->variations->where('is_active', true)->isNotEmpty()) {
-                    throw new \Exception('Please select a product option for ' . $product->name);
+                    throw new \Exception('Please select a product option for '.$product->name);
                 }
 
                 if (! isset($ordersByDistributor[$distributorId])) {
@@ -138,17 +201,22 @@ class OrderController extends Controller
             $createdOrders = [];
 
             foreach ($ordersByDistributor as $distributorData) {
+                $shippingReq = $this->calculateShippingRequirement($distributorData['items']);
+
                 $order = Order::create([
-                    'customer_id'      => auth()->id(),
-                    'distributor_id'   => $distributorData['distributor_id'],
-                    'order_number'     => Order::generateOrderNumber(),
-                    'status'           => 'pending',
-                    'subtotal'         => 0,
-                    'total_amount'     => 0,
+                    'customer_id' => auth()->id(),
+                    'distributor_id' => $distributorData['distributor_id'],
+                    'order_number' => Order::generateOrderNumber(),
+                    'status' => 'pending',
+                    'subtotal' => 0,
+                    'total_amount' => 0,
                     'delivery_address' => $validated['delivery_address'],
-                    'contact_number'   => $validated['contact_number'],
-                    'notes'            => $validated['notes'] ?? null,
-                    'payment_method'   => $validated['payment_method'],
+                    'delivery_latitude' => $validated['delivery_latitude'] ?? null,
+                    'delivery_longitude' => $validated['delivery_longitude'] ?? null,
+                    'contact_number' => $validated['contact_number'],
+                    'notes' => $validated['notes'] ?? null,
+                    'payment_method' => $validated['payment_method'],
+                    'required_vehicle_type' => $shippingReq['vehicle'],
                 ]);
 
                 $itemSubtotal = 0;
@@ -200,11 +268,11 @@ class OrderController extends Controller
                     $itemSubtotal += $lineTotal;
                 }
 
-                $totalAmount = $itemSubtotal + $shippingFeePerOrder;
+                $totalAmount = $itemSubtotal + $shippingReq['fee'];
 
                 $order->update([
-                    'subtotal'     => $itemSubtotal,
-                    'shipping_fee' => $shippingFeePerOrder,
+                    'subtotal' => $itemSubtotal,
+                    'shipping_fee' => $shippingReq['fee'],
                     'total_amount' => $totalAmount,
                 ]);
 
@@ -216,10 +284,9 @@ class OrderController extends Controller
                         : Order::PRESCRIPTION_NOT_REQUIRED,
                 ]);
 
-                // COD: no invoice or payment record — courier collects cash on delivery
-                if (!$isCod) {
-                    $this->orderInvoiceService->createInvoiceAndPayment($order->fresh());
-                }
+                // Always create invoice for record-keeping (including COD).
+                // OrderInvoiceService handles COD-specific payment method / status.
+                $this->orderInvoiceService->createInvoiceAndPayment($order->fresh());
                 if ($isWallet) {
                     $walletToDebitTotal += $totalAmount;
                 }
@@ -228,7 +295,7 @@ class OrderController extends Controller
             }
 
             if ($isWallet) {
-                if (!$customerWallet || $customerWallet->balance < $walletToDebitTotal) {
+                if (! $customerWallet || $customerWallet->balance < $walletToDebitTotal) {
                     throw new \Exception('Insufficient wallet balance for this checkout.');
                 }
 
@@ -244,6 +311,18 @@ class OrderController extends Controller
             session()->forget('cart');
 
             DB::commit();
+
+            foreach ($createdOrders as $placed) {
+                $placed->loadMissing(['distributor.user', 'customer']);
+
+                if ($placed->distributor?->user) {
+                    $placed->distributor->user->notify(new OrderNotification($placed, 'order_placed'));
+                }
+
+                if ($placed->needsPrescriptionUpload() && $placed->customer) {
+                    $placed->customer->notify(new OrderNotification($placed, 'order_requires_prescription'));
+                }
+            }
 
             $ordersWithInvoices = collect($createdOrders)->filter(fn ($o) => $o->invoice);
 
@@ -261,7 +340,7 @@ class OrderController extends Controller
                     $batch = CheckoutBatch::create([
                         'user_id' => auth()->id(),
                         'primary_order_id' => $ordersWithInvoices->first()->id,
-                        'paymongo_session_id' => 'pending-' . uniqid(),
+                        'paymongo_session_id' => 'pending-'.uniqid(),
                         'order_ids' => $orderIds,
                         'invoice_ids' => $invoiceIds,
                         'total_amount' => $batchTotal,
@@ -270,7 +349,7 @@ class OrderController extends Controller
 
                     // Now that batch exists, create a final checkout session with callback URLs containing batch id.
                     $session = $this->paymongo->createGenericCheckoutSession(
-                        description: 'MedEquip checkout (' . count($orderIds) . ' order' . (count($orderIds) > 1 ? 's' : '') . ')',
+                        description: 'MedEquip checkout ('.count($orderIds).' order'.(count($orderIds) > 1 ? 's' : '').')',
                         amountCentavos: (int) round($batchTotal * 100),
                         successUrl: route('payment.batch.success', ['batch' => $batch->id]),
                         cancelUrl: route('payment.batch.cancel', ['batch' => $batch->id]),
@@ -292,6 +371,7 @@ class OrderController extends Controller
                     Log::error('[OrderController] PayMongo session failed', [
                         'error' => $e->getMessage(),
                     ]);
+
                     // Fallback: redirect to confirmation, payment can be retried
                     return redirect()->route('orders.confirmation', $createdOrders[0])
                         ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
@@ -302,7 +382,7 @@ class OrderController extends Controller
             if ($isWallet) {
                 return redirect()->route('orders.confirmation', $createdOrders[0])
                     ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
-                    ->with('success', 'Order placed! Payment verified and funds are now held in escrow.');
+                    ->with('success', 'Order placed! Your payment is held by the platform until you confirm delivery.');
             }
 
             if ($isCod) {
@@ -321,7 +401,8 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return back()->withErrors(['order' => 'Failed to place order: ' . $e->getMessage()])->withInput();
+
+            return back()->withErrors(['order' => 'Failed to place order: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -335,11 +416,11 @@ class OrderController extends Controller
         }
 
         $requestedIds = collect(session('confirmation_order_ids', []))
-            ->filter(fn($id) => is_numeric($id))
-            ->map(fn($id) => (int) $id)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
             ->values();
 
-        if (!$requestedIds->contains($order->id)) {
+        if (! $requestedIds->contains($order->id)) {
             $requestedIds->prepend($order->id);
         }
 
@@ -353,7 +434,7 @@ class OrderController extends Controller
         $primaryOrder = $orders->firstWhere('id', $order->id) ?? $orders->first();
         $shippingTotal = (float) $orders->sum('shipping_fee');
         $grandTotal = (float) $orders->sum('total_amount');
-        $itemsCount = (int) $orders->sum(fn($o) => $o->items->count());
+        $itemsCount = (int) $orders->sum(fn ($o) => $o->items->count());
 
         return Inertia::render('Orders/Confirmation', [
             'order' => $primaryOrder,
@@ -368,7 +449,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Buyer confirms receipt of delivered order → releases escrow.
+     * Buyer confirms receipt of delivered order → releases funds held by the platform to the seller.
      */
     public function confirmReceived(Order $order)
     {
@@ -376,31 +457,52 @@ class OrderController extends Controller
             abort(403);
         }
 
-        if (!$order->canBeConfirmedReceived()) {
+        if (! $order->canBeConfirmedReceived()) {
             return back()->with('error', 'This order cannot be confirmed yet.');
         }
 
-        DB::transaction(function () use ($order) {
-            // Mark order as received
-            $order->update([
-                'received_at' => now(),
-                'status'      => 'completed',
-            ]);
+        try {
+            DB::transaction(function () use ($order) {
+                $order->update([
+                    'received_at' => now(),
+                    'status' => 'completed',
+                ]);
 
-            // Release escrow for all verified payments on this order's invoice
-            if ($order->invoice) {
-                $order->invoice->payments()
-                    ->where('status', 'verified')
-                    ->where('escrow_status', 'held')
-                    ->each(function ($payment) {
-                        $payment->releaseEscrow();
-                    });
-            }
+                if ($order->invoice) {
+                    $order->invoice->payments()
+                        ->where('status', 'verified')
+                        ->where('escrow_status', 'held')
+                        ->each(function ($payment) {
+                            $payment->releaseEscrow();
+                        });
 
-            Log::info('[OrderController] Buyer confirmed receipt, escrow released', [
+                    // Reconcile invoice status — mark as paid once all escrow is released.
+                    $totalPaid = $order->invoice->payments()->where('status', 'verified')->sum('amount');
+                    if ($totalPaid >= (float) $order->invoice->total_amount) {
+                        $order->invoice->update(['status' => 'paid']);
+                    }
+                }
+
+                Log::info('[OrderController] Buyer confirmed receipt; platform hold released for order', [
+                    'order_id' => $order->id,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            Log::error('[OrderController] confirmReceived payout failed', [
                 'order_id' => $order->id,
+                'message' => $e->getMessage(),
             ]);
-        });
+
+            return back()->with(
+                'error',
+                'We could not finalize the seller payout yet. Nothing was charged again — please try again shortly or contact support if this continues.'
+            );
+        }
+
+        $order->loadMissing('distributor.user');
+        if ($order->distributor?->user) {
+            $order->distributor->user->notify(new OrderNotification($order, 'order_completed'));
+        }
 
         return back()->with('success', 'Delivery confirmed! Thank you for your order.');
     }
@@ -420,6 +522,11 @@ class OrderController extends Controller
 
         $order->load('invoice.payments');
         $invoice = $order->invoice;
+        if (! $invoice && $order->hasOnlinePayment() && $order->payment_method === 'paymongo') {
+            $this->orderInvoiceService->createInvoiceAndPayment($order->fresh());
+            $order->refresh()->load('invoice.payments');
+            $invoice = $order->invoice;
+        }
         if (! $invoice) {
             return back()->withErrors(['payment' => 'Invoice not found for this order.']);
         }
@@ -433,18 +540,18 @@ class OrderController extends Controller
             ->latest()
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             $fees = Payment::calculateFees((float) $invoice->total_amount);
             $payment = Payment::create([
-                'invoice_id'          => $invoice->id,
-                'payment_method'      => 'paymongo',
-                'amount'              => $invoice->total_amount,
-                'status'              => 'pending',
-                'escrow_status'       => 'held',
-                'platform_fee_rate'   => $fees['platform_fee_rate'],
+                'invoice_id' => $invoice->id,
+                'payment_method' => 'paymongo',
+                'amount' => $invoice->total_amount,
+                'status' => 'pending',
+                'escrow_status' => 'held',
+                'platform_fee_rate' => $fees['platform_fee_rate'],
                 'platform_fee_amount' => $fees['platform_fee_amount'],
-                'net_seller_amount'   => $fees['net_seller_amount'],
-                'paymongo_status'     => 'pending',
+                'net_seller_amount' => $fees['net_seller_amount'],
+                'paymongo_status' => 'pending',
             ]);
         } else {
             $payment->update([
@@ -501,7 +608,7 @@ class OrderController extends Controller
         }
 
         $request->validate([
-            'prescription' => 'required|image|max:8192',
+            'prescription' => ['required', 'image', 'max:8192', SafeUpload::image()],
         ], [
             'prescription.required' => 'Please choose a clear photo of your prescription.',
         ]);
@@ -512,6 +619,14 @@ class OrderController extends Controller
             'prescription_image_path' => $path,
             'prescription_status' => Order::PRESCRIPTION_PENDING_REVIEW,
         ]);
+
+        $order = $order->fresh();
+        app(PrescriptionChatService::class)->postCustomerUpload($order);
+
+        $order->loadMissing('distributor.user');
+        if ($order->distributor?->user) {
+            $order->distributor->user->notify(new OrderNotification($order, 'prescription_uploaded'));
+        }
 
         return redirect()->route('orders.show', $order)
             ->with('success', 'Prescription submitted. The distributor will review it before you can pay.');

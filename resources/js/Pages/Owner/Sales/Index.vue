@@ -258,7 +258,7 @@
                                                         <span class="text-emerald-700">Net Seller Payout</span>
                                                         <span class="font-bold text-emerald-700">₱{{ Number(payment.net_seller_amount || 0).toLocaleString() }}</span>
                                                     </div>
-                                                    <p class="text-xs text-gray-400 mt-2 text-right italic font-normal">If COD, you are keeping cash, and the platform fee is a recorded debt.</p>
+                                                    <p class="text-xs text-gray-400 mt-2 text-right italic font-normal">For COD orders, the platform fee is deducted from your wallet balance.</p>
                                                 </div>
                                             </div>
                                             <div v-else class="flex items-center text-sm text-gray-500 bg-white p-3 rounded border border-gray-100">

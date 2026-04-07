@@ -1,20 +1,20 @@
 <template>
     <OwnerLayout>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6 pb-28 sm:pb-10 min-w-0">
             <!-- Header -->
-            <div class="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Orders</h1>
-                    <p class="text-gray-600 mt-2">Manage customer orders</p>
+            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
+                <div class="min-w-0">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h1>
+                    <p class="text-gray-600 mt-1 text-sm sm:text-base">Manage customer orders</p>
                 </div>
-                <a href="/owner/dashboard" class="text-blue-600 hover:text-blue-700 font-medium">
-                    ← Back to Dashboard
+                <a href="/owner/dashboard" class="text-blue-600 hover:text-blue-700 font-medium text-sm sm:text-base py-2 sm:py-0 inline-flex items-center min-h-[44px] sm:min-h-0 touch-manipulation shrink-0">
+                    ← Dashboard
                 </a>
             </div>
 
             <!-- Filters -->
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Search -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
@@ -23,7 +23,7 @@
                             @keyup.enter="applyFilters"
                             type="text" 
                             placeholder="Order number or customer name..." 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         />
                     </div>
 
@@ -33,7 +33,7 @@
                         <select 
                             v-model="localFilters.status"
                             @change="applyFilters"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         >
                             <option value="">All Statuses</option>
                             <option value="pending">Pending</option>
@@ -56,9 +56,35 @@
                 </p>
             </div>
 
-            <!-- Orders Table -->
+            <!-- Orders: cards on small screens, table on md+ -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <table v-if="orders && orders.data && orders.data.length > 0" class="min-w-full divide-y divide-gray-200">
+                <!-- Mobile / narrow -->
+                <div v-if="orders && orders.data && orders.data.length > 0" class="md:hidden divide-y divide-gray-100">
+                    <Link
+                        v-for="order in orders.data"
+                        :key="'m-' + order.id"
+                        :href="`/owner/orders/${order.id}`"
+                        class="block p-4 hover:bg-gray-50 active:bg-gray-100 transition min-h-[72px] touch-manipulation"
+                    >
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-semibold text-gray-900 truncate">{{ order.order_number }}</p>
+                                <p class="text-sm text-gray-600 truncate">{{ order.customer?.name || 'Unknown' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ order.items?.length || 0 }} item(s)</p>
+                            </div>
+                            <div class="text-right shrink-0 flex flex-col items-end gap-1">
+                                <p class="text-sm font-bold text-gray-900">₱{{ Number(order.total_amount).toLocaleString() }}</p>
+                                <div class="mt-1">
+                                    <StatusBadge :status="order.status" type="order" />
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1"><DateFormat :date="order.created_at" format="short" /></p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-blue-600 font-semibold mt-2">View details →</p>
+                    </Link>
+                </div>
+
+                <table v-if="orders && orders.data && orders.data.length > 0" class="hidden md:table min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
@@ -113,24 +139,28 @@
             </div>
 
             <!-- Pagination -->
-            <div v-if="orders.data.length > 0" class="mt-6 flex justify-between items-center">
-                <div class="text-sm text-gray-600">
+            <div v-if="orders?.data?.length > 0" class="mt-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div class="text-sm text-gray-600 text-center sm:text-left">
                     Showing {{ orders.from }} to {{ orders.to }} of {{ orders.total }} orders
                 </div>
-                <div class="flex gap-2">
-                    <Link 
-                        v-for="link in orders.links" 
-                        :key="link.label"
-                        :href="link.url"
-                        :class="{
-                            'bg-blue-600 text-white': link.active,
-                            'bg-white text-gray-700 hover:bg-gray-50': !link.active,
-                            'opacity-50 cursor-not-allowed': !link.url,
-                        }"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-                        v-html="link.label"
-                    >
-                    </Link>
+                <div class="flex flex-wrap justify-center sm:justify-end gap-2">
+                    <template v-for="link in orders.links" :key="link.label">
+                        <Link
+                            v-if="link.url"
+                            :href="link.url"
+                            :class="{
+                                'bg-blue-600 text-white border-blue-600': link.active,
+                                'bg-white text-gray-700 hover:bg-gray-50 border-gray-300': !link.active,
+                            }"
+                            class="px-3 py-2.5 sm:py-2 border rounded-lg text-sm font-medium min-w-[40px] text-center touch-manipulation inline-flex items-center justify-center"
+                            v-html="link.label"
+                        />
+                        <span
+                            v-else
+                            class="px-3 py-2.5 sm:py-2 border border-gray-200 rounded-lg text-sm font-medium min-w-[40px] text-center opacity-50 cursor-not-allowed bg-gray-50 text-gray-400 inline-flex items-center justify-center"
+                            v-html="link.label"
+                        />
+                    </template>
                 </div>
             </div>
         </div>
@@ -139,7 +169,7 @@
 
 <script setup>
 import { reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, Link } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import DateFormat from '@/Components/DateFormat.vue';

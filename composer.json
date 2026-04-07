@@ -51,6 +51,12 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "dev-account": [
+            "@php artisan db:seed --class=LocalTestAccountSeeder --ansi"
+        ],
+        "db-info": [
+            "@php artisan db:where-am-i --ansi"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

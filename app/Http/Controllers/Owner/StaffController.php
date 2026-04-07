@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules;
+use Inertia\Inertia;
 
 class StaffController extends Controller
 {
@@ -27,7 +26,7 @@ class StaffController extends Controller
 
         $distributor = $user->distributor;
 
-        if (!$distributor) {
+        if (! $distributor) {
             abort(404, 'Distributor profile not found.');
         }
 
@@ -37,7 +36,7 @@ class StaffController extends Controller
             ->get();
 
         return Inertia::render('Owner/Staff/Index', [
-            'staffMembers' => $staff
+            'staffMembers' => $staff,
         ]);
     }
 
@@ -61,13 +60,15 @@ class StaffController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        User::create([
+        $staffUser = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'staff',
+            'password' => $request->password,
             'distributor_id' => $distributor->id,
+            'email_verified_at' => now(),
         ]);
+
+        $staffUser->forceFill(['role' => 'staff'])->save();
 
         return redirect()->back()->with('success', 'Staff account created successfully.');
     }

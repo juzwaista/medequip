@@ -25,6 +25,7 @@
         "@zxing/browser": "^0.1.5",
         "@zxing/library": "^0.21.3",
         "chart.js": "^4.5.1",
+        "leaflet": "^1.9.4",
         "lodash": "^4.17.23",
         "qrcode.vue": "^3.8.0",
         "vue-qrcode-reader": "^5.7.3",

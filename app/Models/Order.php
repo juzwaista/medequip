@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,18 +31,22 @@ class Order extends Model
         'cancelled_at',
         'delivered_at',
         'received_at',
+        'delivery_latitude',
+        'delivery_longitude',
     ];
 
     protected $casts = [
-        'subtotal'     => 'decimal:2',
+        'subtotal' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
-        'discount'     => 'decimal:2',
+        'discount' => 'decimal:2',
         'total_amount' => 'decimal:2',
-        'approved_at'  => 'datetime',
+        'approved_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'delivered_at' => 'datetime',
-        'received_at'  => 'datetime',
+        'received_at' => 'datetime',
         'prescription_reviewed_at' => 'datetime',
+        'delivery_latitude' => 'decimal:8',
+        'delivery_longitude' => 'decimal:8',
     ];
 
     public const PRESCRIPTION_NOT_REQUIRED = 'not_required';
@@ -96,6 +101,38 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function getShopConversationForOrder(): ?Conversation
+    {
+        return Conversation::query()
+            ->where('customer_id', $this->customer_id)
+            ->where('distributor_id', $this->distributor_id)
+            ->first();
+    }
+
+    public function getOrCreateShopConversation(): Conversation
+    {
+        return Conversation::firstOrCreate(
+            [
+                'customer_id' => $this->customer_id,
+                'distributor_id' => $this->distributor_id,
+            ],
+            []
+        );
+    }
+
+    /**
+     * All messages in the buyer–seller thread (same as /messages for this shop).
+     */
+    public function chatMessages(): Builder
+    {
+        $c = $this->getShopConversationForOrder();
+        if (! $c) {
+            return ConversationMessage::query()->whereRaw('0 = 1');
+        }
+
+        return ConversationMessage::query()->where('conversation_id', $c->id)->orderBy('id');
+    }
+
     /**
      * Get invoice
      */
@@ -110,6 +147,16 @@ class Order extends Model
     public function delivery(): HasOne
     {
         return $this->hasOne(Delivery::class);
+    }
+
+    public function productReviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function deliveryReview(): HasOne
+    {
+        return $this->hasOne(DeliveryReview::class);
     }
 
     /**
@@ -149,7 +196,7 @@ class Order extends Model
      */
     public function hasOnlinePayment(): bool
     {
-        return !$this->isCod() && $this->payment_method !== 'cash';
+        return ! $this->isCod() && $this->payment_method !== 'cash';
     }
 
     /**
@@ -158,7 +205,7 @@ class Order extends Model
     public static function generateOrderNumber(): string
     {
         do {
-            $number = 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            $number = 'ORD-'.date('Ymd').'-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
         } while (self::where('order_number', $number)->exists());
 
         return $number;

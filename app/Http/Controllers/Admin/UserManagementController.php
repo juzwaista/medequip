@@ -3,47 +3,70 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
+use Inertia\Inertia;
 
 class UserManagementController extends Controller
 {
-    /**
-     * Display a listing of admin users.
-     */
-    public function index()
+    public function index(Request $request)
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
+        $search = $request->query('search', '');
+        $shopStatus = $request->query('shop_status', 'all');
 
         $admins = User::whereIn('role', ['admin', 'super_admin'])
-            ->orderBy('created_at', 'desc')
+            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
+            ->orderByDesc('created_at')
             ->get();
 
-        $distributors = \App\Models\Distributor::with('owner')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn($d) => [
-                'id'           => $d->id,
-                'company_name' => $d->company_name,
-                'owner_name'   => $d->owner?->name ?? '—',
-                'owner_email'  => $d->owner?->email ?? '—',
-                'status'       => $d->status,
-                'created_at'   => $d->created_at->toDateString(),
-            ]);
+        $distributorsQuery = \App\Models\Distributor::with('owner')
+            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('company_name', 'like', "%{$search}%")->orWhereHas('owner', fn ($q3) => $q3->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"))))
+            ->when($shopStatus !== 'all', fn ($q) => $q->where('status', $shopStatus))
+            ->orderByDesc('created_at');
+
+        $distributors = $distributorsQuery->get()->map(fn ($d) => [
+            'id' => $d->id,
+            'company_name' => $d->company_name,
+            'owner_name' => $d->owner?->name ?? '—',
+            'owner_email' => $d->owner?->email ?? '—',
+            'status' => $d->status,
+            'contact_number' => $d->contact_number,
+            'address' => $d->address,
+            'created_at' => $d->created_at->toDateString(),
+            'is_suspended' => $d->suspended_until?->isFuture() ?? false,
+            'suspended_until' => $d->suspended_until?->format('M d, Y h:i A'),
+            'dti_sec_path' => $d->dti_sec_path,
+            'business_license_path' => $d->business_license_path,
+            'bir_form_path' => $d->bir_form_path,
+            'fda_license_path' => $d->fda_license_path,
+            'prc_id_path' => $d->prc_id_path,
+            'valid_id_path' => $d->valid_id_path,
+            'authorization_letter_path' => $d->authorization_letter_path,
+        ]);
 
         $platformUsers = User::whereIn('role', ['customer', 'courier'])
-            ->orderBy('created_at', 'desc')
+            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
+            ->orderByDesc('created_at')
             ->get(['id', 'name', 'email', 'role', 'created_at', 'banned_at', 'ban_reason']);
 
+        $shopCounts = [
+            'all' => \App\Models\Distributor::count(),
+            'pending' => \App\Models\Distributor::where('status', 'pending')->count(),
+            'approved' => \App\Models\Distributor::where('status', 'approved')->count(),
+            'rejected' => \App\Models\Distributor::where('status', 'rejected')->count(),
+            'banned' => \App\Models\Distributor::where('status', 'banned')->count(),
+        ];
+
         return Inertia::render('Admin/UserManagement/Index', [
-            'admins'        => $admins,
-            'distributors'  => $distributors,
+            'admins' => $admins,
+            'distributors' => $distributors,
             'platformUsers' => $platformUsers,
-            'isSuperAdmin'  => $user->role === 'super_admin',
+            'isSuperAdmin' => $user->role === 'super_admin',
+            'filters' => ['search' => $search, 'shop_status' => $shopStatus],
+            'shopCounts' => $shopCounts,
         ]);
     }
 
@@ -55,7 +78,7 @@ class UserManagementController extends Controller
         /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
 
-        if (!$currentUser->is_super_admin) {
+        if ($currentUser->role !== 'super_admin') {
             abort(403, 'Only Super Admins can create new admin accounts.');
         }
 
@@ -65,13 +88,14 @@ class UserManagementController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        User::create([
+        $newAdmin = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'admin',
-            'is_super_admin' => false,
+            'password' => $request->password,
+            'email_verified_at' => now(),
         ]);
+
+        $newAdmin->forceFill(['role' => 'admin'])->save();
 
         return redirect()->back()->with('success', 'Admin account created successfully.');
     }
@@ -83,7 +107,7 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
-        if (!$currentUser || $currentUser->role !== 'super_admin') {
+        if (! $currentUser || $currentUser->role !== 'super_admin') {
             abort(403, 'Only Super Admins can update user roles.');
         }
 
@@ -96,9 +120,7 @@ class UserManagementController extends Controller
             return redirect()->back()->with('error', 'Super Admin role cannot be changed.');
         }
 
-        $user->update([
-            'role' => $validated['role'],
-        ]);
+        $user->forceFill(['role' => $validated['role']])->save();
 
         return redirect()->back()->with('success', 'User role updated successfully.');
     }
@@ -110,7 +132,7 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
-        if (!$currentUser || !in_array($currentUser->role, ['admin', 'super_admin'])) {
+        if (! $currentUser || ! in_array($currentUser->role, ['admin', 'super_admin'])) {
             abort(403, 'Not authorized.');
         }
 
@@ -122,10 +144,10 @@ class UserManagementController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $user->update([
-            'banned_at'  => now(),
+        $user->forceFill([
+            'banned_at' => now(),
             'ban_reason' => $validated['reason'],
-        ]);
+        ])->save();
 
         return redirect()->back()->with('success', "User \"{$user->name}\" has been banned.");
     }
@@ -137,14 +159,14 @@ class UserManagementController extends Controller
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
-        if (!$currentUser || !in_array($currentUser->role, ['admin', 'super_admin'])) {
+        if (! $currentUser || ! in_array($currentUser->role, ['admin', 'super_admin'])) {
             abort(403, 'Not authorized.');
         }
 
-        $user->update([
-            'banned_at'  => null,
+        $user->forceFill([
+            'banned_at' => null,
             'ban_reason' => null,
-        ]);
+        ])->save();
 
         return redirect()->back()->with('success', "User \"{$user->name}\" has been unbanned.");
     }

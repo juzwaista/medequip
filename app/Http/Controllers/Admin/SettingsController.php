@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\SystemSetting;
 
 class SettingsController extends Controller
 {
@@ -18,12 +18,12 @@ class SettingsController extends Controller
         $user = auth()->user();
 
         // Enforce Super Admin only
-        if (!$user->is_super_admin) {
+        if ($user->role !== 'super_admin') {
             abort(403, 'Only Super Admins can access global settings.');
         }
 
         $platformFeeRate = SystemSetting::getSetting('platform_fee_rate', config('services.platform.fee_rate', 0.05));
-        
+
         // Let's display it as a percentage on the frontend safely (e.g. 5)
         $platformFeePercent = $platformFeeRate * 100;
 
@@ -40,7 +40,7 @@ class SettingsController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-        if (!$user->is_super_admin) {
+        if ($user->role !== 'super_admin') {
             abort(403, 'Only Super Admins can update global settings.');
         }
 

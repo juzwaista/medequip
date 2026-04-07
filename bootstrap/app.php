@@ -6,8 +6,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -18,25 +18,24 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 
-        // Exempt PayMongo webhook from CSRF — PayMongo POSTs without a session token
+        // Only exempt the PayMongo webhook — it POSTs without a session token.
+        // All other routes use the CSRF token synced via Inertia props + axios interceptors.
         $middleware->validateCsrfTokens(except: [
             'payments/webhook',
-            'courier/deliveries/*/accept',
-            'courier/deliveries/*/status',
-            'courier/scan',
-            'cart/*',
-            'checkout',
-            'logout',
         ]);
 
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         ]);
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
-        $schedule->command('accounts:purge-deactivated')->daily();
+        // Never run destructive maintenance on local/staging unless you opt in.
+        // Mis-set APP_ENV=production on a dev machine + schedule:work could delete deactivated accounts.
+        $schedule->command('accounts:purge-deactivated')
+            ->daily()
+            ->environments(['production']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
-

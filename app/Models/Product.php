@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
@@ -32,7 +31,10 @@ class Product extends Model
         'image_path',
         'barcode',
         'is_active',
+        'is_featured',
+        'variation_options',
         'requires_prescription',
+        'vehicle_requirement',
     ];
 
     protected $casts = [
@@ -41,6 +43,8 @@ class Product extends Model
         'has_expiry' => 'boolean',
         'has_warranty' => 'boolean',
         'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'variation_options' => 'array',
         'requires_prescription' => 'boolean',
     ];
 
@@ -52,6 +56,11 @@ class Product extends Model
     public function distributor(): BelongsTo
     {
         return $this->belongsTo(Distributor::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
     }
 
     /**
@@ -112,7 +121,7 @@ class Product extends Model
      */
     public function hasWholesalePricing(): bool
     {
-        return !is_null($this->wholesale_price) && !is_null($this->wholesale_min_qty);
+        return ! is_null($this->wholesale_price) && ! is_null($this->wholesale_min_qty);
     }
 
     /**

@@ -1,5 +1,5 @@
 <template>
-    <div class="flex h-screen bg-gray-50 font-sans overflow-hidden">
+    <div class="flex h-[100dvh] min-h-0 bg-gray-50 font-sans overflow-hidden min-w-0">
         <FlashMessage />
         <TermsBanner
             v-if="$page.props.auth.user"
@@ -82,16 +82,32 @@
                     Orders
                 </Link>
 
+                <Link 
+                    href="/owner/messages" 
+                    :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/owner/messages') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                >
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    Messages
+                </Link>
+
                 <template v-if="isOwner">
                     <div class="pt-4 pb-2 px-3">
                         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Business Management</p>
                     </div>
 
                     <Link 
+                        href="/owner/insights" 
+                        :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/owner/insights') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                    >
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        Insights
+                    </Link>
+
+                    <Link 
                         href="/owner/sales" 
                         :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/owner/sales') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
                     >
-                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Financial Reports
                     </Link>
 
@@ -166,18 +182,7 @@
         </aside>
 
         <!-- Main Workspace -->
-        <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-gray-50">
-            <div v-if="isSuspended" class="bg-rose-600 text-white px-4 py-2.5 text-center text-sm font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                ACCOUNT SUSPENDED. New orders are currently blocked. You are restricted to processing existing orders only.
-            </div>
-            <div v-else-if="hasWarning" class="bg-blue-600 text-white px-4 py-3 text-sm shadow-sm shrink-0 flex items-start gap-3">
-                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div>
-                    <h3 class="font-bold uppercase tracking-wider">Warning from Admin: {{ warningReason }}</h3>
-                    <p v-if="warningMessage" class="opacity-90 mt-0.5 pr-8">{{ warningMessage }}</p>
-                </div>
-            </div>
+        <div class="flex-1 flex flex-col min-w-0 h-[100dvh] min-h-0 overflow-hidden bg-gray-50">
             <!-- Topbar Header -->
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
                 <div class="flex items-center gap-4">
@@ -187,45 +192,80 @@
                     <!-- Optional Breadcrumbs can go here -->
                 </div>
                 
-                <div class="flex items-center">
+                <div class="flex items-center gap-1">
+                    <NotificationBell :count="unreadNotifications" />
+                    <MessagesHeaderLink
+                        v-if="$page.props.auth.user?.email_verified_at"
+                        href="/owner/messages"
+                        :count="unreadChatMessages"
+                    />
                     <AccountMenu 
                         v-if="$page.props.auth.user"
                         :userName="$page.props.auth.user.name"
                         :userEmail="$page.props.auth.user.email"
                         :userRole="$page.props.auth.user.role || 'distributor'"
                         :csrfToken="csrfToken"
+                        :show-wallet="Boolean($page.props.auth.user.email_verified_at && $page.props.auth.user.role !== 'staff')"
                     />
                 </div>
             </header>
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto pb-20 lg:pb-0">
+            <main
+                class="flex-1 flex flex-col min-h-0 pb-20 lg:pb-0"
+                :class="isOwnerMessagesThread ? 'overflow-hidden' : 'overflow-y-auto'"
+            >
                 <div v-if="$slots.header" class="bg-white shadow-sm px-4 py-6 sm:px-6 lg:px-8 shrink-0">
                     <slot name="header" />
                 </div>
                 <!-- Main page body -->
-                <div class="p-4 sm:p-6 lg:p-8">
+                <div
+                    class="min-w-0 flex flex-col flex-1 min-h-0"
+                    :class="isOwnerMessagesThread
+                        ? 'overflow-hidden p-0 sm:p-0 lg:p-0'
+                        : 'overflow-x-auto p-3 sm:p-6 lg:p-8'"
+                >
                     <slot />
                 </div>
             </main>
             
             <!-- Mobile Bottom Navigation (Distributor/Staff) -->
-            <nav v-if="!isSuspended" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg">
-                <div class="grid grid-cols-4 h-16">
+            <nav v-if="!isSuspended" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg"
+                 style="padding-bottom: env(safe-area-inset-bottom, 0px)">
+                <div class="grid grid-cols-5 h-16">
                     <!-- Dashboard -->
                     <Link href="/owner/dashboard"
-                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        class="flex flex-col items-center justify-center gap-0.5 transition-colors px-0.5"
                         :class="isActive('/owner/dashboard') && !isActive('/owner/dashboard/') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'"
                     >
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
-                        <span class="text-[10px] font-semibold">Home</span>
+                        <span class="text-[9px] font-semibold leading-tight text-center">Home</span>
+                    </Link>
+
+                    <!-- Customer messages -->
+                    <Link href="/owner/messages"
+                        class="flex flex-col items-center justify-center gap-0.5 transition-colors px-0.5"
+                        :class="isActive('/owner/messages') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'"
+                    >
+                        <div class="relative">
+                            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            <span
+                                v-if="unreadChatMessages > 0"
+                                class="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[9px] font-black rounded-full min-w-[1rem] h-4 px-0.5 flex items-center justify-center leading-none"
+                            >
+                                {{ unreadChatMessages > 9 ? '9+' : unreadChatMessages }}
+                            </span>
+                        </div>
+                        <span class="text-[9px] font-semibold leading-tight text-center">Msgs</span>
                     </Link>
 
                     <!-- POS -->
                     <Link href="/owner/pos"
-                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        class="flex flex-col items-center justify-center gap-0.5 transition-colors px-0.5"
                         :class="isActive('/owner/pos') ? 'text-indigo-600' : 'text-gray-400'"
                     >
                         <div class="p-1 px-3 rounded-full" :class="isActive('/owner/pos') ? 'bg-indigo-50 border border-indigo-100' : ''">
@@ -233,29 +273,29 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                             </svg>
                         </div>
-                        <span class="text-[10px] font-bold" :class="isActive('/owner/pos') ? 'text-indigo-600' : ''">POS</span>
+                        <span class="text-[9px] font-bold leading-tight text-center" :class="isActive('/owner/pos') ? 'text-indigo-600' : ''">POS</span>
                     </Link>
 
                     <!-- Inventory -->
                     <Link href="/owner/inventory"
-                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        class="flex flex-col items-center justify-center gap-0.5 transition-colors px-0.5"
                         :class="isActive('/owner/inventory') ? 'text-blue-600' : 'text-gray-400'"
                     >
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                         </svg>
-                        <span class="text-[10px] font-semibold">Inventory</span>
+                        <span class="text-[9px] font-semibold leading-tight text-center">Stock</span>
                     </Link>
 
                     <!-- Orders -->
                     <Link href="/owner/orders"
-                        class="flex flex-col items-center justify-center gap-1 transition-colors"
+                        class="flex flex-col items-center justify-center gap-0.5 transition-colors px-0.5"
                         :class="isActive('/owner/orders') ? 'text-blue-600' : 'text-gray-400'"
                     >
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
-                        <span class="text-[10px] font-semibold">Orders</span>
+                        <span class="text-[9px] font-semibold leading-tight text-center">Orders</span>
                     </Link>
                 </div>
             </nav>
@@ -269,30 +309,17 @@ import { Link, usePage } from '@inertiajs/vue3';
 import AccountMenu from '@/Components/AccountMenu.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
 import TermsBanner from '@/Components/TermsBanner.vue';
+import NotificationBell from '@/Components/NotificationBell.vue';
+import MessagesHeaderLink from '@/Components/MessagesHeaderLink.vue';
+import { useHeaderNotificationPoll } from '@/composables/useHeaderNotificationPoll.js';
 
 const page = usePage();
-const mobileSidebarOpen = ref(false);
 
-const suspendedUntilDate = computed(() => {
-    const timestamp = page.props.auth?.user?.suspended_until;
-    if (!timestamp) return null;
-    return new Date(timestamp * 1000);
-});
+const { unreadNotifications, unreadChatMessages } = useHeaderNotificationPoll(page);
+const mobileSidebarOpen = ref(false);
 
 const isSuspended = computed(() => {
     return page.props.auth?.user?.is_suspended ?? false;
-});
-
-const warningReason = computed(() => {
-    return page.props.auth?.user?.warning_reason;
-});
-
-const warningMessage = computed(() => {
-    return page.props.auth?.user?.warning_message;
-});
-
-const hasWarning = computed(() => {
-    return !!warningReason.value;
 });
 
 const csrfToken = computed(() => {
@@ -307,6 +334,12 @@ const isOwner = computed(() => {
 const isShopInternal = computed(() => {
     const role = page.props.auth.user?.role;
     return role === 'distributor' || role === 'staff';
+});
+
+/** Full-viewport chat thread: avoid nested scroll with OwnerLayout main. */
+const isOwnerMessagesThread = computed(() => {
+    const path = (page.url || '').split('?')[0] || '';
+    return /^\/owner\/messages\/\d+/.test(path);
 });
 
 const isActive = (path) => {

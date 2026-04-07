@@ -2,10 +2,11 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Add PayMongo-specific columns to payments table.
      * Also expands payment_method enum to include 'paymongo'.
@@ -14,11 +15,9 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        $driver = Schema::getConnection()->getDriverName();
-
         // MySQL does not support ALTER COLUMN on enums directly with Blueprint.
         // We use DB::statement to safely extend the enum.
-        if ($driver === 'mysql') {
+        if (DB::connection()->getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM(
                 'cash',
                 'bank_transfer',
@@ -51,7 +50,7 @@ return new class extends Migration {
             $table->dropColumn(['paymongo_session_id', 'paymongo_status']);
         });
 
-        if (Schema::getConnection()->getDriverName() === 'mysql') {
+        if (DB::connection()->getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM(
                 'cash',
                 'bank_transfer',

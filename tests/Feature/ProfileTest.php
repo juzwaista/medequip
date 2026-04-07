@@ -25,11 +25,13 @@ class ProfileTest extends TestCase
     {
         $user = User::factory()->create();
 
+        $originalEmail = $user->email;
+
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
-                'email' => 'test@example.com',
+                'username' => 'updated_username',
             ]);
 
         $response
@@ -39,36 +41,37 @@ class ProfileTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertSame('updated_username', $user->username);
+        $this->assertSame($originalEmail, $user->email);
+        $this->assertNotNull($user->email_verified_at);
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
+    public function test_profile_update_does_not_change_email_via_extra_fields(): void
     {
         $user = User::factory()->create();
 
-        $response = $this
+        $originalEmail = $user->email;
+
+        $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => $user->email,
-            ]);
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => 'someone-else@example.com',
+            ])
+            ->assertSessionHasNoErrors();
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
-
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $this->assertSame($originalEmail, $user->fresh()->email);
     }
 
-    public function test_user_can_delete_their_account(): void
+    public function test_user_can_deactivate_their_account(): void
     {
         $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
-            ->delete('/profile', [
-                'password' => 'password',
+            ->post('/profile/deactivate', [
+                'password' => 'CurrentP4ss!',
             ]);
 
         $response
@@ -76,24 +79,24 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertNotNull($user->fresh());
+        $this->assertNotNull($user->fresh()->deactivated_at);
     }
 
-    public function test_correct_password_must_be_provided_to_delete_account(): void
+    public function test_correct_password_must_be_provided_to_deactivate_account(): void
     {
         $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
             ->from('/profile')
-            ->delete('/profile', [
+            ->post('/profile/deactivate', [
                 'password' => 'wrong-password',
             ]);
 
-        $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
+        $response->assertSessionHasErrors('password');
 
         $this->assertNotNull($user->fresh());
+        $this->assertNull($user->fresh()->deactivated_at);
     }
 }

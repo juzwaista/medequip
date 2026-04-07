@@ -1,9 +1,9 @@
 <template>
     <Head :title="title" />
-    <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col">
+    <div class="min-h-screen min-h-[100dvh] min-w-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col overflow-x-hidden">
         <!-- Top bar -->
         <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200/60">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="max-w-5xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,7 +24,7 @@
         </header>
 
         <!-- Content -->
-        <main class="flex-1 flex flex-col items-center justify-start py-8 px-4">
+        <main class="flex-1 flex flex-col items-center justify-start py-6 sm:py-8 px-3 sm:px-4 pb-24 sm:pb-8 w-full min-w-0">
             <slot />
         </main>
 

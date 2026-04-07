@@ -1,24 +1,30 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Admin\ConversationMessageReportController as AdminMessageReportController;
 /*
 |--------------------------------------------------------------------------
 | Controllers
 |--------------------------------------------------------------------------
 */
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\Owner\DashboardController as OwnerDashboardController;
-use App\Http\Controllers\Owner\OrderController;
-use App\Http\Controllers\Owner\DistributorController;
-use App\Http\Controllers\Owner\LicenseController;
-use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CourierController;
-use App\Http\Controllers\SuperAdmin\AdminManagementController;
+use App\Http\Controllers\Admin\ProductModerationController;
+use App\Http\Controllers\Admin\ReportHubController;
+use App\Http\Controllers\ConversationMarkReadController;
 use App\Http\Controllers\Courier\DashboardController as CourierDashboardController;
 use App\Http\Controllers\Courier\DeliveryController as CourierDeliveryController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderConversationMarkReadController;
+use App\Http\Controllers\OrderMessageController;
+use App\Http\Controllers\OrderMessageReportController;
+use App\Http\Controllers\OrderReviewController;
+use App\Http\Controllers\Owner\ShopConversationController as OwnerShopConversationController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReportController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShopConversationController;
+use App\Http\Controllers\ShopConversationMessageController;
+use App\Http\Controllers\ShopConversationMessageReportController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,22 +34,28 @@ use App\Http\Controllers\Courier\DeliveryController as CourierDeliveryController
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
-        return match($user->role) {
+
+        return match ($user->role) {
             'super_admin', 'admin' => redirect()->route('admin.dashboard'),
-            'courier'              => redirect()->route('courier.dashboard'),
+            'courier' => redirect()->route('courier.dashboard'),
             'distributor', 'staff' => redirect()->route('owner.dashboard'),
-            default                => redirect('/products'),
+            default => redirect('/products'),
         };
     }
+
     return redirect('/products');
 })->name('landing');
 
-
 // Static Pages
-Route::get('/about', function () { return \Inertia\Inertia::render('Static/About'); })->name('about');
-Route::get('/contact', function () { return \Inertia\Inertia::render('Static/Contact'); })->name('contact');
-Route::get('/help', function () { return \Inertia\Inertia::render('Static/Help'); })->name('help');
-
+Route::get('/about', function () {
+    return \Inertia\Inertia::render('Static/About');
+})->name('about');
+Route::get('/contact', function () {
+    return \Inertia\Inertia::render('Static/Contact');
+})->name('contact');
+Route::get('/help', function () {
+    return \Inertia\Inertia::render('Static/Help');
+})->name('help');
 
 // Product Routes (Public) - search must come before the {id} wildcard
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -59,8 +71,8 @@ Route::delete('/cart/{lineKey}', [\App\Http\Controllers\CartController::class, '
 Route::delete('/cart', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 Route::get('/cart/count', [\App\Http\Controllers\CartController::class, 'count'])->name('cart.count');
 
-// Wallet (Auth required)
-Route::middleware('auth')->group(function () {
+// Wallet (Auth + verified email)
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/topup', [\App\Http\Controllers\WalletController::class, 'topup'])->name('wallet.topup');
     Route::get('/wallet/topup/success', [\App\Http\Controllers\WalletController::class, 'topupSuccess'])->name('wallet.topup.success');
@@ -70,17 +82,44 @@ Route::middleware('auth')->group(function () {
 
 // Terms acceptance (Auth required)
 Route::middleware('auth')->post('/terms/accept', [\App\Http\Controllers\TermsController::class, 'accept'])->name('terms.accept');
+Route::middleware('auth')->get('/terms/accept', function () {
+    return redirect('/products');
+});
 
-// Checkout and Orders (Auth required)
-Route::middleware('auth')->group(function () {
+// Checkout and Orders (Auth + verified email)
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
     Route::post('/orders', [\App\Http\Controllers\OrderController::class, 'placeOrder'])->name('orders.place');
     Route::get('/orders/confirmation/{order}', [\App\Http\Controllers\OrderController::class, 'confirmation'])->name('orders.confirmation');
     Route::get('/orders/{order}/prescription', [\App\Http\Controllers\OrderController::class, 'prescriptionUploadForm'])->name('orders.prescription.show');
     Route::post('/orders/{order}/prescription', [\App\Http\Controllers\OrderController::class, 'prescriptionUpload'])->name('orders.prescription.store');
+    Route::post('/orders/{order}/reviews/products', [OrderReviewController::class, 'storeProductReviews'])->name('orders.reviews.products');
+    Route::post('/orders/{order}/reviews/delivery', [OrderReviewController::class, 'storeDeliveryReview'])->name('orders.reviews.delivery');
+
+    Route::post('/products/{product}/report', [ProductReportController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('products.report');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+
+    // Shop messaging (customers ↔ distributors; not tied to orders)
+    Route::get('/messages/start', [ShopConversationController::class, 'start'])->name('messages.start');
+    Route::get('/messages', [ShopConversationController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{conversation}', [ShopConversationController::class, 'show'])->name('messages.show');
+    Route::get('/messages/{conversation}/messages', [ShopConversationMessageController::class, 'index'])->name('messages.messages.index');
+    Route::post('/messages/{conversation}/messages', [ShopConversationMessageController::class, 'store'])->middleware('throttle:60,1')->name('messages.messages.store');
+    Route::post('/messages/{conversation}/mark-read', [ConversationMarkReadController::class, 'store'])->name('messages.mark-read');
+    Route::post('/messages/{conversation}/messages/{conversation_message}/report', [ShopConversationMessageReportController::class, 'store'])->name('messages.messages.report');
 
     // Customer order tracking
     Route::get('/my-orders', [\App\Http\Controllers\CustomerOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}/messages', [OrderMessageController::class, 'index'])->name('orders.messages.index');
+    Route::post('/orders/{order}/messages', [OrderMessageController::class, 'store'])->middleware('throttle:60,1')->name('orders.messages.store');
+    Route::post('/orders/{order}/messages/{conversation_message}/report', [OrderMessageReportController::class, 'store'])->name('orders.messages.report');
+    Route::post('/orders/{order}/messages/mark-read', [OrderConversationMarkReadController::class, 'store'])->name('orders.messages.markRead');
     Route::get('/orders/{order}', [\App\Http\Controllers\CustomerOrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/cancel', [\App\Http\Controllers\CustomerOrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/orders/{order}/confirm-received', [\App\Http\Controllers\OrderController::class, 'confirmReceived'])->name('orders.confirmReceived');
@@ -113,7 +152,7 @@ Route::get('/seller/{slug}', [\App\Http\Controllers\DistributorProfileController
 */
 Route::get('/dashboard', function () {
     return redirect('/products');
-})->middleware(['auth'])->name('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 // Public distributor profile page
 Route::get('/shop/{slug}', [\App\Http\Controllers\DistributorProfileController::class, 'show'])
@@ -137,7 +176,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/deactivate', [ProfileController::class, 'deactivate'])
         ->name('profile.deactivate');
 
-
     // Account Settings
     Route::get('/settings', [ProfileController::class, 'edit'])
         ->name('settings');
@@ -154,17 +192,17 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 // Any authenticated user can apply — they don't have the distributor role yet!
-Route::middleware(['auth'])
+Route::middleware(['auth', 'verified'])
     ->prefix('owner')
     ->name('owner.')
 
     ->group(function () {
         Route::get('/distributor/create', [\App\Http\Controllers\Owner\DistributorController::class, 'create'])
             ->name('distributors.create');
-            
+
         Route::post('/distributor/store', [\App\Http\Controllers\Owner\DistributorController::class, 'store'])
             ->name('distributors.store');
-            
+
         Route::get('/distributor/pending', [\App\Http\Controllers\Owner\DistributorController::class, 'pending'])
             ->name('distributors.pending');
     });
@@ -174,7 +212,7 @@ Route::middleware(['auth'])
 | STRICT SHOP OPERATIONS (Verified Owner & Staff Only)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\EnsureDistributorVerified::class])
+Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middleware\EnsureDistributorVerified::class])
     ->prefix('owner')
     ->name('owner.')
     ->group(function () {
@@ -182,7 +220,7 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
         // ==========================================
         // SHARED SHOP OPERATIONS (Owner & Staff)
         // ==========================================
-        
+
         // Owner Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\Owner\DashboardController::class, 'index'])
             ->name('dashboard');
@@ -199,9 +237,21 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
         Route::get('/pos/invoices/{invoice}/cancel', [\App\Http\Controllers\Owner\POSController::class, 'paymentCancel'])
             ->name('pos.cancel');
 
+        Route::get('/messages', [OwnerShopConversationController::class, 'index'])->name('messages.index');
+        Route::get('/messages/{conversation}', [OwnerShopConversationController::class, 'show'])->name('messages.show');
+        Route::get('/messages/{conversation}/messages', [ShopConversationMessageController::class, 'index'])->name('messages.messages.index');
+        Route::post('/messages/{conversation}/messages', [ShopConversationMessageController::class, 'store'])->middleware('throttle:60,1')->name('messages.messages.store');
+        Route::post('/messages/{conversation}/mark-read', [ConversationMarkReadController::class, 'store'])->name('messages.mark-read');
+        Route::post('/messages/{conversation}/messages/{conversation_message}/report', [ShopConversationMessageReportController::class, 'store'])->name('messages.messages.report');
+
         // Orders
         Route::get('/orders', [\App\Http\Controllers\Owner\OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}/messages', [OrderMessageController::class, 'index'])->name('orders.messages.index');
+        Route::post('/orders/{order}/messages', [OrderMessageController::class, 'store'])->middleware('throttle:60,1')->name('orders.messages.store');
+        Route::post('/orders/{order}/messages/{conversation_message}/report', [OrderMessageReportController::class, 'store'])->name('orders.messages.report');
+        Route::post('/orders/{order}/messages/mark-read', [OrderConversationMarkReadController::class, 'store'])->name('orders.messages.markRead');
         Route::get('/orders/{order}', [\App\Http\Controllers\Owner\OrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Owner\OrderController::class, 'receipt'])->name('orders.receipt');
         Route::post('/orders/{order}/prescription/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approvePrescription'])->name('orders.prescription.approve');
         Route::post('/orders/{order}/prescription/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectPrescription'])->name('orders.prescription.reject');
         Route::patch('/orders/{order}/status', [\App\Http\Controllers\Owner\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
@@ -217,7 +267,7 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
                 'edit' => 'inventory.edit',
                 'update' => 'inventory.update',
                 'destroy' => 'inventory.destroy',
-            ]
+            ],
         ]);
         Route::post('/inventory/{id}/adjust', [\App\Http\Controllers\Owner\InventoryController::class, 'adjustStock'])
             ->name('inventory.adjust');
@@ -233,16 +283,21 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
         // OWNER-ONLY MANAGEMENT
         // ==========================================
         Route::middleware(['role:distributor'])->group(function () {
-            
+
             // Distributor Profile & Licensing
             Route::get('/distributors', [\App\Http\Controllers\Owner\DistributorController::class, 'index'])
                 ->name('distributors.index');
-                
+
             Route::get('/distributor/{distributor}/license/create', [\App\Http\Controllers\Owner\LicenseController::class, 'create'])
                 ->name('licenses.create');
-                
+
             Route::post('/distributor/{distributor}/license/store', [\App\Http\Controllers\Owner\LicenseController::class, 'store'])
                 ->name('licenses.store');
+
+            Route::get('/shop/setup', [\App\Http\Controllers\Owner\ShopProfileOnboardingController::class, 'edit'])
+                ->name('shop.setup');
+            Route::post('/shop/setup', [\App\Http\Controllers\Owner\ShopProfileOnboardingController::class, 'store'])
+                ->name('shop.setup.store');
 
             // Profile Management
             Route::get('/profile/edit', [\App\Http\Controllers\Owner\ProfileController::class, 'edit'])
@@ -270,15 +325,15 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
             Route::get('/sales', [\App\Http\Controllers\Owner\SalesController::class, 'index'])
                 ->name('sales.index');
 
-            // DSS
-            Route::get('/dss', [\App\Http\Controllers\Owner\DssController::class, 'index'])
-                ->name('dss.index');
-            Route::patch('/dss/settings', [\App\Http\Controllers\Owner\DssController::class, 'updateSettings'])
-                ->name('dss.settings.update');
-            Route::post('/dss/alerts/{alert}/read', [\App\Http\Controllers\Owner\DssController::class, 'markAlertRead'])
-                ->name('dss.alerts.read');
-            Route::post('/dss/recommendations/{recommendation}/action', [\App\Http\Controllers\Owner\DssController::class, 'actionRecommendation'])
-                ->name('dss.recommendations.action');
+            // Insights (analytics + DSS)
+            Route::get('/insights', [\App\Http\Controllers\Owner\DssController::class, 'index'])
+                ->name('insights.index');
+            Route::patch('/insights/settings', [\App\Http\Controllers\Owner\DssController::class, 'updateSettings'])
+                ->name('insights.settings.update');
+            Route::post('/insights/alerts/{alert}/read', [\App\Http\Controllers\Owner\DssController::class, 'markAlertRead'])
+                ->name('insights.alerts.read');
+            Route::post('/insights/recommendations/{recommendation}/action', [\App\Http\Controllers\Owner\DssController::class, 'actionRecommendation'])
+                ->name('insights.recommendations.action');
 
             // Staff Management
             Route::get('/staff', [\App\Http\Controllers\Owner\StaffController::class, 'index'])
@@ -288,7 +343,7 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
             Route::delete('/staff/{id}', [\App\Http\Controllers\Owner\StaffController::class, 'destroy'])
                 ->name('staff.destroy');
         });
-        
+
     });
 
 /*
@@ -296,36 +351,65 @@ Route::middleware(['auth', 'role:distributor,staff', \App\Http\Middleware\Ensure
 | ADMIN ROUTES (For Normal Admins & Super Admins)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin,super_admin'])
+Route::middleware(['auth', 'verified', 'role:admin,super_admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
-        
+
         // Distributors Management
         Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])->name('distributors.approve');
         Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])->name('distributors.reject');
-        
+
         // DSS Risk Actions
         Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');
         Route::post('/distributors/{id}/lift-suspension', [\App\Http\Controllers\Admin\DashboardController::class, 'liftSuspension'])->name('distributors.lift-suspension');
         Route::post('/distributors/{id}/ban', [\App\Http\Controllers\Admin\DashboardController::class, 'banDistributor'])->name('distributors.ban');
         Route::post('/distributors/{id}/warn', [\App\Http\Controllers\Admin\DashboardController::class, 'warnDistributor'])->name('distributors.warn');
-        
+
         // Secure Document Viewing
         Route::get('/documents/{path}', [\App\Http\Controllers\Admin\DashboardController::class, 'viewDocument'])
             ->where('path', '.*')
             ->name('documents.view');
-        
+
         // Users Management
         Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
         Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])->name('users.ban');
         Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])->name('users.unban');
-        
+
         // Courier Management
         Route::get('/couriers', [CourierController::class, 'index'])->name('couriers.index');
         Route::post('/couriers', [CourierController::class, 'store'])->name('couriers.store');
+
+        // Product moderation (catalog)
+        Route::get('/products', [ProductModerationController::class, 'index'])->name('products.index');
+        Route::post('/products/{product}/deactivate', [ProductModerationController::class, 'deactivate'])->name('products.deactivate');
+        Route::post('/products/{product}/soft-delete', [ProductModerationController::class, 'softDelete'])->name('products.soft-delete');
+
+        // Moderation reports hub (chat, user, courier, low delivery ratings)
+        Route::get('/reports', [ReportHubController::class, 'index'])->name('reports.index');
+        Route::get('/reports/{bucket}/{id}', [ReportHubController::class, 'show'])
+            ->where(['bucket' => 'message|user|courier|delivery|product', 'id' => '[0-9]+'])
+            ->name('reports.show');
+        Route::patch('/reports/{bucket}/{id}', [ReportHubController::class, 'updateCase'])
+            ->where(['bucket' => 'message|user|courier|product', 'id' => '[0-9]+'])
+            ->name('reports.update');
+        Route::post('/reports/{bucket}/{id}/enforce', [ReportHubController::class, 'enforce'])
+            ->where(['bucket' => 'message|user|courier|delivery', 'id' => '[0-9]+'])
+            ->name('reports.enforce');
+
+        Route::get('/message-reports', function () {
+            $q = request()->only(['status']);
+            $q['tab'] = 'messages';
+
+            return redirect()->route('admin.reports.index', $q);
+        })->name('message-reports.index');
+        Route::patch('/message-reports/{report}', [AdminMessageReportController::class, 'update'])->name('message-reports.update');
+
+        // Orders overview
+        Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'show'])->name('orders.show');
     });
 
 /*
@@ -333,7 +417,7 @@ Route::middleware(['auth', 'role:admin,super_admin'])
 | SUPER ADMIN ROUTES (Exclusive)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:super_admin'])
+Route::middleware(['auth', 'verified', 'role:super_admin'])
     ->prefix('superadmin')
     ->name('superadmin.')
     ->group(function () {
@@ -354,12 +438,13 @@ Route::middleware(['auth', 'role:super_admin'])
 | Courier Fleet App Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:courier'])->prefix('courier')->name('courier.')->group(function () {
     Route::get('/dashboard', [CourierDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/scanner', [\App\Http\Controllers\CourierController::class, 'scanner'])->name('scanner');
-    Route::post('/scan', [\App\Http\Controllers\CourierController::class, 'processScan'])->name('scan');
-    Route::get('/lookup-order', [\App\Http\Controllers\CourierController::class, 'lookupOrder'])->name('lookup-order');
+    Route::get('/scanner', [CourierDeliveryController::class, 'scanner'])->name('scanner');
+    Route::post('/scan', [CourierDeliveryController::class, 'processScan'])->name('scan');
+    Route::get('/lookup-order', [CourierDeliveryController::class, 'lookupOrder'])->name('lookup-order');
     Route::post('/deliveries/{delivery}/accept', [CourierDeliveryController::class, 'accept'])->name('deliveries.accept');
+    Route::post('/deliveries/{delivery}/cancel', [CourierDeliveryController::class, 'cancel'])->name('deliveries.cancel');
     Route::post('/deliveries/{delivery}/status', [CourierDeliveryController::class, 'updateStatus'])->name('deliveries.status');
     Route::post('/deliveries/{delivery}/start-pickup', [CourierDeliveryController::class, 'startPickup'])->name('deliveries.startPickup');
     Route::post('/deliveries/{delivery}/confirm-scan', [CourierDeliveryController::class, 'confirmScan'])->name('deliveries.confirmScan');
@@ -373,4 +458,4 @@ Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')
 | AUTH ROUTES (Breeze)
 |--------------------------------------------------------------------------
 */
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

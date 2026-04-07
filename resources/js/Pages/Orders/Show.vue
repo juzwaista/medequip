@@ -62,16 +62,45 @@
                         />
                     </div>
 
+                    <!-- Confirm receipt (standalone — required before ratings / seller payout) -->
+                    <div
+                        v-if="canConfirmReceived"
+                        class="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-5 sm:p-6 shadow-sm"
+                    >
+                        <h2 class="text-lg font-bold text-emerald-950">Confirm order received</h2>
+                        <p class="text-sm text-emerald-900 mt-2 leading-relaxed">
+                            Mark this order as received after your items arrive. You can rate products and delivery only after you confirm. For online payments, this also allows the seller to receive their payout.
+                        </p>
+                        <button
+                            type="button"
+                            class="mt-4 w-full sm:w-auto inline-flex justify-center items-center gap-2 px-6 py-3 rounded-xl bg-emerald-700 text-white text-sm font-bold hover:bg-emerald-800 shadow-sm min-h-[48px]"
+                            @click="confirmReceived"
+                        >
+                            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            I have received my order
+                        </button>
+                    </div>
+
                     <!-- Order Info -->
                     <div class="bg-white rounded-xl shadow-md p-6">
-                        <div class="flex justify-between items-start mb-6">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-6">
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900">Order Information</h2>
                                 <p class="text-sm text-gray-600 mt-1">
                                     Placed on <DateFormat :date="order.created_at" format="datetime" />
                                 </p>
                             </div>
-                            <StatusBadge :status="order.status" type="order" />
+                            <div class="sm:text-right sm:max-w-sm">
+                                <StatusBadge :status="order.status" type="order" />
+                                <p
+                                    v-if="statusMessage(order.status)"
+                                    class="text-sm text-gray-600 mt-2 leading-relaxed sm:ml-auto sm:text-right"
+                                >
+                                    {{ statusMessage(order.status) }}
+                                </p>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -99,6 +128,108 @@
                                 <p class="text-sm font-medium text-gray-600 mb-1">Notes</p>
                                 <p class="text-sm text-gray-700">{{ order.notes }}</p>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-md border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Messages</h2>
+                            <p class="text-sm text-gray-600 mt-1">Chat with the seller in your MedEquip inbox — same thread as from the shop or product page.</p>
+                        </div>
+                        <Link
+                            :href="orderMessaging.href"
+                            class="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm shrink-0"
+                        >
+                            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            {{ orderMessaging.label }}
+                        </Link>
+                    </div>
+
+                    <div
+                        v-if="reviewState?.eligible"
+                        class="bg-white rounded-xl shadow-md border border-indigo-100 p-5 sm:p-6 mb-6"
+                    >
+                        <h2 class="text-lg font-bold text-gray-900">Rate this order</h2>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Let us know how your experience was.
+                        </p>
+
+                        <div v-if="reviewState.product_rows?.length" class="mt-5 space-y-5">
+                            <div
+                                v-for="row in reviewState.product_rows"
+                                :key="row.product_id"
+                                class="border border-gray-100 rounded-xl p-4"
+                            >
+                                <p class="font-semibold text-gray-900">{{ row.name }}</p>
+                                <div class="flex flex-wrap gap-1 mt-2" role="group" aria-label="Star rating">
+                                    <button
+                                        v-for="s in 5"
+                                        :key="s"
+                                        type="button"
+                                        class="leading-none min-w-[44px] min-h-[44px] rounded-lg transition p-1"
+                                        :class="s <= (productRatings[row.product_id]?.stars ?? 5) ? 'text-amber-400' : 'text-gray-200'"
+                                        @click="setProductStar(row.product_id, s)"
+                                    >
+                                        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    </button>
+                                </div>
+                                <textarea
+                                    v-model="productRatings[row.product_id].body"
+                                    rows="2"
+                                    maxlength="2000"
+                                    placeholder="Optional review (visible on the product)"
+                                    class="mt-2 w-full rounded-lg border-gray-300 text-sm"
+                                />
+                                <p v-if="row.reviewed" class="text-xs text-emerald-700 font-semibold mt-2">Saved — you can update anytime.</p>
+                            </div>
+                        </div>
+
+                        <div v-if="reviewState.delivery?.eligible" class="mt-8 pt-6 border-t border-gray-100">
+                            <h3 class="font-bold text-gray-900">Delivery experience</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Courier: {{ reviewState.delivery.courier_label }}</p>
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                <button
+                                    v-for="s in 5"
+                                    :key="'d-' + s"
+                                    type="button"
+                                    class="leading-none min-w-[44px] min-h-[44px] rounded-lg transition p-1"
+                                    :class="s <= deliveryStars ? 'text-sky-500' : 'text-gray-200'"
+                                    @click="deliveryStars = s"
+                                >
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                </button>
+                            </div>
+                            <textarea
+                                v-model="deliveryBody"
+                                rows="2"
+                                maxlength="2000"
+                                placeholder="Optional — delays, handling, region notes…"
+                                class="mt-2 w-full rounded-lg border-gray-300 text-sm"
+                            />
+                        </div>
+                        <div v-else-if="reviewState.delivery?.submitted" class="mt-8 pt-6 border-t border-gray-100 text-sm text-gray-600">
+                            <span class="font-semibold text-gray-800">Delivery rated</span>
+                            <span class="inline-flex items-center gap-0.5 ml-1">
+                                <svg class="w-3.5 h-3.5 text-sky-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                {{ reviewState.delivery.stars }}
+                            </span>
+                            <span v-if="reviewState.delivery.body" class="block mt-1 text-gray-500">{{ reviewState.delivery.body }}</span>
+                        </div>
+
+                        <div
+                            v-if="reviewState.product_rows?.length || reviewState.delivery?.eligible"
+                            class="mt-8 pt-6 border-t border-gray-100"
+                        >
+                            <button
+                                type="button"
+                                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 min-h-[44px]"
+                                @click="submitAllRatings"
+                            >
+                                Save all ratings
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2">Saves product reviews and your delivery rating together when both apply.</p>
                         </div>
                     </div>
 
@@ -239,8 +370,8 @@
                                 <span
                                     :class="{
                                         'bg-green-100 text-green-800': order.customer_payment_status?.state === 'paid',
-                                        'bg-amber-100 text-amber-800': order.customer_payment_status?.state === 'pending_verification',
-                                        'bg-red-100 text-red-800': order.customer_payment_status?.state === 'payment_failed',
+                                        'bg-amber-100 text-amber-800': order.customer_payment_status?.state === 'pending_verification' || order.customer_payment_status?.state === 'cod_pending',
+                                        'bg-red-100 text-red-800': order.customer_payment_status?.state === 'payment_failed' || order.customer_payment_status?.state === 'cancelled',
                                         'bg-yellow-100 text-yellow-800': !order.customer_payment_status || order.customer_payment_status?.state === 'unpaid',
                                     }"
                                     class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
@@ -253,6 +384,10 @@
                                 <p class="text-sm font-semibold text-gray-900">
                                     <DateFormat :date="order.invoice.due_date" format="short" />
                                 </p>
+                            </div>
+                            <div v-if="order.invoice_payment_display?.label">
+                                <p class="text-xs text-gray-600 mb-1">Payment method</p>
+                                <p class="text-sm font-semibold text-gray-900">{{ order.invoice_payment_display.label }}</p>
                             </div>
                         </div>
                     </div>
@@ -290,16 +425,6 @@
                                 </svg>
                                 Cancel Order
                             </button>
-                            <button 
-                                v-if="order.status === 'delivered' && !order.received_at"
-                                @click="confirmReceived"
-                                class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition px-4 py-3 rounded-lg font-medium text-left flex items-center"
-                            >
-                                <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                Confirm Received
-                            </button>
                             <button
                                 v-if="canPayNow"
                                 @click="payNow"
@@ -309,12 +434,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2m-2 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2zm8 4h.01" />
                                 </svg>
                                 Pay Now
-                            </button>
-                            <button class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition px-4 py-3 rounded-lg font-medium text-left flex items-center">
-                                <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                Contact Distributor
                             </button>
                             <Link 
                                 href="/products"
@@ -340,19 +459,81 @@ import OrderTimeline from '@/Components/OrderTimeline.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import DateFormat from '@/Components/DateFormat.vue';
 import PriceDisplay from '@/Components/PriceDisplay.vue';
-import { computed } from 'vue';
+import { customerOrderStatusMessage } from '@/utils/customerOrderStatusMessage.js';
+import { computed, reactive, ref, watch } from 'vue';
+
+const statusMessage = (s) => customerOrderStatusMessage(s);
 
 const props = defineProps({
     order: Object,
+    orderMessaging: {
+        type: Object,
+        required: true,
+    },
+    reviewState: { type: Object, default: null },
 });
+
+const productRatings = reactive({});
+const deliveryStars = ref(5);
+const deliveryBody = ref('');
+
+watch(
+    () => props.reviewState,
+    (rs) => {
+        if (!rs?.product_rows) {
+            return;
+        }
+        for (const row of rs.product_rows) {
+            productRatings[row.product_id] = {
+                stars: row.stars ?? productRatings[row.product_id]?.stars ?? 5,
+                body: row.body ?? productRatings[row.product_id]?.body ?? '',
+            };
+        }
+    },
+    { immediate: true, deep: true }
+);
+
+function setProductStar(productId, stars) {
+    if (!productRatings[productId]) {
+        productRatings[productId] = { stars: 5, body: '' };
+    }
+    productRatings[productId].stars = stars;
+}
+
+function submitAllRatings() {
+    const orderId = props.order.id;
+    const hasProducts = props.reviewState?.product_rows?.length;
+    const deliveryEligible = props.reviewState?.delivery?.eligible;
+
+    const postDelivery = () => {
+        if (deliveryEligible) {
+            router.post(`/orders/${orderId}/reviews/delivery`, {
+                stars: deliveryStars.value,
+                body: deliveryBody.value || null,
+            }, { preserveScroll: true });
+        }
+    };
+
+    if (hasProducts) {
+        const reviews = props.reviewState.product_rows.map((row) => ({
+            product_id: row.product_id,
+            stars: productRatings[row.product_id]?.stars ?? 5,
+            body: productRatings[row.product_id]?.body || null,
+        }));
+        router.post(`/orders/${orderId}/reviews/products`, { reviews }, {
+            preserveScroll: true,
+            onSuccess: () => postDelivery(),
+        });
+        return;
+    }
+
+    postDelivery();
+}
 
 const cancelOrder = () => {
     if (confirm(`Are you sure you want to cancel order ${props.order.order_number}? This action cannot be undone.`)) {
-        console.log('[OrderShow] Cancelling order', props.order.id);
-        
         router.post(`/orders/${props.order.id}/cancel`, {}, {
             onSuccess: () => {
-                console.log('[OrderShow] Order cancelled successfully');
             },
             onError: (errors) => {
                 console.error('[OrderShow] Cancel failed', errors);
@@ -362,11 +543,9 @@ const cancelOrder = () => {
 };
 
 const confirmReceived = () => {
-    if (confirm(`Confirm that you received order ${props.order.order_number}? This will release the payment to the seller.`)) {
-        console.log('[OrderShow] Confirming receipt for order', props.order.id);
+    if (confirm(`Confirm that you received order ${props.order.order_number}? This completes the order and releases payment held by the platform to the seller.`)) {
         router.post(`/orders/${props.order.id}/confirm-received`, {}, {
             onSuccess: () => {
-                console.log('[OrderShow] Order receipt confirmed successfully');
             },
             onError: (errors) => {
                 console.error('[OrderShow] Confirm failed', errors);
@@ -377,6 +556,10 @@ const confirmReceived = () => {
 
 const canPayNow = computed(() => {
     return !!props.order?.can_pay_now;
+});
+
+const canConfirmReceived = computed(() => {
+    return props.order?.status === 'delivered' && !props.order?.received_at;
 });
 
 const orderSubtotal = computed(() => Number(props.order?.subtotal || 0));

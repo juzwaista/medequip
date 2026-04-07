@@ -97,13 +97,13 @@ const props = defineProps({
 
 const statusOrder = ['pending', 'approved', 'packed', 'shipped', 'delivered'];
 const statusLabels = {
-    'pending': 'Pending',
-    'approved': 'Approved',
-    'packed': 'Packed',
-    'shipped': 'Shipped',
-    'delivered': 'Delivered',
-    'cancelled': 'Cancelled',
-    'rejected': 'Rejected'
+    pending: 'Waiting for seller',
+    approved: 'Seller accepted',
+    packed: 'Packed & ready to ship',
+    shipped: 'Picked up · out for delivery',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+    rejected: 'Rejected',
 };
 
 const stages = computed(() => {

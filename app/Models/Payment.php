@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class Payment extends Model
 {
@@ -88,7 +91,7 @@ class Payment extends Model
             (float) $this->net_seller_amount,
             'escrow_held',
             (string) $this->id,
-            "Payment held in escrow (Invoice #{$this->invoice_id})"
+            "Payment held by platform (Invoice #{$this->invoice_id})"
         );
 
         // Intentionally DO NOT update seller_wallet_credited_at
@@ -97,42 +100,62 @@ class Payment extends Model
 
     public function releaseEscrow(): void
     {
-        $this->update([
-            'escrow_status' => 'released',
-            'released_at'   => now(),
-        ]);
-
-        $this->refresh();
-
         if ($this->seller_wallet_credited_at !== null) {
             return;
         }
 
-        $this->loadMissing('invoice.order.distributor.owner.wallet');
-        $invoice = $this->invoice;
-        $sellerWallet = $invoice?->order?->distributor?->owner?->wallet;
-        $superAdmin = \App\Models\User::whereIn('role', ['super_admin', 'superadmin', 'admin'])->first();
-        $superAdminWallet = $superAdmin?->wallet;
+        DB::transaction(function () {
+            $this->update([
+                'escrow_status' => 'released',
+                'released_at'   => now(),
+            ]);
+            $this->refresh();
 
-        if ($sellerWallet && (float) $this->net_seller_amount > 0) {
-            if ($superAdminWallet && $superAdminWallet->balance >= (float) $this->net_seller_amount) {
-                $superAdminWallet->debit(
-                    (float) $this->net_seller_amount,
-                    'escrow_release_payout',
-                    (string) $this->id,
-                    "Escrow released to seller for Invoice #{$invoice->invoice_number}"
-                );
+            $amount = (float) $this->net_seller_amount;
+            if ($amount <= 0) {
+                $this->update(['seller_wallet_credited_at' => now()]);
+
+                return;
             }
 
+            $this->loadMissing('invoice.order.distributor.owner.wallet');
+            $invoice = $this->invoice;
+            $sellerWallet = $invoice?->order?->distributor?->owner?->wallet;
+            $superAdmin = \App\Models\User::whereIn('role', ['super_admin', 'superadmin', 'admin'])->first();
+            $superAdminWallet = $superAdmin?->wallet;
+
+            if (! $sellerWallet) {
+                Log::warning('[Payment] releaseEscrow: seller wallet missing', ['payment_id' => $this->id]);
+
+                throw new RuntimeException('Seller wallet not found for payout.');
+            }
+
+            if (! $superAdminWallet || $superAdminWallet->balance < $amount) {
+                Log::warning('[Payment] releaseEscrow: platform holding balance insufficient', [
+                    'payment_id' => $this->id,
+                    'required' => $amount,
+                    'available' => $superAdminWallet?->balance ?? 0,
+                ]);
+
+                throw new RuntimeException('Platform holding balance insufficient to complete payout.');
+            }
+
+            $superAdminWallet->debit(
+                $amount,
+                'escrow_release_payout',
+                (string) $this->id,
+                "Payout from platform hold to seller (Invoice #{$invoice->invoice_number})"
+            );
+
             $sellerWallet->credit(
-                (float) $this->net_seller_amount,
+                $amount,
                 'escrow_release',
                 (string) $this->id,
-                "Escrow released for Invoice #{$invoice->invoice_number}"
+                "Order payout released (Invoice #{$invoice->invoice_number})"
             );
-        }
 
-        $this->update(['seller_wallet_credited_at' => now()]);
+            $this->update(['seller_wallet_credited_at' => now()]);
+        });
     }
 
     /**

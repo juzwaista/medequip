@@ -50,6 +50,7 @@
                             </div>
                         </div>
 
+                        <!-- City & Barangay -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">City/Municipality *</label>
@@ -113,6 +114,35 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             <p v-if="errors.address_line" class="text-red-500 text-sm mt-1">{{ errors.address_line }}</p>
+                        </div>
+
+                        <!-- Address Pin Location -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                Pin Exact Location
+                                <span class="text-xs font-normal text-gray-500 italic">(Optional — drop a pin to auto-fill City &amp; Barangay)</span>
+                            </label>
+                            <MapPicker 
+                                v-model:lat="form.latitude" 
+                                v-model:lng="form.longitude"
+                                :geocodeQuery="geocodeQuery"
+                                @update:address="onMapAddressPicked"
+                                height="250px"
+                            />
+                            <!-- Detected location banner -->
+                            <transition
+                                enter-active-class="transition ease-out duration-200"
+                                enter-from-class="opacity-0 -translate-y-1"
+                                enter-to-class="opacity-100 translate-y-0"
+                                leave-active-class="transition ease-in duration-150"
+                                leave-from-class="opacity-100 translate-y-0"
+                                leave-to-class="opacity-0 -translate-y-1"
+                            >
+                                <p v-if="detectedLocation" class="mt-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
+                                    <svg class="h-3.5 w-3.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                    {{ detectedLocation }}
+                                </p>
+                            </transition>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -244,6 +274,7 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import MapPicker from '@/Components/MapPicker.vue';
 
 const props = defineProps({
     addresses: Array,
@@ -260,6 +291,14 @@ const selectedBarangay = ref('');
 const manualBarangay = ref('');
 const zipCode = ref('');
 
+// For map ↔ form sync
+const geocodeQuery = ref(null);
+const detectedLocation = ref('');
+let detectedTimer = null;
+
+// Prevents circular updates when we auto-fill the form from a map pin
+let isProgrammaticChange = false;
+
 const form = reactive({
     label: '',
     recipient_name: '',
@@ -269,7 +308,131 @@ const form = reactive({
     city: '',
     province: 'Cavite',
     zip_code: '',
+    latitude: null,
+    longitude: null,
     is_default: false,
+});
+
+// ─── Fuzzy match a raw OSM string against a list of known names ───────────────
+const normalize = (str) =>
+    String(str)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')   // strip diacritics (ñ → n, etc.)
+        .replace(/[^a-z0-9\s]/g, '')       // remove punctuation
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const fuzzyMatch = (input, list) => {
+    if (!input || !list || !list.length) return null;
+    const normalInput = normalize(input);
+    if (!normalInput) return null;
+
+    // 1. Exact (case/diacritic insensitive)
+    const exact = list.find(item => normalize(item) === normalInput);
+    if (exact) return exact;
+
+    // 2. List item starts with input (e.g. "Molino" → "Molino I")
+    const startsWith = list.find(item => normalize(item).startsWith(normalInput + ' ') || normalize(item) === normalInput);
+    if (startsWith) return startsWith;
+
+    // 3. Input contains list item (e.g. "Bacoor City" → "Bacoor")
+    const superString = list.find(item => normalInput.includes(normalize(item)));
+    if (superString) return superString;
+
+    // 4. List item contains input (partial)
+    const subString = list.find(item => normalize(item).includes(normalInput));
+    if (subString) return subString;
+
+    return null;
+};
+
+// ─── Called when MapPicker emits reverse-geocoded city + barangay ─────────────
+const onMapAddressPicked = ({ city, barangay }) => {
+    if (!city && !barangay) return;
+
+    isProgrammaticChange = true;
+
+    const cityKeys = Object.keys(props.cities || {});
+    const matchedCity = fuzzyMatch(city, cityKeys);
+
+    let matchedBrgy = null;
+
+    if (matchedCity) {
+        selectedCity.value = matchedCity;
+        // update zip, available barangays, etc. (without triggering geocodeQuery)
+        _applyCityChange(matchedCity);
+
+        // Now match the barangay against the newly available list
+        if (barangay) {
+            const brgys = props.barangays?.[matchedCity] || [];
+            matchedBrgy = fuzzyMatch(barangay, brgys);
+
+            if (matchedBrgy) {
+                selectedBarangay.value = matchedBrgy;
+            } else {
+                selectedBarangay.value = 'other';
+                manualBarangay.value = barangay;
+            }
+        }
+    }
+
+    // Show detected banner
+    const cityLabel = matchedCity || city || '';
+    const brgyLabel = matchedBrgy || (barangay ? `${barangay} (unmatched)` : '');
+    if (cityLabel) {
+        detectedLocation.value = `Detected: ${cityLabel}${brgyLabel ? ' · Brgy. ' + brgyLabel : ''}`;
+        clearTimeout(detectedTimer);
+        detectedTimer = setTimeout(() => { detectedLocation.value = ''; }, 5000);
+    }
+
+    isProgrammaticChange = false;
+};
+
+// ─── Internal city-change logic (shared between user-driven and programmatic) ─
+const _applyCityChange = (city) => {
+    selectedBarangay.value = '';
+    manualBarangay.value = '';
+    form.city = city || '';
+    if (city && props.cities[city]) {
+        zipCode.value = props.cities[city].zip;
+        form.zip_code = zipCode.value;
+        if ((props.barangays?.[city] || []).length === 0) {
+            selectedBarangay.value = 'other';
+        }
+    } else {
+        zipCode.value = '';
+        form.zip_code = '';
+    }
+};
+
+// ─── User selects city from dropdown ─────────────────────────────────────────
+const onCityChange = () => {
+    _applyCityChange(selectedCity.value);
+    // Pan map to the chosen city (skip when called programmatically from pin)
+    if (!isProgrammaticChange && selectedCity.value) {
+        geocodeQuery.value = `${selectedCity.value}, Cavite, Philippines`;
+    }
+};
+
+// ─── User selects barangay from dropdown ─────────────────────────────────────
+watch(selectedBarangay, (brgy) => {
+    if (!isProgrammaticChange && brgy && brgy !== 'other' && selectedCity.value) {
+        geocodeQuery.value = `Barangay ${brgy}, ${selectedCity.value}, Cavite, Philippines`;
+    }
+});
+
+watch([selectedCity, selectedBarangay, manualBarangay, zipCode], () => {
+    form.city = selectedCity.value || '';
+    form.zip_code = zipCode.value || '';
+    form.barangay = selectedBarangay.value === 'other'
+        ? (manualBarangay.value || '')
+        : (selectedBarangay.value || '');
+});
+
+const availableBarangays = computed(() => {
+    if (!selectedCity.value || !props.barangays) return [];
+    return props.barangays[selectedCity.value] || [];
 });
 
 const resetForm = () => {
@@ -281,11 +444,15 @@ const resetForm = () => {
     form.city = '';
     form.province = 'Cavite';
     form.zip_code = '';
+    form.latitude = null;
+    form.longitude = null;
     form.is_default = false;
     selectedCity.value = '';
     selectedBarangay.value = '';
     manualBarangay.value = '';
     zipCode.value = '';
+    geocodeQuery.value = null;
+    detectedLocation.value = '';
     editingAddress.value = null;
 };
 
@@ -304,6 +471,8 @@ const editAddress = (address) => {
     form.city = address.city;
     form.province = address.province;
     form.zip_code = address.zip_code;
+    form.latitude = address.latitude;
+    form.longitude = address.longitude;
     form.is_default = address.is_default;
     selectedCity.value = address.city || '';
     zipCode.value = address.zip_code || '';
@@ -321,35 +490,6 @@ const editAddress = (address) => {
     }
     showAddForm.value = true;
 };
-
-const availableBarangays = computed(() => {
-    if (!selectedCity.value || !props.barangays) return [];
-    return props.barangays[selectedCity.value] || [];
-});
-
-const onCityChange = () => {
-    selectedBarangay.value = '';
-    manualBarangay.value = '';
-    form.city = selectedCity.value || '';
-    if (selectedCity.value && props.cities[selectedCity.value]) {
-        zipCode.value = props.cities[selectedCity.value].zip;
-        form.zip_code = zipCode.value;
-        if (availableBarangays.value.length === 0) {
-            selectedBarangay.value = 'other';
-        }
-    } else {
-        zipCode.value = '';
-        form.zip_code = '';
-    }
-};
-
-watch([selectedCity, selectedBarangay, manualBarangay, zipCode], () => {
-    form.city = selectedCity.value || '';
-    form.zip_code = zipCode.value || '';
-    form.barangay = selectedBarangay.value === 'other'
-        ? (manualBarangay.value || '')
-        : (selectedBarangay.value || '');
-});
 
 const saveAddress = () => {
     if (editingAddress.value) {

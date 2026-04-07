@@ -12,7 +12,7 @@
                     <div class="p-6 text-gray-900 border-b border-gray-200">
                         <h3 class="text-lg font-bold mb-4">Financial Settings</h3>
                         <p class="text-sm text-gray-600 mb-6">
-                            Adjust the global commission rate that the platform deducts from distributor sales when escrow is released. 
+                            Adjust the global commission rate that the platform deducts from distributor sales when payouts are released to sellers.
                         </p>
                         
                         <form @submit.prevent="submit" class="space-y-4">
@@ -57,7 +57,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p class="text-xs text-blue-800">
-                            <strong>Note:</strong> Changes to the platform fee rate only apply to <em>new payments processed after the change</em>. Existing open orders in escrow will use the fee rate that was active when they were paid.
+                            <strong>Note:</strong> Changes to the platform fee rate only apply to <em>new payments processed after the change</em>. Existing orders with funds still held by the platform will use the fee rate that was active when they were paid.
                         </p>
                     </div>
                 </div>

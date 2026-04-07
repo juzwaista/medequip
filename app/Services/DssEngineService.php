@@ -9,11 +9,10 @@ use App\Models\DssSalesAnalytics;
 use App\Models\Inventory;
 use App\Models\OrderItem;
 use App\Models\Product;
-use Illuminate\Support\Collection;
 
 class DssEngineService
 {
-    public function syncForDistributor(int $distributorId): void
+    public function syncForDistributor(int $distributorId, bool $force = false): void
     {
         $settings = DssDistributorSettings::firstOrCreate(
             ['distributor_id' => $distributorId],
@@ -25,12 +24,20 @@ class DssEngineService
             ]
         );
 
+        // Always refresh alerts — they are cheap and must reflect the current threshold and inventory state.
         if ($settings->enable_auto_alerts) {
             $this->syncAlerts($distributorId, (int) $settings->expiry_warning_days);
         }
 
+        // Debounce the heavier analytics/recommendations syncs (runs at most every 15 minutes).
+        if (! $force && $settings->updated_at && $settings->updated_at->diffInMinutes(now()) < 15) {
+            return;
+        }
+
         $this->syncReorderRecommendations($distributorId, (int) $settings->low_stock_threshold_days);
         $this->syncSalesAnalytics($distributorId);
+
+        $settings->touch();
     }
 
     public function getInsights(int $distributorId): array
@@ -83,7 +90,7 @@ class DssEngineService
             ->delete();
 
         $expiryInventories = Inventory::with('product')
-            ->whereHas('product', fn($q) => $q->where('distributor_id', $distributorId))
+            ->whereHas('product', fn ($q) => $q->where('distributor_id', $distributorId))
             ->whereNotNull('expiry_date')
             ->where('quantity', '>', 0)
             ->whereDate('expiry_date', '<=', now()->addDays($expiryWarningDays))
@@ -97,7 +104,7 @@ class DssEngineService
                 'inventory_id' => $inventory->id,
                 'product_id' => $inventory->product_id,
                 'alert_type' => 'expiry_warning',
-                'severity' => $days <= 15 ? 'critical' : 'warning',
+                'severity' => $days <= 30 ? 'critical' : 'warning',
                 'title' => 'Product Expiring Soon',
                 'message' => "{$inventory->product->name} batch {$inventory->batch_number} expires in {$days} day(s).",
                 'metadata' => [
@@ -109,7 +116,7 @@ class DssEngineService
         }
 
         $lowStockInventories = Inventory::with('product')
-            ->whereHas('product', fn($q) => $q->where('distributor_id', $distributorId))
+            ->whereHas('product', fn ($q) => $q->where('distributor_id', $distributorId))
             ->whereRaw('quantity <= reorder_level')
             ->get();
 
@@ -207,7 +214,7 @@ class DssEngineService
             ->orderByDesc('sold_qty')
             ->limit(5)
             ->get()
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'product_id' => $row->id,
                 'name' => $row->name,
                 'sold_qty' => (int) $row->sold_qty,
@@ -232,4 +239,3 @@ class DssEngineService
         );
     }
 }
-

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 class TermsController extends Controller
 {
@@ -14,6 +13,7 @@ class TermsController extends Controller
     {
         $request->validate([
             'terms_accepted' => 'required|accepted',
+            'redirect_to' => 'nullable|string',
         ], [
             'terms_accepted.accepted' => 'You must accept the Terms and Conditions to continue.',
         ]);
@@ -26,6 +26,27 @@ class TermsController extends Controller
             'terms_version' => \App\Models\User::CURRENT_TERMS_VERSION,
         ]);
 
-        return back()->with('success', 'Terms accepted. Welcome to MedEquip!');
+        $redirectTo = $request->input('redirect_to');
+
+        // Allow only internal absolute paths; reject full URLs.
+        if (! is_string($redirectTo) || ! str_starts_with($redirectTo, '/')) {
+            $redirectTo = null;
+        }
+
+        // Safety: never redirect back to the POST endpoint.
+        if ($redirectTo === '/terms/accept') {
+            $redirectTo = null;
+        }
+
+        if (! $redirectTo) {
+            $redirectTo = match ($user->role) {
+                'admin', 'super_admin' => '/admin/dashboard',
+                'courier' => '/courier/dashboard',
+                'distributor', 'staff' => '/owner/dashboard',
+                default => '/products',
+            };
+        }
+
+        return redirect($redirectTo)->with('success', 'Terms accepted. Welcome to MedEquip!');
     }
 }

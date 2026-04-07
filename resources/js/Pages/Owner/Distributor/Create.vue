@@ -56,15 +56,23 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                         <div v-for="item in requirements" :key="item.title" class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
-                            <div class="text-2xl mb-2">{{ item.icon }}</div>
+                            <div class="w-10 h-10 mx-auto mb-2 flex items-center justify-center bg-blue-50 rounded-xl">
+                                <!-- document -->
+                                <svg v-if="item.icon === 'document'" class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <!-- shield -->
+                                <svg v-else-if="item.icon === 'shield'" class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                <!-- id -->
+                                <svg v-else class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                            </div>
                             <p class="text-xs font-bold text-gray-700">{{ item.title }}</p>
                             <p class="text-[11px] text-gray-500 mt-0.5">{{ item.desc }}</p>
                         </div>
                     </div>
 
                     <button @click="currentStep = 1"
-                        class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md">
-                        Get Started →
+                        class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">
+                        Get Started
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                     </button>
                 </div>
 
@@ -110,8 +118,14 @@
                     </div>
 
                     <div class="flex gap-3 mt-8">
-                        <button @click="currentStep = 0" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm">← Back</button>
-                        <button @click="validateStep1" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm">Continue →</button>
+                        <button @click="currentStep = 0" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                            Back
+                        </button>
+                        <button @click="validateStep1" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1.5">
+                            Continue
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </button>
                     </div>
                 </div>
 
@@ -135,8 +149,9 @@
                                         <p v-if="form.errors[doc.key]" class="text-xs text-red-600 mt-1">{{ form.errors[doc.key] }}</p>
                                     </div>
                                     <div class="flex-shrink-0 flex items-center gap-2">
-                                        <span v-if="form[doc.key]" class="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full truncate max-w-[100px]">
-                                            ✓ {{ form[doc.key].name }}
+                                        <span v-if="form[doc.key]" class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            {{ form[doc.key].name }}
                                         </span>
                                         <label :for="doc.key" class="cursor-pointer bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition flex-shrink-0">
                                             {{ form[doc.key] ? 'Change' : 'Upload' }}
@@ -151,55 +166,55 @@
                     </div>
 
                     <div class="flex gap-3 mt-8">
-                        <button @click="currentStep = 1" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm">← Back</button>
-                        <button @click="validateStep2" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm">Review & Submit →</button>
+                        <button @click="currentStep = 1" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                            Back
+                        </button>
+                        <button @click="validateStep2" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1.5">
+                            Review &amp; Submit
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </button>
                     </div>
                 </div>
 
-                <!-- ========= STEP 4: Review ========= -->
+                <!-- ========= STEP 4: Review (compact) ========= -->
                 <div v-else-if="currentStep === 3" class="p-8">
-                    <h2 class="text-xl font-bold text-gray-900 mb-1">Review your Application</h2>
-                    <p class="text-sm text-gray-500 mb-6">Everything look good? You can go back to make changes.</p>
+                    <h2 class="text-xl font-bold text-gray-900 mb-1">Ready to submit?</h2>
+                    <p class="text-sm text-gray-500 mb-5">Double-check below. Use Back to edit any step.</p>
 
-                    <div class="space-y-3 mb-6">
-                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Business Info</p>
-                            <div class="space-y-1.5 text-sm">
-                                <div class="flex justify-between"><span class="text-gray-500">Company</span><span class="font-semibold text-gray-800">{{ form.company_name }}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Address</span><span class="font-semibold text-gray-800 text-right max-w-[200px]">{{ form.address }}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Phone</span><span class="font-semibold text-gray-800">{{ form.contact_number }}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Email</span><span class="font-semibold text-gray-800">{{ form.email }}</span></div>
-                            </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4 mb-5 text-sm space-y-3">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Business</p>
+                            <p class="font-semibold text-gray-900 mt-0.5">{{ form.company_name }}</p>
+                            <p class="text-gray-600 text-xs mt-1 line-clamp-2">{{ form.address }}</p>
+                            <p class="text-gray-600 text-xs mt-1">{{ form.contact_number }} · {{ form.email }}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Documents</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <template v-for="doc in docFields" :key="doc.key">
-                                    <div v-if="form[doc.key] || !doc.optional" class="flex items-center gap-2 text-sm">
-                                        <span :class="form[doc.key] ? 'text-green-500' : 'text-red-400'">
-                                            {{ form[doc.key] ? '✓' : '✗' }}
-                                        </span>
-                                        <span :class="form[doc.key] ? 'text-gray-700' : 'text-red-500 font-medium'">{{ doc.short }}</span>
-                                    </div>
-                                </template>
-                            </div>
+                        <div class="pt-2 border-t border-gray-100">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Documents</p>
+                            <p class="text-gray-700">
+                                <span class="text-green-600 font-semibold">{{ uploadedDocCount }}</span> of {{ requiredDocCount }} required files attached
+                                <span v-if="form.authorization_letter" class="text-gray-500"> + authorization letter</span>
+                            </p>
                         </div>
                     </div>
 
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
-                        <span class="text-amber-500 text-lg flex-shrink-0">⚠️</span>
+                        <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         <p class="text-xs text-amber-700 leading-relaxed">By submitting, you confirm that all information is accurate and all documents are authentic. False submissions may result in permanent account termination.</p>
                     </div>
 
                     <div class="flex gap-3">
-                        <button @click="currentStep = 2" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm">← Back</button>
+                        <button @click="currentStep = 2" class="flex-none px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                            Back
+                        </button>
                         <button @click="submit" :disabled="form.processing"
                             class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                             <svg v-if="form.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                             </svg>
-                            {{ form.processing ? 'Submitting...' : '🚀 Submit Application' }}
+                            {{ form.processing ? 'Submitting...' : 'Submit Application' }}
                         </button>
                     </div>
                 </div>
@@ -215,7 +230,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
 
@@ -229,9 +244,9 @@ const steps = [
 ];
 
 const requirements = [
-    { icon: '📋', title: 'Business Documents', desc: 'DTI/SEC, Business Permit, BIR Form' },
-    { icon: '🏥', title: 'FDA Compliance', desc: 'License to Operate (LTO) & PRC ID' },
-    { icon: '🪪', title: 'Personal ID', desc: 'Valid government-issued ID' },
+    { icon: 'document', title: 'Business Documents', desc: 'DTI/SEC, Business Permit, BIR Form' },
+    { icon: 'shield',   title: 'FDA Compliance',     desc: 'License to Operate (LTO) & PRC ID' },
+    { icon: 'id',       title: 'Personal ID',         desc: 'Valid government-issued ID' },
 ];
 
 const docFields = [
@@ -257,6 +272,9 @@ const form = useForm({
     prc_id: null,
     authorization_letter: null,
 });
+
+const requiredDocCount = computed(() => docFields.filter((d) => !d.optional).length);
+const uploadedDocCount = computed(() => docFields.filter((d) => !d.optional && form[d.key]).length);
 
 const sanitizeContactNumber = () => {
     form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);

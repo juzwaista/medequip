@@ -1,6 +1,6 @@
 <template>
     <MainLayout>
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8">
             <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Checkout</h1>
@@ -57,9 +57,10 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Select Delivery Address *</label>
                                 <select 
                                     v-model="selectedSavedAddress"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white min-h-[44px] touch-manipulation"
                                 >
-                                    <option value="">-- Choose an address --</option>
+                                    <option value="" disabled hidden>Select a delivery address</option>
                                     <option v-for="addr in savedAddresses" :key="addr.id" :value="addr.id">
                                         {{ addr.label ? `${addr.label}: ` : '' }}{{ addr.address_line }}, Brgy. {{ addr.barangay }}, {{ addr.city }}
                                     </option>
@@ -130,7 +131,7 @@
 
                 <!-- Order Summary -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
+                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:sticky lg:top-24">
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
                         
                         <div class="space-y-3 mb-6">
@@ -143,7 +144,7 @@
                                 <span>₱{{ Number(shipping_fee_total || 0).toLocaleString() }}</span>
                             </div>
                             <p v-if="distributor_count > 1" class="text-xs text-gray-500">
-                                {{ distributor_count }} shipments x ₱{{ Number(shipping_fee_per_order || 0).toLocaleString() }}
+                                Delivery fees vary per shipment based on required vehicle size.
                             </p>
                             <div class="border-t pt-3 flex justify-between text-lg font-bold">
                                 <span>Total</span>
@@ -241,13 +242,20 @@
 
                                 <!-- Cash on Delivery -->
                                 <label :class="[
-                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
-                                    form.payment_method === 'cod'
-                                        ? 'border-orange-400 bg-orange-50 shadow-sm'
-                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 transition-all select-none',
+                                    cod_available
+                                        ? form.payment_method === 'cod'
+                                            ? 'border-orange-400 bg-orange-50 shadow-sm cursor-pointer'
+                                            : 'border-gray-200 hover:border-gray-300 bg-white cursor-pointer'
+                                        : 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-60'
                                 ]">
-                                    <input type="radio" v-model="form.payment_method" value="cod" class="sr-only" />
-                                    <span class="text-lg leading-none">💵</span>
+                                    <input type="radio" v-model="form.payment_method" value="cod" class="sr-only" :disabled="!cod_available" />
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="24" height="24" rx="4" fill="#EA580C"/>
+                                        <rect x="2" y="7" width="20" height="10" rx="1.5" fill="white" fill-opacity="0.25"/>
+                                        <circle cx="12" cy="12" r="3" fill="white" fill-opacity="0.7"/>
+                                        <path d="M4 9.5h2M18 9.5h2M4 14.5h2M18 14.5h2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
                                     <span class="text-sm font-semibold" :class="form.payment_method === 'cod' ? 'text-orange-700' : 'text-gray-700'">Cash on Delivery</span>
                                     <svg v-if="form.payment_method === 'cod'" class="h-4 w-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
@@ -263,14 +271,19 @@
                             <p v-if="cart_has_prescription_items" class="mt-2 text-xs text-gray-600">
                                 Wallet is unavailable when the cart includes prescription medicine.
                             </p>
+                            <p v-if="!cod_available" class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                Cash on delivery isn’t available when too many of your past orders were rejected (including prescription declines). Your current rate is about
+                                <strong>{{ Number(cod_rejection_rate_percent || 0).toFixed(1) }}%</strong>
+                                — use card, e-wallet, or Maya instead.
+                            </p>
                         </div>
 
                         <!-- Payment info banner -->
                         <div v-if="form.payment_method === 'cod'" class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-6">
                             <div class="flex items-start">
-                                <span class="text-xl mr-2 flex-shrink-0">💵</span>
-                                <p class="text-xs text-orange-800">
-                                    <strong>Cash on Delivery:</strong> Your assigned courier will collect <strong>₱{{ Number(grandTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</strong> from you upon delivery. No online payment required now.
+                                <svg class="w-5 h-5 text-orange-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2m-2 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2z"/></svg>
+                                <p class="text-sm text-orange-800">
+                                    <strong>Cash on Delivery:</strong> Please hand <strong>₱{{ Number(grandTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</strong> to your courier upon receiving the item.
                                 </p>
                             </div>
                         </div>
@@ -280,7 +293,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                                 </svg>
                                 <p class="text-xs text-green-800">
-                                    <strong>Buyer Protection:</strong> Your payment is held securely until you confirm receipt of your order.
+                                    <strong>Buyer protection:</strong> Your payment is held by the platform until you confirm receipt of your order.
                                 </p>
                             </div>
                         </div>
@@ -348,6 +361,14 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    cod_available: {
+        type: Boolean,
+        default: true,
+    },
+    cod_rejection_rate_percent: {
+        type: Number,
+        default: 0,
+    },
 });
 
 // Address fields
@@ -374,6 +395,8 @@ watch(selectedSavedAddress, (newId) => {
         if (address.zip_code) parts.push(address.zip_code);
         
         form.delivery_address = parts.join(', ');
+        form.delivery_latitude = address.latitude || null;
+        form.delivery_longitude = address.longitude || null;
     }
 });
 
@@ -394,10 +417,21 @@ watch(
     { immediate: true }
 );
 
-// Form data — now includes payment_method
+watch(
+    () => props.cod_available,
+    (ok) => {
+        if (!ok && form.payment_method === 'cod') {
+            form.payment_method = 'gcash';
+        }
+    },
+    { immediate: true }
+);
+
 const form = useForm({
     customer_name: '',
     delivery_address: '',
+    delivery_latitude: null,
+    delivery_longitude: null,
     contact_number: '',
     notes: '',
     payment_method: 'gcash',
@@ -431,19 +465,9 @@ const isFormValid = computed(() => {
 });
 
 const submitOrder = () => {
-    console.log('submitOrder called!');
-    console.log('Form data:', {
-        customer_name: form.customer_name,
-        delivery_address: form.delivery_address,
-        contact_number: form.contact_number,
-        notes: form.notes
-    });
-    console.log('isFormValid:', isFormValid.value);
-    
     form.post('/orders', {
         preserveScroll: true,
         onSuccess: () => {
-            console.log('Order placed successfully!');
             // Redirected to confirmation page
         },
         onError: (errors) => {

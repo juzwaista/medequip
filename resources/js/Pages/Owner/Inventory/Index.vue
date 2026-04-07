@@ -1,39 +1,39 @@
 <template>
     <OwnerLayout>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Inventory Management</h1>
-                    <p class="text-gray-600 mt-1">Manage your products and stock levels</p>
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 pb-28 sm:pb-10 min-w-0">
+            <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+                <div class="min-w-0">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Inventory</h1>
+                    <p class="text-gray-600 mt-1 text-sm sm:text-base">Products and stock levels</p>
                 </div>
                 <Link 
                     href="/owner/inventory/create"
-                    class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition font-bold shadow-lg flex items-center"
+                    class="bg-blue-600 text-white px-5 py-3.5 rounded-xl hover:bg-blue-700 transition font-bold shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto min-h-[48px] touch-manipulation shrink-0"
                 >
-                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                     Add Product
                 </Link>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
+            <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="sm:col-span-2 lg:col-span-2 min-w-0">
                         <input 
                             v-model="search"
                             @input="applyFilters"
                             type="text"
                             placeholder="Search by product name or SKU..."
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         />
                     </div>
 
-                    <div>
+                    <div class="min-w-0">
                         <select 
                             v-model="categoryFilter"
                             @change="applyFilters"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         >
                             <option value="">All Categories</option>
                             <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -42,11 +42,11 @@
                         </select>
                     </div>
 
-                    <div>
+                    <div class="min-w-0">
                         <select 
                             v-model="stockFilter"
                             @change="applyFilters"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         >
                             <option value="">All Stock Levels</option>
                             <option value="out">Out of Stock</option>
@@ -56,11 +56,11 @@
                     </div>
 
                     <!-- DSS Alert Filter -->
-                    <div>
+                    <div class="min-w-0 sm:col-span-2 lg:col-span-4">
                         <select
                             v-model="alertFilter"
                             @change="applyFilters"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         >
                             <option value="">All DSS flags</option>
                             <option value="expired">Expired</option>
@@ -73,25 +73,25 @@
             </div>
 
 
-            <div v-if="products.data.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-if="products.data.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                 <div 
                     v-for="product in products.data" 
                     :key="product.id" 
-                    class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition"
+                    class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition flex flex-col"
                 >
-                    <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative">
+                    <div class="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative shrink-0 overflow-hidden">
                         <img 
                             v-if="product.image_path" 
                             :src="`/storage/${product.image_path}`" 
                             :alt="product.name" 
                             class="w-full h-full object-cover" 
                         />
-                        <svg v-else class="h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg v-else class="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         
                         <div 
-                            class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center"
+                            class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg flex items-center"
                             :class="{
                                 'bg-red-100 text-red-800 border-2 border-red-300': product.stock_status === 'out' || product.stock_status === 'expired',
                                 'bg-orange-100 text-orange-800 border-2 border-orange-300': product.stock_status === 'low' || product.stock_status === 'near_expiry',
@@ -100,7 +100,7 @@
                             }"
                         >
                             <span 
-                                class="inline-block w-2 h-2 rounded-full mr-1"
+                                class="inline-block w-1.5 h-1.5 rounded-full mr-1 hidden sm:inline-block"
                                 :class="{
                                     'bg-red-600': product.stock_status === 'out' || product.stock_status === 'expired',
                                     'bg-orange-600': product.stock_status === 'low' || product.stock_status === 'near_expiry',
@@ -112,28 +112,18 @@
                         </div>
                     </div>
 
-                    <div class="p-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">{{ product.name }}</h3>
-                                <p class="text-xs text-gray-500">SKU: {{ product.sku }}</p>
-                            </div>
-                            <span 
-                                :class="[
-                                    'px-2 py-1 rounded-full text-xs font-semibold ml-2',
-                                    product.is_active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                                ]"
-                            >
-                                {{ product.is_active ? 'Active' : 'Inactive' }}
-                            </span>
+                    <div class="p-3 sm:p-4 flex flex-col flex-1 h-full">
+                        <div class="mb-1.5 min-h-[36px] sm:min-h-[44px]">
+                            <h3 class="font-bold text-sm sm:text-base text-gray-900 mb-0.5 truncate">{{ product.name }}</h3>
+                            <p class="text-[10px] sm:text-xs text-gray-500 truncate">SKU: {{ product.sku }}</p>
                         </div>
 
-                        <p class="text-sm text-gray-600 mb-3">{{ product.category?.name || 'Uncategorized' }}</p>
+                        <p class="text-[11px] sm:text-xs text-gray-600 mb-2 truncate min-h-[16px]">{{ product.category?.name || 'Uncategorized' }}</p>
 
-                        <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Total Stock:</span>
-                                <span class="text-2xl font-bold" :class="{
+                        <div class="bg-gray-50 rounded-lg p-2 mb-3 border border-gray-200 min-h-[56px] flex flex-col justify-center">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[11px] sm:text-xs font-semibold text-gray-700">Stock:</span>
+                                <span class="text-base sm:text-lg font-bold" :class="{
                                     'text-red-600': product.stock_status === 'out' || product.stock_status === 'expired',
                                     'text-orange-600': product.stock_status === 'low' || product.stock_status === 'near_expiry',
                                     'text-yellow-600': product.stock_status === 'medium',
@@ -142,41 +132,42 @@
                                     {{ product.total_stock }}
                                 </span>
                             </div>
-                            <div class="flex justify-between text-xs text-gray-600">
-                                <span>Available: {{ product.available_stock }}</span>
-                                <span v-if="product.total_reserved > 0" class="text-orange-600">Reserved: {{ product.total_reserved }}</span>
+                            <div class="flex justify-between text-[10px] sm:text-[11px] text-gray-600 leading-tight">
+                                <span>Avail: {{ product.available_stock }}</span>
+                                <span class="text-orange-600 h-3 sm:h-4 w-12 text-right">
+                                    <template v-if="product.total_reserved > 0">Rsrv: {{ product.total_reserved }}</template>
+                                </span>
                             </div>
                         </div>
 
-                        <p class="text-xl font-bold text-blue-600 mb-4">₱{{ Number(product.base_price).toLocaleString() }}</p>
+                        <div class="mt-auto">
+                            <p class="text-base sm:text-lg font-bold text-blue-600 mb-2">₱{{ Number(product.base_price).toLocaleString() }}</p>
 
-                        <div class="flex gap-2">
-                            <Link 
-                                :href="`/owner/inventory/${product.id}/edit`"
-                                class="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
-                            >
-                                <svg class="h-4 w-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                Edit
-                            </Link>
-                            <button 
-                                @click="openStockModal(product)"
-                                class="flex-1 px-4 py-2 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition font-medium text-sm"
-                            >
-                                <svg class="h-4 w-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                Stock
-                            </button>
-                            <button 
-                                @click="deleteProduct(product.id)"
-                                class="px-4 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-medium text-sm"
-                            >
-                                <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
+                            <div class="flex gap-1.5">
+                                <Link 
+                                    :href="`/owner/inventory/${product.id}/edit`"
+                                    class="flex-1 min-w-0 text-center px-1.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-[11px] sm:text-xs flex items-center justify-center touch-manipulation"
+                                >
+                                    Edit
+                                </Link>
+                                <button 
+                                    type="button"
+                                    @click="openStockModal(product)"
+                                    class="flex-1 min-w-0 px-1.5 py-1.5 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition font-medium text-[11px] sm:text-xs flex items-center justify-center touch-manipulation"
+                                >
+                                    Stock
+                                </button>
+                                <button 
+                                    type="button"
+                                    title="Archive product"
+                                    @click="deleteProduct(product.id)"
+                                    class="w-8 h-8 px-0 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-medium inline-flex items-center justify-center touch-manipulation shrink-0"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -228,8 +219,8 @@
         </div>
 
         <Teleport to="body">
-            <div v-if="showStockModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] px-4" @click="closeStockModal">
-                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" @click.stop>
+            <div v-if="showStockModal" class="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[100] sm:p-4" @click="closeStockModal">
+                <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-6 max-h-[90dvh] overflow-y-auto overscroll-contain" @click.stop>
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-bold text-gray-900">Adjust Stock</h3>
                         <button @click="closeStockModal" class="text-gray-400 hover:text-gray-600">

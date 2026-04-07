@@ -224,14 +224,23 @@
                     </label>
                 </div>
 
-                <div v-else class="relative rounded-2xl overflow-hidden bg-black">
-                    <img :src="photoPreview" class="w-full object-cover max-h-64 rounded-2xl" />
-                    <button @click="clearPhoto" class="absolute top-2 right-2 bg-white/90 text-gray-700 rounded-full p-1.5 shadow hover:bg-red-50 hover:text-red-600 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                    <label for="proofPhoto" class="absolute bottom-2 right-2 bg-white/90 text-gray-700 text-xs font-bold px-3 py-1.5 rounded-full shadow cursor-pointer hover:bg-white transition">
-                        Retake
-                    </label>
+                <div v-else class="relative rounded-2xl overflow-hidden bg-black flex items-center justify-center min-h-[220px]">
+                    <div v-if="photoPreview === 'processing'" class="text-white text-center">
+                        <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p class="text-xs font-semibold">Adding GPS Watermark...</p>
+                    </div>
+                    <template v-else>
+                        <img :src="photoPreview" class="w-full object-cover max-h-64 rounded-2xl" />
+                        <button @click="clearPhoto" class="absolute top-2 right-2 bg-white/90 text-gray-700 rounded-full p-1.5 shadow hover:bg-red-50 hover:text-red-600 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                        <label for="proofPhoto" class="absolute bottom-2 right-2 bg-white/90 text-gray-700 text-xs font-bold px-3 py-1.5 rounded-full shadow cursor-pointer hover:bg-white transition">
+                            Retake
+                        </label>
+                    </template>
                 </div>
 
                 <p v-if="form.errors.photo" class="text-sm text-red-600 text-center">{{ form.errors.photo }}</p>
@@ -291,7 +300,9 @@ const initialOrder = new URLSearchParams(window.location.search).get('order') ||
 const form = useForm({
     order_number: initialOrder,
     action: initialAction,
-    photo: null
+    photo: null,
+    proof_latitude: null,
+    proof_longitude: null,
 });
 
 // Do NOT auto-lookup on mount — courier must physically scan the waybill QR.
@@ -393,9 +404,69 @@ const submitPickup = () => {
     });
 };
 
-const handlePhotoUpload = (e) => {
+const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    photoPreview.value = 'processing';
+    
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        });
+        
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        form.proof_latitude = lat;
+        form.proof_longitude = lng;
+        
+        const photoUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = photoUrl;
+        
+        await new Promise(r => img.onload = r);
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.drawImage(img, 0, 0);
+        
+        // Watermark styling
+        const fontSize = Math.max(16, canvas.height * 0.03); 
+        const boxHeight = fontSize * 3 + 40;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${fontSize}px monospace`;
+        
+        const dateStr = new Date().toLocaleString() + ' (Local)';
+        const locStr = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        const orderStr = `Order: ${form.order_number}`;
+        
+        ctx.fillText(orderStr, 20, canvas.height - boxHeight + fontSize + 10);
+        ctx.fillText(locStr, 20, canvas.height - boxHeight + (fontSize * 2) + 20);
+        ctx.fillText(dateStr, 20, canvas.height - boxHeight + (fontSize * 3) + 30);
+        
+        canvas.toBlob((blob) => {
+            const newFile = new File([blob], file.name, { type: file.type });
+            form.photo = newFile;
+            photoPreview.value = URL.createObjectURL(newFile);
+        }, file.type, 0.9);
+        
+    } catch (err) {
+        console.error("GPS or Watermark Error:", err);
+        alert("Could not attach GPS location. Ensure location services are enabled on your device/browser.");
+        form.proof_latitude = null;
+        form.proof_longitude = null;
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
     }

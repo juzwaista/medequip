@@ -21,7 +21,7 @@ class EnsureDistributorVerified
             $distributor = $user->distributor;
 
             // If no distributor application at all, redirect to create
-            if (!$distributor) {
+            if (! $distributor) {
                 return redirect()->route('owner.distributors.create');
             }
 
@@ -30,6 +30,7 @@ class EnsureDistributorVerified
                 \Illuminate\Support\Facades\Auth::guard('web')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+
                 return redirect()->route('login')
                     ->with('error', 'Your distributor account has been permanently banned.');
             }
@@ -57,12 +58,23 @@ class EnsureDistributorVerified
             // If pending or rejected, block access and redirect to the pending page
             // Allow access to pending/create routes to avoid infinite loops
             $allowedRoutes = ['owner.distributors.pending', 'owner.distributors.create', 'owner.distributors.store'];
-            if (in_array($distributor->status, ['pending', 'rejected', null]) && !$request->routeIs(...$allowedRoutes)) {
+            if (in_array($distributor->status, ['pending', 'rejected', null]) && ! $request->routeIs(...$allowedRoutes)) {
                 // null status = distributor was reset for re-application, send to create form
                 if (is_null($distributor->status)) {
                     return redirect()->route('owner.distributors.create');
                 }
+
                 return redirect()->route('owner.distributors.pending');
+            }
+
+            // Approved owners: short shop setup (slug + description + optional branding) before full portal
+            if ($user->role === 'distributor'
+                && $distributor->status === 'approved'
+                && $distributor->shop_profile_onboarding_completed_at === null) {
+                $setupRoutes = ['owner.shop.setup', 'owner.shop.setup.store', 'owner.profile.checkSlug', 'logout'];
+                if (! $request->routeIs(...$setupRoutes)) {
+                    return redirect()->route('owner.shop.setup');
+                }
             }
         }
 

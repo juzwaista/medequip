@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\DssDistributorSettings;
 use App\Models\Inventory;
 use App\Models\Product;
-use App\Models\DssDistributorSettings;
 use Illuminate\Support\Collection;
 
 class DssAlertService
@@ -21,7 +21,7 @@ class DssAlertService
         $lowStockThreshold = $settings->low_stock_threshold_days ?? 7;
         $enableAlerts = $settings->enable_auto_alerts ?? true;
 
-        if (!$enableAlerts) {
+        if (! $enableAlerts) {
             return [
                 'expiry_alerts' => [],
                 'low_stock_alerts' => [],
@@ -29,10 +29,13 @@ class DssAlertService
             ];
         }
 
+        $expiryAlerts = $this->getExpiryAlerts($distributorId, $expiryWarningDays);
+        $lowStockAlerts = $this->getLowStockAlerts($distributorId);
+
         return [
-            'expiry_alerts' => $this->getExpiryAlerts($distributorId, $expiryWarningDays),
-            'low_stock_alerts' => $this->getLowStockAlerts($distributorId),
-            'total_alerts' => 0, // Will be calculated below
+            'expiry_alerts' => $expiryAlerts,
+            'low_stock_alerts' => $lowStockAlerts,
+            'total_alerts' => $expiryAlerts->count() + $lowStockAlerts->count(),
         ];
     }
 
@@ -98,7 +101,7 @@ class DssAlertService
                                     ->whereRaw('EXISTS (SELECT 1 FROM product_variations WHERE product_variations.id = inventory.product_variation_id AND product_variations.is_active = 1)');
                             });
                         });
-                }
+                },
             ])
             ->get()
             ->flatMap(function ($product) {
@@ -122,6 +125,7 @@ class DssAlertService
     public function getAlertCount(int $distributorId): int
     {
         $alerts = $this->getAlertsForDistributor($distributorId);
+
         return $alerts['expiry_alerts']->count() + $alerts['low_stock_alerts']->count();
     }
 }

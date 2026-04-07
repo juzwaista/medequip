@@ -4,7 +4,7 @@
             <div class="mb-8 flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">DSS Center</h1>
-                    <p class="text-gray-600 mt-1">Decision-support insights for inventory and sales.</p>
+                    <p class="text-gray-600 mt-1">Inventory and sales insights to help you make better decisions.</p>
                 </div>
                 <Link href="/owner/dashboard" class="text-blue-600 hover:text-blue-700 font-medium">Back to Dashboard</Link>
             </div>

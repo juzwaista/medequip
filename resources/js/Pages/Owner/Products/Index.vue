@@ -27,44 +27,53 @@
             </div>
 
             <!-- Products Grid -->
-            <div v-if="products.data.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div v-for="product in products.data" :key="product.id" class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition">
-                    <div class="aspect-square bg-gray-200 flex items-center justify-center">
+            <div v-if="products.data.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                <div v-for="product in products.data" :key="product.id" class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition flex flex-col">
+                    <div class="w-full aspect-square bg-gray-200 flex items-center justify-center relative shrink-0 overflow-hidden">
                         <img v-if="product.image_path" :src="`/storage/${product.image_path}`" :alt="product.name" class="w-full h-full object-cover" />
-                        <svg v-else class="h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg v-else class="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                    </div>
-                    <div class="p-4">
-                        <div class="flex items-start justify-between mb-2">
-                            <h3 class="font-bold text-lg text-gray-900">{{ product.name }}</h3>
-                            <span 
+                        
+                        <div class="absolute top-2 right-2">
+                             <span 
                                 :class="[
-                                    'px-2 py-1 rounded-full text-xs font-semibold',
+                                    'px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold shadow-sm',
                                     product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                                 ]"
                             >
                                 {{ product.is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </div>
-                        <p class="text-sm text-gray-600 mb-2">{{ product.category.name }}</p>
-                        <p class="text-xl font-bold text-blue-600 mb-2">₱{{ Number(product.price).toLocaleString() }}</p>
-                        <div class="text-sm text-gray-600 mb-4">
-                            <span class="font-semibold">Stock:</span> {{ product.total_stock }} units
+                    </div>
+                    <div class="p-3 sm:p-4 flex flex-col flex-1 h-full">
+                        <div class="mb-1.5 min-h-[22px] sm:min-h-[26px]">
+                            <h3 class="font-bold text-sm sm:text-base text-gray-900 truncate">{{ product.name }}</h3>
                         </div>
-                        <div class="flex gap-2">
-                            <Link 
-                                :href="`/owner/products/${product.id}/edit`"
-                                class="text-blue-600 hover:text-blue-900 text-sm"
-                            >
-                                Edit
-                            </Link>
-                            <button 
-                                @click="deleteProduct(product.id)"
-                                class="px-4 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-medium"
-                            >
-                                Delete
-                            </button>
+                        <p class="text-[11px] sm:text-xs text-gray-600 mb-2 truncate min-h-[16px]">{{ product.category.name }}</p>
+                        
+                        <div class="mt-auto">
+                            <p class="text-base sm:text-lg font-bold text-blue-600 mb-2">₱{{ Number(product.price).toLocaleString() }}</p>
+                            <div class="text-[11px] sm:text-xs text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg border border-gray-100 min-h-[34px] flex items-center">
+                                <span><span class="font-semibold">Stock:</span> <span class="font-bold text-gray-800">{{ product.total_stock }}</span> units</span>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <Link 
+                                    :href="`/owner/products/${product.id}/edit`"
+                                    class="flex-1 text-center bg-blue-600 text-white hover:bg-blue-700 text-[11px] sm:text-xs px-2 py-1.5 rounded-lg transition font-medium"
+                                >
+                                    Edit
+                                </Link>
+                                <button 
+                                    @click="deleteProduct(product.id)"
+                                    class="w-8 h-8 flex items-center justify-center border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition shrink-0"
+                                    title="Delete product"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

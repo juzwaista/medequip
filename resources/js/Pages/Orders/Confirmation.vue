@@ -1,6 +1,6 @@
 <template>
     <MainLayout>
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-16 pb-24 md:pb-16">
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mx-auto mb-6">
                     <svg class="h-12 w-12 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -82,18 +82,39 @@
                 </div>
             </div>
 
-            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-6">
+            <div
+                v-if="allOrdersCod"
+                class="bg-orange-50 border border-orange-200 rounded-xl p-4 sm:p-6 mb-6"
+            >
+                <p class="text-sm text-orange-900">
+                    <strong>Cash on delivery:</strong> Pay <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> to your courier when your order arrives. No online payment was taken for these orders.
+                </p>
+            </div>
+            <div
+                v-else-if="mixedPaymentTypes"
+                class="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-6 mb-6 space-y-2"
+            >
+                <p v-if="onlineOrdersTotal > 0" class="text-sm text-gray-700">
+                    For orders paid online, <strong>₱{{ Number(onlineOrdersTotal).toLocaleString() }}</strong> is held by the platform per order until you confirm delivery.
+                </p>
+                <p v-if="codOrdersTotal > 0" class="text-sm text-gray-700">
+                    For cash on delivery orders, pay <strong>₱{{ Number(codOrdersTotal).toLocaleString() }}</strong> to your courier when those orders arrive.
+                </p>
+            </div>
+            <div
+                v-else-if="hasOnlinePaidOrders"
+                class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-6 mb-6"
+            >
                 <p class="text-sm text-gray-700">
-                    Your total payment of <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> is secured by escrow.
-                    Funds are released per order after delivery confirmation.
+                    Your online payments totaling <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> are held by the platform per order until you confirm delivery.
                 </p>
             </div>
 
-            <div class="flex gap-4">
-                <Link href="/my-orders" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-6 py-3 rounded-xl hover:shadow-xl transition font-bold">
+            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link href="/my-orders" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-6 py-3.5 rounded-xl hover:shadow-xl transition font-bold min-h-[44px] flex items-center justify-center touch-manipulation">
                     View My Orders
                 </Link>
-                <Link href="/products" class="flex-1 border-2 border-gray-300 text-gray-700 text-center px-6 py-3 rounded-xl hover:bg-gray-50 transition font-bold">
+                <Link href="/products" class="flex-1 border-2 border-gray-300 text-gray-700 text-center px-6 py-3.5 rounded-xl hover:bg-gray-50 transition font-bold min-h-[44px] flex items-center justify-center touch-manipulation">
                     Continue Shopping
                 </Link>
             </div>
@@ -128,6 +149,34 @@ const itemsCount = computed(() => Number(props.summary?.items_count ?? normalize
 const shippingTotal = computed(() => Number(props.summary?.shipping_total ?? normalizedOrders.value.reduce((sum, o) => sum + Number(o.shipping_fee || 0), 0)));
 const grandTotal = computed(() => Number(props.summary?.grand_total ?? normalizedOrders.value.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)));
 
+const allOrdersCod = computed(() => {
+    const orders = normalizedOrders.value;
+    return orders.length > 0 && orders.every((o) => o.payment_method === 'cod');
+});
+
+const hasOnlinePaidOrders = computed(() => {
+    return normalizedOrders.value.some((o) => o.payment_method && o.payment_method !== 'cod');
+});
+
+const mixedPaymentTypes = computed(() => {
+    const orders = normalizedOrders.value;
+    const hasCod = orders.some((o) => o.payment_method === 'cod');
+    const hasOnline = orders.some((o) => o.payment_method && o.payment_method !== 'cod');
+    return hasCod && hasOnline;
+});
+
+const codOrdersTotal = computed(() =>
+    normalizedOrders.value
+        .filter((o) => o.payment_method === 'cod')
+        .reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
+);
+
+const onlineOrdersTotal = computed(() =>
+    normalizedOrders.value
+        .filter((o) => o.payment_method && o.payment_method !== 'cod')
+        .reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
+);
+
 const formatPaymentMethod = (method) => {
     const labels = {
         'gcash': 'GCash',
@@ -137,6 +186,7 @@ const formatPaymentMethod = (method) => {
         'bank_transfer': 'Bank Transfer',
         'paymongo': 'Online Payment',
         'wallet': 'Wallet',
+        'cod': 'Cash on Delivery',
     };
     return labels[method] || method;
 };

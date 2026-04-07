@@ -44,38 +44,30 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                                    <input 
-                                        v-model="profileForm.email"
-                                        type="email"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+                                    <input
+                                        v-model="profileForm.username"
+                                        type="text"
                                         required
+                                        autocomplete="username"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
+                                    <p class="text-xs text-gray-500 mt-1">Sign-in name. 4–20 characters: letters, numbers, underscore (stored lowercase).</p>
+                                    <p v-if="$page.props.errors?.username" class="text-red-600 text-xs mt-1">{{ $page.props.errors.username }}</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                                    <div class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 break-all">
+                                        {{ user.email }}
+                                    </div>
                                     <p v-if="user.email_verified_at" class="text-xs text-green-600 mt-1 flex items-center">
-                                        <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg class="h-3 w-3 mr-1 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                         </svg>
                                         Verified
                                     </p>
-                                    <p v-else class="text-xs text-gray-500 mt-1">Email not verified</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">User Type</label>
-                                    <div class="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
-                                        <span v-if="user.user_type" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-                                            :class="{
-                                                'bg-purple-100 text-purple-800': user.user_type === 'admin',
-                                                'bg-blue-100 text-blue-800': user.user_type === 'distributor',
-                                                'bg-green-100 text-green-800': user.user_type === 'hospital'
-                                            }">
-                                            {{ user.user_type === 'hospital' ? 'Healthcare Facility' : user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1) }}
-                                        </span>
-                                        <span v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
-                                            Not Set
-                                        </span>
-                                        <p class="text-xs text-gray-600 mt-2">Account type cannot be changed</p>
-                                    </div>
+                                    <p v-else class="text-xs text-amber-700 mt-1">Not verified yet — use the banner to resend the link.</p>
                                 </div>
                             </div>
 
@@ -300,7 +292,7 @@ const layoutComponent = computed(() => {
 
 const profileForm = reactive({
     name: props.user.name,
-    email: props.user.email
+    username: props.user.username || '',
 });
 
 const passwordForm = reactive({
@@ -321,30 +313,17 @@ const showDeactivateConfirmation = ref(false);
 const deactivateForm = reactive({ password: '' });
 
 onMounted(() => {
-    console.log('[AccountSettings] Component mounted', {
-        user_id: props.user?.id,
-        user_type: props.user?.user_type,
-        email_verified: !!props.user?.email_verified_at,
-        user_object: props.user
-    });
-
     if (page.props.errors && Object.keys(page.props.errors).length > 0) {
         console.error('[AccountSettings] Errors detected on page load', page.props.errors);
     }
 });
 
 const updateProfile = () => {
-    console.log('[AccountSettings] Updating profile', {
-        name_changed: profileForm.name !== props.user.name,
-        email_changed: profileForm.email !== props.user.email
-    });
-
     updatingProfile.value = true;
 
     router.patch('/profile', profileForm, {
         preserveScroll: true,
         onSuccess: () => {
-            console.log('[AccountSettings] Profile updated successfully');
         },
         onError: (errors) => {
             console.error('[AccountSettings] Profile update failed', errors);
@@ -357,17 +336,14 @@ const updateProfile = () => {
 
 const updatePassword = () => {
     if (!confirm('Are you sure you want to change your password?')) {
-        console.log('[AccountSettings] Password change cancelled by user');
         return;
     }
 
-    console.log('[AccountSettings] Updating password');
     updatingPassword.value = true;
 
     router.put('/password', passwordForm, {
         preserveScroll: true,
         onSuccess: () => {
-            console.log('[AccountSettings] Password updated successfully');
             passwordForm.current_password = '';
             passwordForm.password = '';
             passwordForm.password_confirmation = '';

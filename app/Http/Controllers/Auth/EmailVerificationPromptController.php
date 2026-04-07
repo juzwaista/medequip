@@ -5,17 +5,19 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class EmailVerificationPromptController extends Controller
 {
     /**
-     * Display the email verification prompt.
+     * Laravel's verified middleware sends users here. We keep shopping UX: send them to the catalog
+     * with a persistent banner (EmailVerificationBanner) instead of a dedicated verify page.
      */
-    public function __invoke(Request $request): RedirectResponse|View
+    public function __invoke(Request $request): RedirectResponse
     {
-        return $request->user()->hasVerifiedEmail()
-                    ? redirect()->intended(route('dashboard', absolute: false))
-                    : view('auth.verify-email');
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
+
+        return redirect()->to(route('products.index', [], false));
     }
 }

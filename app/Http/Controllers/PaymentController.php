@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
 use App\Models\CheckoutBatch;
+use App\Models\Invoice;
 use App\Models\Payment;
+use App\Notifications\OrderNotification;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,32 +22,35 @@ class PaymentController extends Controller
     public function webhook(Request $request)
     {
         // Verify webhook signature
-        if (!$this->paymongo->verifyWebhookSignature($request)) {
+        if (! $this->paymongo->verifyWebhookSignature($request)) {
             Log::warning('[PaymentController] Webhook signature verification failed');
+
             return response()->json(['error' => 'Invalid signature'], 401);
         }
 
-        $event     = $request->json('data.attributes.type');
+        $event = $request->json('data.attributes.type');
         $eventData = $request->json('data.attributes.data');
 
         Log::info('[PaymentController] Webhook received', ['event' => $event]);
 
         if ($event === 'checkout_session.payment.paid') {
             $sessionId = $eventData['id'] ?? null;
-            $metadata  = $eventData['attributes']['metadata'] ?? [];
+            $metadata = $eventData['attributes']['metadata'] ?? [];
             $batchId = $metadata['batch_id'] ?? null;
             $invoiceId = $metadata['invoice_id'] ?? null;
 
-            if (!$sessionId) {
+            if (! $sessionId) {
                 Log::warning('[PaymentController] Webhook missing session_id');
+
                 return response()->json(['error' => 'Missing data'], 422);
             }
 
             if ($batchId) {
                 DB::transaction(function () use ($sessionId, $batchId) {
                     $batch = CheckoutBatch::find($batchId);
-                    if (!$batch) {
+                    if (! $batch) {
                         Log::warning('[PaymentController] Batch not found', ['batch_id' => $batchId]);
+
                         return;
                     }
 
@@ -56,6 +60,7 @@ class PaymentController extends Controller
                             'batch_session' => $batch->paymongo_session_id,
                             'webhook_session' => $sessionId,
                         ]);
+
                         return;
                     }
 
@@ -67,10 +72,10 @@ class PaymentController extends Controller
                     foreach ($payments as $payment) {
                         /** @var \App\Models\Payment $payment */
                         $payment->update([
-                            'status'          => 'verified',
+                            'status' => 'verified',
                             'paymongo_status' => 'paid',
-                            'verified_at'     => now(),
-                            'escrow_status'   => 'held',
+                            'verified_at' => now(),
+                            'escrow_status' => 'held',
                         ]);
 
                         if ((float) $payment->platform_fee_amount === 0.0) {
@@ -83,8 +88,16 @@ class PaymentController extends Controller
                         if ($invoice) {
                             $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
                             $invoice->update([
-                                'status' => $totalPaid >= $invoice->total_amount ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid')
+                                'status' => $totalPaid >= $invoice->total_amount ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
                             ]);
+
+                            $order = $invoice->order;
+                            if ($order) {
+                                $order->loadMissing('customer');
+                                $order->customer?->notify(new OrderNotification($order, 'payment_confirmed', [
+                                    'amount' => $payment->amount,
+                                ]));
+                            }
                         }
                     }
 
@@ -97,16 +110,18 @@ class PaymentController extends Controller
                 return response()->json(['received' => true]);
             }
 
-            if (!$invoiceId) {
+            if (! $invoiceId) {
                 Log::warning('[PaymentController] Webhook missing session_id or invoice_id');
+
                 return response()->json(['error' => 'Missing data'], 422);
             }
 
             DB::transaction(function () use ($sessionId, $invoiceId) {
                 $payment = Payment::where('paymongo_session_id', $sessionId)->first();
 
-                if (!$payment) {
+                if (! $payment) {
                     Log::warning('[PaymentController] No payment for session', ['session_id' => $sessionId]);
+
                     return;
                 }
 
@@ -116,15 +131,20 @@ class PaymentController extends Controller
                         'expected_invoice_id' => $invoiceId,
                         'payment_invoice_id' => $payment->invoice_id,
                     ]);
+
                     return;
                 }
 
-                // Mark as verified, payment held in escrow
+                $invoice = $payment->invoice;
+                $order = $invoice ? $invoice->order : null;
+                $isPos = $order && str_starts_with((string) $order->order_number, 'POS-');
+
+                // Mark as verified, payment held in escrow (unless POS)
                 $payment->update([
-                    'status'          => 'verified',
+                    'status' => 'verified',
                     'paymongo_status' => 'paid',
-                    'verified_at'     => now(),
-                    'escrow_status'   => 'held',
+                    'verified_at' => now(),
+                    'escrow_status' => $isPos ? 'released' : 'held',
                 ]);
 
                 // Ensure fees are calculated
@@ -136,26 +156,42 @@ class PaymentController extends Controller
 
                 // Update invoice status
                 $invoice = $payment->invoice;
-                if (!$invoice) {
+                if (! $invoice) {
                     Log::warning('[PaymentController] Payment has no invoice', ['payment_id' => $payment->id]);
+
                     return;
                 }
                 $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
 
                 $invoiceStatus = match (true) {
                     $totalPaid >= $invoice->total_amount => 'paid',
-                    $totalPaid > 0                      => 'partial',
-                    default                             => 'unpaid',
+                    $totalPaid > 0 => 'partial',
+                    default => 'unpaid',
                 };
 
                 $invoice->update(['status' => $invoiceStatus]);
 
                 Log::info('[PaymentController] Payment verified via webhook (escrow held)', [
-                    'payment_id'     => $payment->id,
+                    'payment_id' => $payment->id,
                     'invoice_status' => $invoiceStatus,
-                    'escrow_status'  => 'held',
-                    'net_seller'     => $payment->net_seller_amount,
+                    'escrow_status' => 'held',
+                    'net_seller' => $payment->net_seller_amount,
                 ]);
+
+                $order = $invoice->order;
+                if ($order) {
+                    if (isset($isPos) && $isPos) {
+                        $order->update([
+                            'status' => 'completed',
+                            'delivered_at' => now(),
+                            'received_at' => now(),
+                        ]);
+                    }
+                    $order->loadMissing('customer');
+                    $order->customer?->notify(new OrderNotification($order, 'payment_confirmed', [
+                        'amount' => $payment->amount,
+                    ]));
+                }
             });
         }
 
@@ -197,7 +233,7 @@ class PaymentController extends Controller
         }
 
         return redirect()->route('orders.confirmation', $invoice->order)
-            ->with('success', 'Payment successful! Your funds are securely held until delivery.');
+            ->with('success', 'Payment successful! Your payment is held by the platform until you confirm delivery.');
     }
 
     /**
@@ -256,7 +292,7 @@ class PaymentController extends Controller
 
         return redirect()->route('orders.confirmation', $batch->primary_order_id)
             ->with('confirmation_order_ids', $batch->order_ids ?? [])
-            ->with('success', 'Payment successful! Funds are held in escrow until delivery confirmation.');
+            ->with('success', 'Payment successful! Your payment is held by the platform until you confirm delivery.');
     }
 
     public function batchCancel(CheckoutBatch $batch)
@@ -281,11 +317,15 @@ class PaymentController extends Controller
 
     private function finalizePaymentAsVerified(Payment $payment): void
     {
+        $invoice = $payment->invoice;
+        $order = $invoice ? $invoice->order : null;
+        $isPos = $order && str_starts_with((string) $order->order_number, 'POS-');
+
         $payment->update([
-            'status'          => 'verified',
+            'status' => 'verified',
             'paymongo_status' => 'paid',
-            'verified_at'     => now(),
-            'escrow_status'   => 'held',
+            'verified_at' => now(),
+            'escrow_status' => $isPos ? 'released' : 'held',
         ]);
 
         if ((float) $payment->platform_fee_amount === 0.0) {
@@ -294,8 +334,7 @@ class PaymentController extends Controller
 
         $payment->refresh()->creditSellerWalletOnVerification();
 
-        $invoice = $payment->invoice;
-        if (!$invoice) {
+        if (! $invoice) {
             return;
         }
 
@@ -303,6 +342,22 @@ class PaymentController extends Controller
         $invoice->update([
             'status' => $totalPaid >= $invoice->total_amount ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
         ]);
+
+        if ($order) {
+            if ($isPos) {
+                $order->update([
+                    'status' => 'completed',
+                    'delivered_at' => now(),
+                    'received_at' => now(),
+                ]);
+            }
+            $order->loadMissing('customer');
+            if ($order->customer) {
+                $order->customer->notify(new OrderNotification($order, 'payment_confirmed', [
+                    'amount' => $payment->amount,
+                ]));
+            }
+        }
     }
 
     private function isCheckoutSessionPaid(array $session): bool

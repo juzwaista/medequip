@@ -4,7 +4,7 @@
             <div class="mb-8 flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">MedEquip Express Fleet</h1>
-                    <p class="text-gray-600 mt-2">Provision and manage Courier driver accounts</p>
+                    <p class="text-gray-600 mt-2">Manage courier driver accounts and assignments.</p>
                 </div>
             </div>
 
@@ -25,6 +25,19 @@
                                     required
                                 >
                                 <p v-if="form.errors.name" class="mt-1 text-sm text-red-600">{{ form.errors.name }}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Username (sign-in)</label>
+                                <input
+                                    v-model="form.username"
+                                    type="text"
+                                    autocomplete="off"
+                                    class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm"
+                                    placeholder="4–20 letters, numbers, underscore"
+                                    required
+                                >
+                                <p v-if="form.errors.username" class="mt-1 text-sm text-red-600">{{ form.errors.username }}</p>
                             </div>
                             
                             <div>
@@ -84,17 +97,9 @@
                                 </div>
                             </div>
 
-                            <hr class="my-4 border-gray-200">
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
-                                <input 
-                                    v-model="form.password"
-                                    type="text" 
-                                    class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm bg-gray-50"
-                                    readonly
-                                >
-                            </div>
+                            <p class="text-xs text-gray-500 leading-relaxed">
+                                The driver receives two emails: one to verify their email address, and one to set their password. They must complete both before using the courier app.
+                            </p>
 
                             <button 
                                 type="submit" 
@@ -124,6 +129,7 @@
                                         </div>
                                         <div>
                                             <p class="font-bold text-gray-900 text-lg">{{ driver.name }}</p>
+                                            <p v-if="driver.username" class="text-sm font-mono text-blue-700 mt-0.5">@{{ driver.username }}</p>
                                             <div class="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500 mt-1 sm:space-x-4">
                                                 <span class="flex items-center">
                                                     <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -194,17 +200,13 @@ const props = defineProps({
     couriers: Array
 });
 
-const generatePassword = () => {
-    return 'Express@' + Math.random().toString(36).slice(-6).toUpperCase() + '!';
-};
-
 const form = useForm({
     name: '',
+    username: '',
     email: '',
     phone_number: '',
     vehicle_type: 'Motorcycle',
     plate_number: '',
-    password: generatePassword(),
 });
 
 const sanitizePhoneNumber = () => {
@@ -215,8 +217,7 @@ const submit = () => {
     form.post(route('admin.couriers.store'), {
         preserveScroll: true,
         onSuccess: () => {
-            form.reset('name', 'email', 'phone_number', 'plate_number');
-            form.password = generatePassword();
+            form.reset('name', 'username', 'email', 'phone_number', 'plate_number');
         },
     });
 };

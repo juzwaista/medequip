@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -27,7 +26,8 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            // Plain text: User model uses 'password' => 'hashed' cast. Must satisfy Password::defaults() in tests.
+            'password' => static::$password ??= 'CurrentP4ss!',
             'remember_token' => Str::random(10),
         ];
     }
@@ -40,5 +40,37 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function withRole(string $role): static
+    {
+        return $this->afterCreating(function (\App\Models\User $user) use ($role) {
+            $user->forceFill(['role' => $role])->save();
+        });
+    }
+
+    public function customer(): static
+    {
+        return $this->withRole('customer');
+    }
+
+    public function distributor(): static
+    {
+        return $this->withRole('distributor');
+    }
+
+    public function admin(): static
+    {
+        return $this->withRole('admin');
+    }
+
+    public function courier(): static
+    {
+        return $this->withRole('courier');
+    }
+
+    public function staff(): static
+    {
+        return $this->withRole('staff');
     }
 }

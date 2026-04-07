@@ -5,3 +5,14 @@
 .nav-link {
     @apply text-gray-600 hover:text-blue-700 font-medium;
 }
+
+/* Remove 300ms tap delay on all interactive elements for native-app feel */
+button,
+a,
+input,
+select,
+textarea,
+label,
+[role="button"] {
+    touch-action: manipulation;
+}

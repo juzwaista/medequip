@@ -20,7 +20,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
-                <h1 class="text-3xl font-black text-gray-900 mb-3">Payment Received! 🎉</h1>
+                <h1 class="text-3xl font-black text-gray-900 mb-3">Payment Received</h1>
                 <p class="text-gray-600 mb-2">Thank you for your payment.</p>
                 <p class="text-sm font-mono text-gray-500 bg-gray-100 rounded-lg px-4 py-2 inline-block">
                     {{ invoice.invoice_number }}

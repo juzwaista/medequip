@@ -7,12 +7,13 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariation;
+use App\Rules\SafeUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ProductController extends Controller
 {
@@ -37,7 +38,7 @@ class ProductController extends Controller
             ->with(['category', 'inventory']);
 
         if ($request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $products = $query->latest()->paginate(12);
@@ -92,7 +93,7 @@ class ProductController extends Controller
             'wholesale_min_qty' => 'nullable|integer|min:1',
             'requires_prescription' => 'boolean',
             'images' => 'required|array|min:1|max:12',
-            'images.*' => 'image|max:4096',
+            'images.*' => ['image', 'max:4096', SafeUpload::image()],
             'variations_json' => 'nullable|string',
         ]);
 
@@ -125,8 +126,8 @@ class ProductController extends Controller
             $product = Product::create([
                 'distributor_id' => $distributor->id,
                 'name' => $validated['name'],
-                'sku' => 'PRD-' . strtoupper(Str::random(8)),
-                'slug' => Str::slug($validated['name']) . '-' . Str::random(6),
+                'sku' => 'PRD-'.strtoupper(Str::random(8)),
+                'slug' => Str::slug($validated['name']).'-'.Str::random(6),
                 'description' => $validated['description'],
                 'category_id' => $validated['category_id'],
                 'brand' => $validated['brand'],
@@ -164,7 +165,7 @@ class ProductController extends Controller
 
             return back()
                 ->withInput()
-                ->withErrors(['error' => 'Failed to create product: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Failed to create product: '.$e->getMessage()]);
         }
     }
 
@@ -211,7 +212,7 @@ class ProductController extends Controller
             'is_active' => 'boolean',
             'requires_prescription' => 'boolean',
             'images' => 'nullable|array|max:12',
-            'images.*' => 'image|max:4096',
+            'images.*' => ['image', 'max:4096', SafeUpload::image()],
             'removed_image_ids' => 'nullable|array',
             'removed_image_ids.*' => 'integer|exists:product_images,id',
             'variations_json' => 'nullable|string',
@@ -395,7 +396,7 @@ class ProductController extends Controller
         foreach ($toRemove as $v) {
             if ($v->inventory()->exists()) {
                 throw new \RuntimeException(
-                    'Cannot remove option "' . $v->option_name . ': ' . $v->option_value . '" because stock is still assigned to it.'
+                    'Cannot remove option "'.$v->option_name.': '.$v->option_value.'" because stock is still assigned to it.'
                 );
             }
             $v->delete();

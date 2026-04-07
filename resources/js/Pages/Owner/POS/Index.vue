@@ -224,7 +224,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 import { BrowserMultiFormatReader } from '@zxing/browser';
@@ -338,7 +338,6 @@ const addToCart = (product) => {
     } else {
         if (product.stock > 0) cart.value.push({ product, quantity: 1 });
     }
-    if (paymentMethod.value === 'cash' && !amountPaid.value) amountPaid.value = cartTotal.value;
 };
 
 const removeFromCart = (index) => { cart.value.splice(index, 1); };
@@ -392,4 +391,11 @@ const checkout = () => {
         },
     });
 };
+
+// Open the receipt in a new popup window if it was flashed by the server
+watch(() => page.props.flash?.receipt_url, (url) => {
+    if (url) {
+        window.open(url, 'POS Receipt', 'width=400,height=600');
+    }
+}, { immediate: true });
 </script>

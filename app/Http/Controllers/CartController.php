@@ -182,7 +182,27 @@ class CartController extends Controller
     {
         $cart = CartService::normalizeCart($this->getCart());
         $uniqueItems = count($cart);
+        
+        $previewItems = [];
+        if ($uniqueItems > 0) {
+            $cartItems = CartService::enrichCartItems($cart);
+            $previewItems = collect($cartItems)->take(4)->values()->map(function ($item) {
+                $p = $item['product'];
+                $v = $item['variation'];
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'image_url' => $p->image_path ? asset('storage/'.$p->image_path) : null,
+                    'price' => $item['unit_price'],
+                    'quantity' => $item['quantity'],
+                    'variation_name' => $v ? $v->name : null,
+                ];
+            })->all();
+        }
 
-        return response()->json(['count' => $uniqueItems]);
+        return response()->json([
+            'count' => $uniqueItems,
+            'preview' => $previewItems,
+        ]);
     }
 }

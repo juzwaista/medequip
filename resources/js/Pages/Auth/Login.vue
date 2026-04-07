@@ -1,6 +1,6 @@
 <template>
     <Head title="Login · MedEquip" />
-<div class="min-h-screen flex">
+<div class="min-h-screen min-h-[100dvh] flex min-w-0 overflow-x-hidden">
     <!-- Left: Brand Panel (hidden on mobile) -->
     <div class="hidden lg:flex lg:w-2/5 xl:w-2/5 bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 flex-col justify-between p-12 relative overflow-hidden">
         <!-- Background decoration -->
@@ -55,7 +55,7 @@
     </div>
 
         <!-- Right: Login Form -->
-        <div class="flex-1 flex items-center justify-center px-6 py-12 bg-slate-50">
+        <div class="flex-1 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 bg-slate-50 min-w-0">
             <div class="w-full max-w-md">
                 <!-- Mobile logo -->
                 <div class="lg:hidden text-center mb-8">
@@ -75,20 +75,21 @@
                         {{ status }}
                     </div>
 
-                    <div v-if="error || form.errors.email" class="mb-5 p-3.5 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
+                    <div v-if="error || form.errors.login" class="mb-5 p-3.5 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                         <svg class="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
-                        {{ form.errors.email || error || 'These credentials do not match our records.' }}
+                        {{ form.errors.login || error || 'These credentials do not match our records.' }}
                     </div>
 
                     <form @submit.prevent="submit" class="space-y-5">
                         <div>
-                            <label class="block text-sm font-semibold mb-1.5 text-gray-700">Email Address</label>
+                            <label class="block text-sm font-semibold mb-1.5 text-gray-700">Email or username</label>
                             <input
-                                type="email"
-                                v-model="form.email"
+                                type="text"
+                                v-model="form.login"
                                 required
                                 autofocus
-                                placeholder="you@example.com"
+                                autocomplete="username"
+                                placeholder="you@example.com or clinic_user"
                                 class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300"
                             >
                         </div>
@@ -134,7 +135,7 @@
                     <p class="text-sm text-center mt-6 text-gray-500">
                         New to MedEquip?
                         <Link href="/register" class="text-blue-600 hover:underline font-bold ml-1">
-                            Create one!
+                            Create an account!
                         </Link>
                     </p>
                 </div>
@@ -155,7 +156,7 @@ const props = defineProps({
 const showPassword = ref(false);
 
 const form = useForm({
-    email: '',
+    login: '',
     password: '',
     remember: false,
 });

@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Distributor;
 use App\Models\Branch;
+use App\Models\Distributor;
 use App\Models\DssDistributorSettings;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DistributorSeeder extends Seeder
 {
@@ -28,7 +28,7 @@ class DistributorSeeder extends Seeder
                 'branches' => [
                     ['branch_name' => 'Main Branch', 'address' => '123 Medical Drive, Imus, Cavite', 'contact_number' => '09171234567'],
                     ['branch_name' => 'Bacoor Branch', 'address' => '456 Health Street, Bacoor, Cavite', 'contact_number' => '09171234568'],
-                ]
+                ],
             ],
             [
                 'company_name' => 'PharmaCare Distributors',
@@ -40,7 +40,7 @@ class DistributorSeeder extends Seeder
                 'auto_approve_orders' => false,
                 'branches' => [
                     ['branch_name' => 'Main Warehouse', 'address' => '789 Wellness Ave, Dasmarinas, Cavite', 'contact_number' => '09181234567'],
-                ]
+                ],
             ],
             [
                 'company_name' => 'Surgical Instruments PH',
@@ -53,7 +53,7 @@ class DistributorSeeder extends Seeder
                 'branches' => [
                     ['branch_name' => 'Cavite City Store', 'address' => '321 Surgery Road, Cavite City, Cavite', 'contact_number' => '09191234567'],
                     ['branch_name' => 'Tagaytay Branch', 'address' => '654 Medical Plaza, Tagaytay, Cavite', 'contact_number' => '09191234569'],
-                ]
+                ],
             ],
             [
                 'company_name' => 'LabEquip Corp',
@@ -63,7 +63,7 @@ class DistributorSeeder extends Seeder
                 'description' => 'Laboratory equipment and consumables specialist',
                 'is_verified' => true,
                 'auto_approve_orders' => false,
-                'branches' => [] // No branches - inventory tracked at distributor level
+                'branches' => [], // No branches - inventory tracked at distributor level
             ],
         ];
 
@@ -72,9 +72,10 @@ class DistributorSeeder extends Seeder
             $user = User::create([
                 'name' => $distributorData['company_name'],
                 'email' => $distributorData['email'],
-                'password' => Hash::make('password'), // Demo password
-                'role' => 'distributor',
+                'password' => 'CurrentP4ss!',
+                'email_verified_at' => now(),
             ]);
+            $user->forceFill(['role' => 'distributor'])->save();
 
             // Extract branches
             $branches = $distributorData['branches'];
@@ -83,6 +84,11 @@ class DistributorSeeder extends Seeder
             // Create distributor
             $distributorData['user_id'] = $user->id;
             $distributor = Distributor::create($distributorData);
+            $distributor->update([
+                'status' => 'approved',
+                'slug' => Str::slug($distributorData['company_name']).'-'.$distributor->id,
+                'shop_profile_onboarding_completed_at' => now(),
+            ]);
 
             // Create branches
             foreach ($branches as $branchData) {
@@ -101,22 +107,24 @@ class DistributorSeeder extends Seeder
         }
 
         // Create admin user
-        User::create([
+        $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@medequip.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
+            'password' => 'CurrentP4ss!',
+            'email_verified_at' => now(),
         ]);
+        $admin->forceFill(['role' => 'admin'])->save();
 
         // Create sample customers
         for ($i = 1; $i <= 5; $i++) {
-            User::create([
+            $customer = User::create([
                 'name' => "Customer {$i}",
                 'email' => "customer{$i}@example.com",
-                'password' => Hash::make('password'),
-                'role' => 'customer',
-                'phone_number' => '0917000' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'password' => 'CurrentP4ss!',
+                'phone_number' => '0917000'.str_pad($i, 4, '0', STR_PAD_LEFT),
+                'email_verified_at' => now(),
             ]);
+            $customer->forceFill(['role' => 'customer'])->save();
         }
     }
 }

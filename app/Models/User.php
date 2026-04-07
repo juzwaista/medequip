@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\WelcomeToMedequip;
+use App\Support\NotificationFilters;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Distributor;
+use Illuminate\Support\Str;
 
-
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
@@ -22,17 +24,16 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
-        'role',
         'phone_number',
         'distributor_id',
         'social_provider',
         'social_id',
-        'banned_at',
-        'ban_reason',
         'terms_accepted_at',
         'terms_version',
+        'deactivated_at',
     ];
 
     /**
@@ -55,6 +56,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
+            'deactivated_at' => 'datetime',
+            'last_seen_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -74,11 +77,20 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the distributor profile (for distributors)
+     * Get the distributor profile (for distributors).
+     * Prefer the newest row if duplicates exist for the same user_id.
      */
-    public function distributor()
+    public function distributor(): HasOne
     {
-        return $this->hasOne(Distributor::class, 'user_id');
+        return $this->hasOne(Distributor::class, 'user_id')->latestOfMany('id');
+    }
+
+    /**
+     * Unread notifications excluding in-app chat (handled via Messages badge).
+     */
+    public function unreadNonChatNotificationsCount(): int
+    {
+        return NotificationFilters::excludeNewChatMessages($this->unreadNotifications())->count();
     }
 
     /**
@@ -95,6 +107,11 @@ class User extends Authenticatable
     public function addresses()
     {
         return $this->hasMany(CustomerAddress::class);
+    }
+
+    public function customerConversations()
+    {
+        return $this->hasMany(Conversation::class, 'customer_id');
     }
 
     /**
@@ -123,8 +140,9 @@ class User extends Authenticatable
 
     public function isBanned(): bool
     {
-        return !is_null($this->banned_at);
+        return ! is_null($this->banned_at);
     }
+
     /**
      * Get the user's wallet
      */
@@ -147,6 +165,36 @@ class User extends Authenticatable
     }
 
     /**
+     * Generate a unique username from an email local-part (for provisioning / migration).
+     */
+    public static function suggestUniqueUsername(string $email): string
+    {
+        $localPart = strstr($email, '@', true) ?: 'user';
+        $base = strtolower(preg_replace('/[^a-z0-9_]/', '_', $localPart));
+        $base = trim($base, '_') ?: '';
+        if ($base === '' || strlen($base) < 3) {
+            $base = 'user_'.substr(sha1($email), 0, 6);
+        }
+        $base = substr($base, 0, 20);
+        $candidate = $base;
+        $n = 0;
+        while (static::withTrashed()->where('username', $candidate)->exists()) {
+            $n++;
+            $candidate = $base.'_'.$n;
+            if (strlen($candidate) > 30) {
+                $candidate = 'u'.substr(str_replace('-', '', (string) Str::uuid()), 0, 10);
+            }
+            $candidate = substr($candidate, 0, 30);
+            if ($n > 500) {
+                $candidate = 'u'.substr(str_replace('-', '', (string) Str::uuid()), 0, 12);
+                break;
+            }
+        }
+
+        return substr($candidate, 0, 30);
+    }
+
+    /**
      * Get the distributor this user works for (if role is staff)
      */
     public function employer()
@@ -154,11 +202,17 @@ class User extends Authenticatable
         return $this->belongsTo(Distributor::class, 'distributor_id');
     }
 
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::created(function ($user) {
+        static::creating(function (User $user) {
+            if (filled($user->email) && blank($user->username)) {
+                $user->username = static::suggestUniqueUsername($user->email);
+            }
+        });
+
+        static::created(function (User $user) {
             $user->wallet()->create();
+            $user->notify(new WelcomeToMedequip);
         });
     }
 }
-

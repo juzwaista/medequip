@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use App\Models\Distributor;
 use App\Models\License;
+use App\Rules\SafeUpload;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -30,7 +31,7 @@ class LicenseController extends Controller
 
         $request->validate([
             'type' => 'required|in:fda,business_permit,phic,doh,other',
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120', SafeUpload::document()],
         ]);
 
         $path = $request->file('file')->store('licenses', 'public');

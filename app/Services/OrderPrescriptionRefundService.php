@@ -71,17 +71,9 @@ class OrderPrescriptionRefundService
                 $payment->refundEscrow();
             }
 
-            // Update invoice status to valid enum values only.
+            // Mark invoice as cancelled — the order itself is cancelled/rejected.
             $invoice = $order->invoice;
-            $verifiedRemaining = (float) $invoice->payments()->where('status', 'verified')->sum('amount');
-
-            $invoice->update([
-                'status' => match (true) {
-                    $verifiedRemaining <= 0.0 => 'unpaid',
-                    $verifiedRemaining < (float) $invoice->total_amount => 'partial',
-                    default => 'paid',
-                },
-            ]);
+            $invoice->update(['status' => 'cancelled']);
         });
     }
 }

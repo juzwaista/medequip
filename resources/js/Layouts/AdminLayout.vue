@@ -1,5 +1,5 @@
 <template>
-    <div class="flex h-screen bg-gray-50 font-sans overflow-hidden">
+    <div class="flex h-[100dvh] min-h-0 bg-gray-50 font-sans overflow-hidden">
         <FlashMessage />
 
         <!-- Mobile Sidebar Backdrop -->
@@ -46,6 +46,20 @@
                     Dashboard
                 </Link>
 
+                <Link
+                    href="/admin/reports"
+                    :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/reports') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                >
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span class="flex-1">Reports hub</span>
+                    <span
+                        v-if="openReportCount > 0"
+                        class="text-[10px] font-black bg-rose-500 text-white rounded-full min-w-[1.25rem] px-1.5 py-0.5 text-center leading-none"
+                    >
+                        {{ openReportCount > 99 ? '99+' : openReportCount }}
+                    </span>
+                </Link>
+
                 <div class="pt-4 pb-2 px-3">
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Management</p>
                 </div>
@@ -55,7 +69,29 @@
                     :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/users') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
                 >
                     <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                    Users & Shops
+                    <span class="flex-1">Users & Shops</span>
+                    <span
+                        v-if="pendingVerifications > 0"
+                        class="text-[10px] font-black bg-amber-500 text-white rounded-full min-w-[1.25rem] px-1.5 py-0.5 text-center leading-none"
+                    >
+                        {{ pendingVerifications > 99 ? '99+' : pendingVerifications }}
+                    </span>
+                </Link>
+
+                <Link 
+                    href="/admin/orders" 
+                    :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/orders') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                >
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    Orders
+                </Link>
+
+                <Link
+                    href="/admin/products"
+                    :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/products') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
+                >
+                    <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    Products
                 </Link>
 
                 <Link 
@@ -99,7 +135,7 @@
         </aside>
 
         <!-- Main Workspace -->
-        <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-gray-50">
+        <div class="flex-1 flex flex-col min-w-0 h-[100dvh] min-h-0 overflow-hidden bg-gray-50">
             <!-- Topbar Header -->
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
                 <div class="flex items-center gap-4">
@@ -115,6 +151,7 @@
                         :userEmail="$page.props.auth.user.email"
                         :userRole="$page.props.auth.user.role"
                         :csrfToken="csrfToken"
+                        :show-wallet="Boolean($page.props.auth.user.email_verified_at && $page.props.auth.user.role !== 'staff')"
                     />
                 </div>
             </header>
@@ -125,7 +162,7 @@
                     <slot name="header" />
                 </div>
                 <!-- Main page body -->
-                <div class="p-4 sm:p-6 lg:p-8">
+                <div class="p-3 sm:p-6 lg:p-8 min-w-0 overflow-x-auto">
                     <slot />
                 </div>
             </main>
@@ -141,6 +178,15 @@ import FlashMessage from '@/Components/FlashMessage.vue';
 
 const page = usePage();
 const mobileSidebarOpen = ref(false);
+
+const openReportCount = computed(() => {
+    const n = page.props.open_reports_hub_count ?? page.props.open_message_reports_count;
+    return Number(n) || 0;
+});
+
+const pendingVerifications = computed(() => {
+    return Number(page.props.pending_verifications_count) || 0;
+});
 
 const csrfToken = computed(() => {
     return page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.content;

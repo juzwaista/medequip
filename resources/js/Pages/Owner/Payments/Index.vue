@@ -39,7 +39,7 @@
                     </div>
                     <div>
                         <p class="text-2xl font-black text-blue-900">₱{{ Number(stats.escrow_held || 0).toLocaleString() }}</p>
-                        <p class="text-sm text-blue-700">In Escrow</p>
+                        <p class="text-sm text-blue-700">Held by platform</p>
                     </div>
                 </div>
                 <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 flex items-center gap-4">
@@ -67,7 +67,7 @@
                                 <th class="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Fee</th>
                                 <th class="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Net Payout</th>
                                 <th class="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Escrow</th>
+                                <th class="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Payout</th>
                                 <th class="text-center px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -114,8 +114,8 @@
                                         'bg-blue-100 text-blue-800':    payment.escrow_status === 'held',
                                         'bg-green-100 text-green-800':  payment.escrow_status === 'released',
                                         'bg-red-100 text-red-800':      payment.escrow_status === 'refunded',
-                                    }" class="px-3 py-1 rounded-full text-xs font-bold capitalize">
-                                        {{ payment.escrow_status }}
+                                    }" class="px-3 py-1 rounded-full text-xs font-bold">
+                                        {{ formatHoldStatus(payment.escrow_status) }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
@@ -184,8 +184,17 @@ const formatMethod = (method) => {
     return labels[method] || method;
 };
 
+const formatHoldStatus = (status) => {
+    const labels = {
+        held: 'Held by platform',
+        released: 'Paid out',
+        refunded: 'Refunded',
+    };
+    return labels[status] || status || '—';
+};
+
 const verifyPayment = (payment) => {
-    if (!confirm('Verify this bank transfer payment? Funds will be held in escrow.')) return;
+    if (!confirm('Verify this bank transfer payment? Funds will be held by the platform until the buyer confirms delivery.')) return;
     router.post(`/owner/payments/${payment.id}/verify`, {}, { preserveScroll: true });
 };
 

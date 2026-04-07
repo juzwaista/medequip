@@ -12,6 +12,7 @@ class ProductVariation extends Model
         'product_id',
         'option_name',
         'option_value',
+        'combination',
         'price_adjustment',
         'sku',
         'sort_order',
@@ -19,6 +20,7 @@ class ProductVariation extends Model
     ];
 
     protected $casts = [
+        'combination' => 'array',
         'price_adjustment' => 'decimal:2',
         'is_active' => 'boolean',
     ];
@@ -37,6 +39,12 @@ class ProductVariation extends Model
 
     public function getDisplayLabelAttribute(): string
     {
-        return $this->option_name . ': ' . $this->option_value;
+        if (! empty($this->combination) && is_array($this->combination)) {
+            return collect($this->combination)
+                ->map(fn ($val, $key) => "$key: $val")
+                ->implode(' / ');
+        }
+
+        return $this->option_name.': '.$this->option_value;
     }
 }

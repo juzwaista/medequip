@@ -91,24 +91,36 @@ class ProductCatalogSyncService
             ->get();
 
         foreach ($toRemove as $v) {
-            $rows = $v->inventory()->get();
-            $totalQty = (int) $rows->sum('quantity');
-            $totalReserved = (int) $rows->sum('reserved_quantity');
+            $invRows = $v->inventory()->get();
+            $totalQty = (int) $invRows->sum('quantity');
+            $totalReserved = (int) $invRows->sum('reserved_quantity');
             if ($totalQty > 0 || $totalReserved > 0) {
                 throw new \RuntimeException(
-                    'Cannot remove option "' . $v->option_name . ': ' . $v->option_value . '" while it still has on-hand or reserved stock. Complete or cancel related orders first.'
+                    'Cannot remove option "'.$v->display_label.'" while it still has on-hand or reserved stock. Complete or cancel related orders first.'
                 );
             }
-            foreach ($rows as $row) {
-                $row->delete();
+            foreach ($invRows as $invRow) {
+                $invRow->delete();
             }
             $v->delete();
         }
 
         foreach ($rows as $i => $row) {
+            $combination = $row['combination'] ?? null;
+
+            if (is_array($combination) && ! empty($combination)) {
+                $groupNames = implode(' / ', array_keys($combination));
+                $groupValues = implode(' / ', array_values($combination));
+            } else {
+                $groupNames = $row['option_name'] ?? '';
+                $groupValues = $row['option_value'] ?? '';
+                $combination = null;
+            }
+
             $payload = [
-                'option_name' => $row['option_name'],
-                'option_value' => $row['option_value'],
+                'option_name' => $groupNames,
+                'option_value' => $groupValues,
+                'combination' => $combination,
                 'price_adjustment' => $row['price_adjustment'] ?? 0,
                 'sku' => $row['sku'] ?? null,
                 'sort_order' => $i,
@@ -159,6 +171,7 @@ class ProductCatalogSyncService
                     'Base stock kept (reserved on open orders: %d). Variations were added/updated successfully.',
                     (int) $row->reserved_quantity
                 );
+
                 continue;
             }
 

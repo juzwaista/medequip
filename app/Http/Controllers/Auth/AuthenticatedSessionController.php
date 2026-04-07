@@ -34,10 +34,11 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
 
         // Block banned users immediately after authentication
-        if ($user && !is_null($user->banned_at)) {
+        if ($user && ! is_null($user->banned_at)) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')
                 ->with('error', 'Your account has been suspended. Please contact support for assistance.');
         }
@@ -47,24 +48,26 @@ class AuthenticatedSessionController extends Controller
                 case 'super_admin':
                 case 'admin':
                     return redirect()->intended(route('admin.dashboard', absolute: false))
-                    ->with('success','Logged in successfully!');
+                        ->with('success', 'Logged in successfully!');
                 case 'courier':
-                    return redirect()->intended(route('courier.dashboard', absolute: false))
-                    ->with('success','Logged in successfully!');
+                    // Always land couriers on their app; ignore stale url.intended from public pages.
+                    return redirect()->route('courier.dashboard')
+                        ->with('success', 'Logged in successfully!');
                 case 'distributor':
                 case 'staff':
                     // Check if distributor application is pending/rejected
                     if ($user->role === 'distributor') {
                         $distributor = $user->distributor;
-                        if (!$distributor) {
+                        if (! $distributor) {
                             return redirect()->route('owner.distributors.create')
                                 ->with('info', 'Please complete your distributor registration.');
                         }
                         if (in_array($distributor->status, ['pending', 'rejected'])) {
                             return redirect()->route('owner.distributors.pending')
-                                ->with('info', 'Your application is ' . $distributor->status . '.');
+                                ->with('info', 'Your application is '.$distributor->status.'.');
                         }
                     }
+
                     return redirect()->intended(route('owner.dashboard', absolute: false))
                         ->with('success', 'Logged in successfully!');
             }

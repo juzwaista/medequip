@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -13,7 +14,7 @@ return new class extends Migration {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
-            $table->enum('payment_method', ['cash', 'bank_transfer', 'gcash', 'paymaya']);
+            $table->string('payment_method');
             $table->decimal('amount', 12, 2);
             $table->string('reference_number', 100)->nullable();
             $table->string('proof_of_payment_path')->nullable();

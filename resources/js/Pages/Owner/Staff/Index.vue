@@ -24,7 +24,7 @@
                             </svg>
                             Add New Staff Member
                         </h2>
-                        <p class="text-sm text-gray-500 mt-0.5">Staff can access POS, Orders, and Inventory. They cannot access your Wallet or financial reports.</p>
+                        <p class="text-sm text-gray-500 mt-0.5">Staff members can help manage orders and inventory.</p>
                     </div>
                     <div class="p-6">
                         <form @submit.prevent="submit" class="grid grid-cols-1 md:grid-cols-2 gap-5">

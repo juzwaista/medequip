@@ -20,10 +20,14 @@ class CustomerAddress extends Model
         'province',
         'zip_code',
         'is_default',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     /**

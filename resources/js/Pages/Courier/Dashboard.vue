@@ -282,7 +282,14 @@
                     </div>
                 </div>
                 <!-- Photo preview -->
-                <div v-if="flow.photoPreview" class="rounded-xl overflow-hidden border-2 border-green-300">
+                <div v-if="flow.photoPreview === 'processing'" class="bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center py-10">
+                    <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="text-sm font-semibold text-gray-600">Adding GPS Watermark...</p>
+                </div>
+                <div v-else-if="flow.photoPreview" class="rounded-xl overflow-hidden border-2 border-green-300">
                     <img :src="flow.photoPreview" class="w-full max-h-64 object-cover" alt="Proof of delivery">
                 </div>
                 <div v-else class="bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center py-10">
@@ -427,6 +434,11 @@
                                     class="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm">
                                     Start Delivery
                                 </button>
+                                <button v-if="delivery.status === 'scheduled'"
+                                    @click="cancelDelivery(delivery.id)"
+                                    class="flex-none bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-sm transition hover:bg-red-200">
+                                    Cancel
+                                </button>
                                 <button v-if="delivery.status === 'picking_up'"
                                     @click="openPickupFlow(delivery, 2)"
                                     class="flex-1 bg-yellow-500 text-white font-bold py-2.5 rounded-xl text-sm">
@@ -437,6 +449,12 @@
                                     class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm">
                                     Deliver Package
                                 </button>
+                                <a v-if="delivery.status === 'in_transit' && delivery.order?.delivery_latitude && delivery.order?.delivery_longitude"
+                                    :href="`https://www.google.com/maps/dir/?api=1&destination=${delivery.order.delivery_latitude},${delivery.order.delivery_longitude}`"
+                                    target="_blank"
+                                    class="flex-1 bg-white border border-blue-200 text-blue-600 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center">
+                                    Navigate
+                                </a>
                                 <button v-if="delivery.status === 'in_transit'"
                                     @click="markFailed(delivery.id)"
                                     class="flex-none bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-sm">
@@ -461,6 +479,13 @@
                                     <span v-if="job.order?.payment_method === 'cod'"
                                         class="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-1 rounded-full border border-orange-200">COD</span>
                                     <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-2 py-1 rounded-full">{{ job.order?.items?.length || 0 }} item(s)</span>
+                                    
+                                    <span class="flex items-center gap-1 bg-gray-100 text-gray-700 text-[10px] font-black px-2 py-1 rounded-full border border-gray-200 uppercase">
+                                        <svg v-if="job.order?.required_vehicle_type === 'motorcycle' || !job.order?.required_vehicle_type" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V6m0 0l-3 3m3-3l3 3M5 19h14M8 12a4 4 0 108 0 4 4 0 00-8 0z" /></svg>
+                                        <svg v-else-if="job.order?.required_vehicle_type.includes('car')" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M5 10V8a2 2 0 012-2h10a2 2 0 012 2v2M4 14a2 2 0 110-4 2 2 0 010 4zm16 0a2 2 0 110-4 2 2 0 010 4z" /></svg>
+                                        <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h10M8 11h10M5 15h14v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2zM3 5h1a2 2 0 012 2v8" /></svg>
+                                        {{ formatVehicleType(job.order?.required_vehicle_type) }} Required
+                                    </span>
                                 </div>
                                 <div v-if="job.courier_fee" class="text-right">
                                     <p class="text-[10px] text-gray-400 font-bold uppercase">Earn</p>
@@ -473,8 +498,11 @@
                                 Collect <strong>₱{{ Number(job.order.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</strong> cash from customer
                             </div>
                             <button @click="acceptDelivery(job.id)"
-                                class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl text-sm">
-                                Accept Job
+                                :disabled="!canAcceptJob(job)"
+                                class="w-full text-white font-bold py-3 rounded-xl text-sm transition-colors"
+                                :class="canAcceptJob(job) ? 'bg-gray-900 hover:bg-black' : 'bg-gray-300 cursor-not-allowed'">
+                                <span v-if="canAcceptJob(job)">Accept Job</span>
+                                <span v-else>Vehicle Too Small</span>
                             </button>
                         </div>
                     </div>
@@ -596,6 +624,7 @@ const resetFlow = () => ({
     step: 1, delivery: null, loading: false, error: '',
     cameraActive: false, scannedCode: '', cameraError: '',
     photoPreview: '', photoFile: null,
+    proof_latitude: null, proof_longitude: null,
 });
 
 const openPickupFlow = (delivery, step = 1) => {
@@ -654,11 +683,70 @@ const stopCamera = () => {
 };
 
 // Photo selection
-const onPhotoSelected = (e) => {
+const onPhotoSelected = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    flow.value.photoFile = file;
-    flow.value.photoPreview = URL.createObjectURL(file);
+
+    flow.value.photoPreview = 'processing';
+
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        });
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        flow.value.proof_latitude = lat;
+        flow.value.proof_longitude = lng;
+
+        const photoUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = photoUrl;
+
+        await new Promise(r => img.onload = r);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+
+        ctx.drawImage(img, 0, 0);
+
+        const fontSize = Math.max(16, canvas.height * 0.03); 
+        const boxHeight = fontSize * 3 + 40;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${fontSize}px monospace`;
+
+        const dateStr = new Date().toLocaleString() + ' (Local)';
+        const locStr = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        const orderStr = `Order: ${flow.value.delivery?.order?.order_number || 'Unknown'}`;
+
+        ctx.fillText(orderStr, 20, canvas.height - boxHeight + fontSize + 10);
+        ctx.fillText(locStr, 20, canvas.height - boxHeight + (fontSize * 2) + 20);
+        ctx.fillText(dateStr, 20, canvas.height - boxHeight + (fontSize * 3) + 30);
+
+        canvas.toBlob((blob) => {
+            const newFile = new File([blob], file.name, { type: file.type });
+            flow.value.photoFile = newFile;
+            flow.value.photoPreview = URL.createObjectURL(newFile);
+        }, file.type, 0.9);
+
+    } catch (err) {
+        console.error("GPS or Watermark Error:", err);
+        alert("Could not attach GPS location. Ensure location services are enabled.");
+        flow.value.proof_latitude = null;
+        flow.value.proof_longitude = null;
+        flow.value.photoFile = file;
+        flow.value.photoPreview = URL.createObjectURL(file);
+    }
 };
 
 // ── Pickup flow actions ──
@@ -710,6 +798,10 @@ const doConfirmDelivery = () => {
     const formData = new FormData();
     formData.append('order_number', flow.value.scannedCode);
     formData.append('proof_photo', flow.value.photoFile);
+    if (flow.value.proof_latitude && flow.value.proof_longitude) {
+        formData.append('proof_latitude', flow.value.proof_latitude);
+        formData.append('proof_longitude', flow.value.proof_longitude);
+    }
     formData.append('_method', 'POST');
 
     router.post('/courier/deliveries/' + flow.value.delivery.id + '/confirm-delivery', formData, {
@@ -727,6 +819,20 @@ const acceptDelivery = (id) => {
     });
 };
 
+const cancelDelivery = (id) => {
+    if (confirm('Are you sure you want to cancel this job? It will be returned to the dispatch pool.')) {
+        router.post('/courier/deliveries/' + id + '/cancel', {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // If there are no more active deliveries, switch to pool tab
+                if (props.myDeliveries.length <= 1) {
+                    tab.value = 'pool';
+                }
+            }
+        });
+    }
+};
+
 const markFailed = (id) => {
     if (confirm('Mark this delivery as failed?')) {
         router.post('/courier/deliveries/' + id + '/status', { status: 'failed' }, { preserveScroll: true });
@@ -741,6 +847,28 @@ const markRemittanceSent = (id) => {
 
 const goToPage = (page) => {
     router.get('/courier/dashboard', { page }, { preserveScroll: true, preserveState: true });
+};
+
+const getVehicleWeight = (type) => {
+    const weights = {
+        'motorcycle': 1,
+        'car_sedan': 2,
+        'car_hatchback': 3,
+        'pickup_truck': 4,
+        'box_truck': 5
+    };
+    return weights[type] || 1;
+};
+
+const formatVehicleType = (type) => {
+    if (!type) return 'Motorcycle';
+    return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+
+const canAcceptJob = (job) => {
+    const jobWeight = getVehicleWeight(job.order?.required_vehicle_type);
+    const courierWeight = getVehicleWeight(props.courier?.vehicle_type);
+    return courierWeight >= jobWeight;
 };
 
 onBeforeUnmount(stopCamera);

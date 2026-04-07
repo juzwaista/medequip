@@ -3,7 +3,7 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Edit product</h1>
-                <p class="text-gray-600 mt-2">Update photos, pricing, variations, and compliance — same sections as create.</p>
+                <p class="text-gray-600 mt-2">Update your product listing details.</p>
             </div>
 
             <form @submit.prevent="submit" class="space-y-6">
@@ -175,7 +175,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                         <div>
                             <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500">Variations</h2>
-                            <p class="text-sm text-gray-600 mt-1">Stock per option is managed in Inventory.</p>
+                            <p class="text-sm text-gray-600 mt-1">Define size, color, or other options for this product.</p>
                         </div>
                         <button
                             type="button"

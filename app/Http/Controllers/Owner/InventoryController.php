@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductImage;
-use App\Models\Category;
+use App\Rules\SafeUpload;
 use App\Services\ProductCatalogSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,12 +25,7 @@ class InventoryController extends Controller
     {
         $distributor = $this->getDistributor();
 
-        Log::info('[InventoryController] Inventory page accessed', [
-            'user_id' => auth()->id(),
-            'has_distributor' => !is_null($distributor)
-        ]);
-
-        if (!$distributor) {
+        if (! $distributor) {
             return redirect('/owner/dashboard')
                 ->withErrors(['error' => 'Please create a distributor profile first.']);
         }
@@ -42,12 +38,12 @@ class InventoryController extends Controller
         // NEW: DASHBOARD ALERT FILTERS
         // ---------------------------------------------------------
         $alertFilter = $request->input('filter');
-        
+
         if (in_array($alertFilter, ['expired'], true)) {
-            $query->whereHas('inventory', function($q) {
+            $query->whereHas('inventory', function ($q) {
                 $q->where('quantity', '>', 0)
-                  ->whereNotNull('expiry_date')
-                  ->whereDate('expiry_date', '<', now()->toDateString());
+                    ->whereNotNull('expiry_date')
+                    ->whereDate('expiry_date', '<', now()->toDateString());
             });
         } elseif (in_array($alertFilter, ['expiring', 'near_expiry', 'near-expiry', 'near_expiry_products'], true)) {
             $query->whereHas('inventory', function ($q) {
@@ -57,23 +53,23 @@ class InventoryController extends Controller
                     ->whereDate('expiry_date', '<=', now()->addDays(30)->toDateString());
             });
         } elseif (in_array($alertFilter, ['low_stock', 'low_stock_products'], true)) {
-            $query->whereHas('inventory', function($q) {
+            $query->whereHas('inventory', function ($q) {
                 $q->whereRaw('quantity <= reorder_level')
-                  ->where(function ($subQ) {
-                      $subQ->where(function ($sub) {
-                          $sub->whereNull('product_variation_id')
-                              ->whereRaw('NOT EXISTS (SELECT 1 FROM product_variations WHERE product_variations.product_id = inventory.product_id AND product_variations.is_active = 1)');
-                      })->orWhere(function ($sub) {
-                          $sub->whereNotNull('product_variation_id')
-                              ->whereRaw('EXISTS (SELECT 1 FROM product_variations WHERE product_variations.id = inventory.product_variation_id AND product_variations.is_active = 1)');
-                      });
-                  });
+                    ->where(function ($subQ) {
+                        $subQ->where(function ($sub) {
+                            $sub->whereNull('product_variation_id')
+                                ->whereRaw('NOT EXISTS (SELECT 1 FROM product_variations WHERE product_variations.product_id = inventory.product_id AND product_variations.is_active = 1)');
+                        })->orWhere(function ($sub) {
+                            $sub->whereNotNull('product_variation_id')
+                                ->whereRaw('EXISTS (SELECT 1 FROM product_variations WHERE product_variations.id = inventory.product_variation_id AND product_variations.is_active = 1)');
+                        });
+                    });
             });
         } elseif ($alertFilter === 'predicted_stockout') {
             $engine = new \App\Services\DssEngineService;
             $insights = $engine->getInsights($distributor->id);
             $stockoutProductIds = collect($insights['recommendations'])
-                ->filter(fn ($r) => ((int)($r->days_until_stockout ?? 999)) <= 5 && ((int)($r->days_until_stockout ?? -1)) >= 0)
+                ->filter(fn ($r) => ((int) ($r->days_until_stockout ?? 999)) <= 5 && ((int) ($r->days_until_stockout ?? -1)) >= 0)
                 ->pluck('product_id')->toArray();
             $query->whereIn('id', $stockoutProductIds);
         }
@@ -82,8 +78,8 @@ class InventoryController extends Controller
         // Filter by search (name or SKU)
         if ($request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('sku', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('sku', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -110,7 +106,7 @@ class InventoryController extends Controller
         }
 
         // Added ->withQueryString() so filters aren't lost on Page 2
-        $products = $query->latest()->paginate(12)->withQueryString(); 
+        $products = $query->latest()->paginate(12)->withQueryString();
 
         // Add computed stock data
         $products->getCollection()->transform(function ($product) {
@@ -122,7 +118,7 @@ class InventoryController extends Controller
             $product->total_stock = $totalStock;
             $product->total_reserved = $totalReserved;
             $product->available_stock = $available;
-            
+
             // Stock status aligned to dashboard alert logic (reorder_level),
             // so when DSS says "Low Stock Products" the UI badge matches.
             $activeCountForCheck = $product->variations->where('is_active', true)->count();
@@ -131,12 +127,13 @@ class InventoryController extends Controller
                     return $activeCountForCheck === 0 && (int) $inv->quantity <= (int) $inv->reorder_level;
                 } else {
                     $variation = $product->variations->firstWhere('id', $inv->product_variation_id);
+
                     return $variation && $variation->is_active && (int) $inv->quantity <= (int) $inv->reorder_level;
                 }
             })->count()) > 0;
 
-            $isExpired = $product->inventory->filter(fn($inv) => $inv->quantity > 0 && $inv->expiry_date && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->isPast())->isNotEmpty();
-            $isNearExpiry = !$isExpired && $product->inventory->filter(fn($inv) => $inv->quantity > 0 && $inv->expiry_date && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->diffInDays(now()->startOfDay()) <= 30 && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->isFuture())->isNotEmpty();
+            $isExpired = $product->inventory->filter(fn ($inv) => $inv->quantity > 0 && $inv->expiry_date && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->isPast())->isNotEmpty();
+            $isNearExpiry = ! $isExpired && $product->inventory->filter(fn ($inv) => $inv->quantity > 0 && $inv->expiry_date && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->diffInDays(now()->startOfDay()) <= 30 && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->isFuture())->isNotEmpty();
 
             if ($totalStock === 0) {
                 $product->stock_status = 'out';
@@ -185,11 +182,11 @@ class InventoryController extends Controller
     {
         $distributor = $this->getDistributor();
 
-        if (!$distributor) {
+        if (! $distributor) {
             return redirect('/owner/dashboard');
         }
 
-        $categories = Category::orderBy('name')->get(['id', 'name', 'parent_id']);
+        $categories = Category::orderBy('name')->get(['id', 'name', 'parent_id', 'description']);
 
         return Inertia::render('Owner/Inventory/Create', [
             'categories' => $categories,
@@ -217,7 +214,9 @@ class InventoryController extends Controller
             'brand' => 'required|string|max:100',
             'model' => 'required|string|max:100',
             'sku' => 'nullable|string|max:100|unique:products,sku',
+            'product_type' => 'nullable|string|in:equipment,consumable',
             'requires_prescription' => 'boolean',
+            'vehicle_requirement' => 'required|string|in:motorcycle,car_sedan,car_hatchback,pickup_truck,box_truck',
             'base_price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_qty' => 'nullable|integer|min:1',
@@ -226,9 +225,10 @@ class InventoryController extends Controller
             'has_expiry' => 'boolean',
             'barcode' => 'nullable|string|max:100|unique:products,barcode',
             'images' => 'required|array|min:1|max:12',
-            'images.*' => 'image|max:8192',
+            'images.*' => ['image', 'max:8192', SafeUpload::image()],
             'variations_json' => 'nullable|string',
             'variation_stocks_json' => 'nullable|string',
+            'variation_options_json' => 'nullable|string',
             'primary_image_index' => 'nullable|integer|min:0',
             'initial_quantity' => 'nullable|integer|min:0',
             'reorder_level' => 'required|integer|min:0',
@@ -245,8 +245,9 @@ class InventoryController extends Controller
             ['variations' => $variations],
             [
                 'variations' => 'nullable|array',
-                'variations.*.option_name' => 'required|string|max:100',
-                'variations.*.option_value' => 'required|string|max:100',
+                'variations.*.option_name' => 'nullable|string|max:100',
+                'variations.*.option_value' => 'nullable|string|max:100',
+                'variations.*.combination' => 'nullable|array',
                 'variations.*.price_adjustment' => 'nullable|numeric',
                 'variations.*.sku' => 'nullable|string|max:100',
             ]
@@ -255,6 +256,8 @@ class InventoryController extends Controller
         if ($varValidator->fails()) {
             return back()->withErrors($varValidator)->withInput();
         }
+
+        $variationOptionsDef = json_decode($request->input('variation_options_json', 'null'), true);
 
         $variationStocks = json_decode($request->input('variation_stocks_json', '[]'), true);
         if (! is_array($variationStocks)) {
@@ -277,19 +280,21 @@ class InventoryController extends Controller
         $catalogWarnings = [];
 
         try {
-            DB::transaction(function () use ($request, $catalog, $validated, $distributor, $variations, $variationStocks, $requiresRx, &$catalogWarnings) {
+            DB::transaction(function () use ($request, $catalog, $validated, $distributor, $variations, $variationStocks, $variationOptionsDef, $requiresRx, &$catalogWarnings) {
                 $product = Product::create([
                     'distributor_id' => $distributor->id,
                     'name' => $validated['name'],
                     'sku' => ! empty($validated['sku'])
                         ? $validated['sku']
-                        : ('PRD-' . strtoupper(Str::random(8))),
-                    'slug' => Str::slug($validated['name']) . '-' . Str::random(6),
+                        : ('PRD-'.strtoupper(Str::random(8))),
+                    'slug' => Str::slug($validated['name']).'-'.Str::random(6),
                     'description' => $validated['description'],
                     'category_id' => $validated['category_id'],
                     'brand' => $validated['brand'],
                     'model' => $validated['model'],
+                    'product_type' => $validated['product_type'] ?? 'consumable',
                     'requires_prescription' => $requiresRx,
+                    'vehicle_requirement' => $validated['vehicle_requirement'] ?? 'motorcycle',
                     'base_price' => $validated['base_price'],
                     'wholesale_price' => $validated['wholesale_price'] ?? null,
                     'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
@@ -301,6 +306,7 @@ class InventoryController extends Controller
                     'barcode' => $validated['barcode'] ?? null,
                     'image_path' => null,
                     'is_active' => true,
+                    'variation_options' => is_array($variationOptionsDef) ? $variationOptionsDef : null,
                 ]);
 
                 $files = $request->file('images', []);
@@ -374,7 +380,7 @@ class InventoryController extends Controller
             $variationReserved[$v->id] = (int) $product->inventory->where('product_variation_id', $v->id)->sum('reserved_quantity');
         }
 
-        $categories = Category::orderBy('name')->get(['id', 'name', 'parent_id']);
+        $categories = Category::orderBy('name')->get(['id', 'name', 'parent_id', 'description']);
 
         $baseInventory = $product->inventory->firstWhere('product_variation_id', null);
 
@@ -406,22 +412,25 @@ class InventoryController extends Controller
             'category_id' => 'required|exists:categories,id',
             'brand' => 'required|string|max:100',
             'model' => 'required|string|max:100',
-            'sku' => 'nullable|string|max:100|unique:products,sku,' . $id,
+            'sku' => 'nullable|string|max:100|unique:products,sku,'.$id,
+            'product_type' => 'nullable|string|in:equipment,consumable',
             'requires_prescription' => 'boolean',
+            'vehicle_requirement' => 'required|string|in:motorcycle,car_sedan,car_hatchback,pickup_truck,box_truck',
             'base_price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_qty' => 'nullable|integer|min:1',
             'has_warranty' => 'boolean',
             'warranty_months' => 'nullable|integer|min:1|max:120|required_if:has_warranty,1',
             'has_expiry' => 'boolean',
-            'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $id,
+            'barcode' => 'nullable|string|max:100|unique:products,barcode,'.$id,
             'is_active' => 'boolean',
             'images' => 'nullable|array|max:12',
-            'images.*' => 'image|max:8192',
+            'images.*' => ['image', 'max:8192', SafeUpload::image()],
             'removed_image_ids' => 'nullable|array',
             'removed_image_ids.*' => 'integer|exists:product_images,id',
             'variations_json' => 'nullable|string',
             'variation_stocks_json' => 'nullable|string',
+            'variation_options_json' => 'nullable|string',
             'primary_image_id' => 'nullable|integer|exists:product_images,id',
             'primary_image_index' => 'nullable|integer|min:0',
             'initial_quantity' => 'nullable|integer|min:0',
@@ -440,8 +449,9 @@ class InventoryController extends Controller
             [
                 'variations' => 'nullable|array',
                 'variations.*.id' => 'nullable|integer|exists:product_variations,id',
-                'variations.*.option_name' => 'required|string|max:100',
-                'variations.*.option_value' => 'required|string|max:100',
+                'variations.*.option_name' => 'nullable|string|max:100',
+                'variations.*.option_value' => 'nullable|string|max:100',
+                'variations.*.combination' => 'nullable|array',
                 'variations.*.price_adjustment' => 'nullable|numeric',
                 'variations.*.sku' => 'nullable|string|max:100',
                 'variations.*.is_active' => 'nullable|boolean',
@@ -451,6 +461,8 @@ class InventoryController extends Controller
         if ($varValidator->fails()) {
             return back()->withErrors($varValidator)->withInput();
         }
+
+        $variationOptionsDef = json_decode($request->input('variation_options_json', 'null'), true);
 
         $variationStocks = json_decode($request->input('variation_stocks_json', '[]'), true);
         if (! is_array($variationStocks)) {
@@ -478,7 +490,7 @@ class InventoryController extends Controller
         $catalogWarnings = [];
 
         try {
-            DB::transaction(function () use ($request, $catalog, $validated, $product, $variations, $variationStocks, $requiresRx, &$catalogWarnings) {
+            DB::transaction(function () use ($request, $catalog, $validated, $product, $variations, $variationStocks, $variationOptionsDef, $requiresRx, &$catalogWarnings) {
                 $product->update([
                     'name' => $validated['name'],
                     'description' => $validated['description'],
@@ -486,7 +498,9 @@ class InventoryController extends Controller
                     'brand' => $validated['brand'],
                     'model' => $validated['model'],
                     'sku' => $validated['sku'] ?? $product->sku,
+                    'product_type' => $validated['product_type'] ?? $product->product_type,
                     'requires_prescription' => $requiresRx,
+                    'vehicle_requirement' => $validated['vehicle_requirement'] ?? $product->vehicle_requirement,
                     'base_price' => $validated['base_price'],
                     'wholesale_price' => $validated['wholesale_price'] ?? null,
                     'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
@@ -497,6 +511,7 @@ class InventoryController extends Controller
                     'has_expiry' => (bool) ($validated['has_expiry'] ?? false),
                     'barcode' => $validated['barcode'] ?? null,
                     'is_active' => $validated['is_active'] ?? $product->is_active,
+                    'variation_options' => is_array($variationOptionsDef) ? $variationOptionsDef : null,
                 ]);
 
                 if (! empty($validated['removed_image_ids'])) {
@@ -619,13 +634,6 @@ class InventoryController extends Controller
 
         $inventory->update(['quantity' => $newQuantity]);
 
-        Log::info('[InventoryController] Stock adjusted', [
-            'product_id' => $product->id,
-            'adjustment' => $validated['adjustment'],
-            'new_quantity' => $newQuantity,
-            'reason' => $validated['reason'] ?? 'not specified'
-        ]);
-
         return back()->with('success', "Stock adjusted successfully. New quantity: {$newQuantity}");
     }
 
@@ -648,10 +656,6 @@ class InventoryController extends Controller
 
         $product->update(['is_active' => false]);
         $product->delete();
-
-        Log::info('[InventoryController] Product archived (soft deleted)', [
-            'product_id' => $id,
-        ]);
 
         return redirect()->route('owner.inventory.index')
             ->with('success', 'Product archived. It remains in the database and can be restored by an administrator if needed.');

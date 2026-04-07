@@ -1,17 +1,17 @@
 <template>
-    <div class="min-h-screen bg-gray-50 flex flex-col">
+    <div class="min-h-[100dvh] min-w-0 bg-gray-50 flex flex-col overflow-x-hidden">
         <TermsBanner
             v-if="$page.props.auth.user"
             :needs-acceptance="$page.props.needsTermsAcceptance"
             :user-role="$page.props.auth.user?.role || 'courier'"
         />
         <!-- Top Navigation -->
-        <nav class="bg-blue-600 border-b border-blue-700 pb-20">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
+        <nav class="bg-blue-600 border-b border-blue-700 shrink-0">
+            <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-w-0">
+                <div class="flex justify-between items-center h-14 sm:h-16 gap-2 min-w-0">
                     <div class="flex">
                         <div class="flex-shrink-0 flex items-center">
-                            <img :src="'/images/logo.png'" alt="MedEquip" class="h-24 w-auto scale-125 object-contain">
+                            <img :src="'/images/logo.png'" alt="MedEquip" class="h-12 sm:h-16 w-auto object-contain">
                         </div>
                     </div>
                     <div class="flex items-center space-x-4 text-white">
@@ -26,8 +26,8 @@
         </nav>
 
         <!-- Main Content Layout -->
-        <main class="-mt-20 flex-1 flex flex-col items-center w-full px-4 sm:px-6 lg:px-8 pb-24">
-            <div class="w-full max-w-lg mx-auto bg-white rounded-xl shadow-xl overflow-hidden min-h-[75vh]">
+        <main class="flex-1 flex flex-col items-stretch w-full px-3 sm:px-6 lg:px-8 pb-28 sm:pb-24 min-w-0">
+            <div class="w-full max-w-lg mx-auto bg-white rounded-xl shadow-xl overflow-hidden min-h-[60vh] sm:min-h-[75vh] my-4 sm:my-6">
                 <slot />
             </div>
         </main>

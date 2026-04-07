@@ -33,6 +33,9 @@ class Delivery extends Model
         'cod_collected_at',
         'cod_remitted_at',
         'cod_remittance_sent_at',
+        'proof_latitude',
+        'proof_longitude',
+        'is_location_flagged',
     ];
 
     protected $casts = [
@@ -46,6 +49,9 @@ class Delivery extends Model
         'cod_remittance_sent_at' => 'datetime',
         'courier_fee'         => 'decimal:2',
         'courier_paid_at'     => 'datetime',
+        'proof_latitude'      => 'decimal:8',
+        'proof_longitude'     => 'decimal:8',
+        'is_location_flagged' => 'boolean',
     ];
 
     public function order(): BelongsTo
