@@ -158,7 +158,7 @@
                     <div>
                         <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Contact</h4>
                         <p class="text-sm text-gray-400">Cavite, Philippines</p>
-                        <p class="text-sm text-gray-400 mt-1">support@medequip.com</p>
+                        <p class="text-sm text-gray-400 mt-1">contact@medequip.shop</p>
                     </div>
                 </div>
                 <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">

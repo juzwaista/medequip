@@ -43,6 +43,7 @@ class DistributorProfileController extends Controller
 
         $shopCategories = $this->buildShopCategories($distributorId);
         $messagingUrl = $this->shopMessagingStartUrlFor($request->user(), $distributor, null);
+        $isOwner = $request->user()?->id === $distributor->owner_id;
 
         $payload = [
             'distributor' => $distributor,
@@ -50,24 +51,38 @@ class DistributorProfileController extends Controller
             'shopCategories' => $shopCategories,
             'activeTab' => $tab,
             'messaging' => $messagingUrl ? ['start_url' => $messagingUrl] : null,
+            'isOwner' => $isOwner,
         ];
 
         match ($tab) {
-            'shop' => $payload = array_merge($payload, $this->shopTabData($distributorId)),
-            'products' => $payload = array_merge($payload, $this->productsTabData($request, $distributorId)),
+            'shop' => $payload = array_merge($payload, $this->shopTabData($distributorId, $isOwner)),
+            'products' => $payload = array_merge($payload, $this->productsTabData($request, $distributorId, $isOwner)),
             'reviews' => $payload = array_merge($payload, $this->reviewsTabData($request, $distributorId)),
             default => null,
         };
 
+        // Diagnostic logging for visibility bug
+        if (app()->environment('local')) {
+            \Illuminate\Support\Facades\Log::info('Public Profile Visit Diagnostics', [
+                'slug' => $slug,
+                'isOwner' => $isOwner,
+                'tab' => $tab,
+                'categories_count' => count($shopCategories),
+                'recommended_count' => isset($payload['recommendedProducts']) ? count($payload['recommendedProducts']) : 'N/A',
+                'products_count' => isset($payload['products']) ? $payload['products']->count() : 'N/A',
+            ]);
+        }
+
         return Inertia::render('Seller/Profile', $payload);
     }
 
-    private function shopTabData(int $distributorId): array
+    private function shopTabData(int $distributorId, bool $isOwner = false): array
     {
         $baseQuery = fn () => Product::where('distributor_id', $distributorId)
-            ->where('is_active', true)
-            ->with(['images', 'category']);
+            ->when(!$isOwner, fn($q) => $q->where('is_active', true))
+            ->with(['images', 'category', 'inventory']);
 
+        // 1. Recommended (Featured first)
         $featured = $baseQuery()
             ->where('is_featured', true)
             ->withAvg('reviews', 'stars')
@@ -78,24 +93,17 @@ class DistributorProfileController extends Controller
         if ($featured->isNotEmpty()) {
             $recommended = $featured;
         } else {
+            // New shops won't have reviews yet, so we just show the latest products
+            // instead of filtering for having reviews_count > 0.
             $recommended = $baseQuery()
                 ->withAvg('reviews', 'stars')
                 ->withCount('reviews')
-                ->having('reviews_count', '>', 0)
-                ->orderByDesc('reviews_avg_stars')
+                ->latest()
                 ->limit(8)
                 ->get();
-
-            if ($recommended->isEmpty()) {
-                $recommended = $baseQuery()
-                    ->withAvg('reviews', 'stars')
-                    ->withCount('reviews')
-                    ->latest()
-                    ->limit(8)
-                    ->get();
-            }
         }
 
+        // 2. Top Sellers (Sales first, then latest fallback)
         $topSellerIds = DB::table('order_items')
             ->join('products', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
@@ -131,10 +139,10 @@ class DistributorProfileController extends Controller
         ];
     }
 
-    private function productsTabData(Request $request, int $distributorId): array
+    private function productsTabData(Request $request, int $distributorId, bool $isOwner = false): array
     {
         $query = Product::where('distributor_id', $distributorId)
-            ->where('is_active', true)
+            ->when(!$isOwner, fn($q) => $q->where('is_active', true))
             ->with(['images', 'category', 'inventory'])
             ->withAvg('reviews', 'stars')
             ->withCount('reviews');

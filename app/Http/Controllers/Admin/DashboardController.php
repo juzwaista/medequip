@@ -250,6 +250,37 @@ class DashboardController extends Controller
     }
 
     /**
+     * Broadcast a system-wide announcement to all users.
+     */
+    public function broadcastAnnouncement(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:100',
+            'message' => 'required|string|max:2000',
+        ]);
+
+        $admin = $request->user();
+        $title = $validated['title'];
+        $message = $validated['message'];
+
+        // Batch processing to avoid server timeout/memory issues
+        User::chunk(100, function ($users) use ($title, $message, $admin) {
+            foreach ($users as $user) {
+                $user->notify(new \App\Notifications\SystemAnnouncement($title, $message, $admin->name));
+            }
+        });
+
+        // Also log this for audit
+        \Illuminate\Support\Facades\Log::info("Global Announcement Broadcast by Admin: {$admin->name}", [
+            'admin_id' => $admin->id,
+            'title' => $title,
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Announcement has been broadcasted to all users successfully.');
+    }
+
+    /**
      * Securely serve distributor compliance documents to admins
      */
     public function viewDocument($path)

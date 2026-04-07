@@ -187,6 +187,10 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/profile/verify-email', [ProfileController::class, 'verifyEmail'])
         ->name('profile.verifyEmail');
+
+    // Contact Form
+    Route::post('/contact', [\App\Http\Controllers\Static\ContactController::class, 'store'])
+        ->name('contact.store');
 });
 
 /*
@@ -415,6 +419,12 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         // Orders overview
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'show'])->name('orders.show');
+
+        // System-wide Announcements
+        Route::post('/broadcast-announcement', [\App\Http\Controllers\Admin\DashboardController::class, 'broadcastAnnouncement'])->name('broadcast-announcement');
+
+        // Storage Repair
+        Route::post('/repair-storage', [\App\Http\Controllers\Admin\StorageFixController::class, 'repair'])->name('repair-storage');
     });
 
 /*

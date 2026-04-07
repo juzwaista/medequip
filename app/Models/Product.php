@@ -179,22 +179,39 @@ class Product extends Model
     }
 
     /**
-     * Get full URL for product image
+     * Get full URL for product image.
+     * Enhanced for resilience on shared hosting (Hostinger).
      */
     public function imageUrl(): Attribute
     {
         return Attribute::make(
             get: function () {
+                $path = null;
+
                 if ($this->relationLoaded('images') && $this->images->isNotEmpty()) {
                     $primary = $this->images->firstWhere('is_primary', true);
-                    $img = $primary ?? $this->images->first();
-
-                    return $img?->image_path ? \Storage::url($img->image_path) : null;
+                    $path = ($primary ?? $this->images->first())?->image_path;
+                } else {
+                    $path = $this->image_path;
                 }
 
-                return $this->image_path
-                    ? \Storage::url($this->image_path)
-                    : null;
+                if (!$path) return null;
+
+                // Handle cases where Storage::url() might fail or produce incorrect URLs on shared hosting
+                try {
+                    // Standard Laravel way
+                    $url = \Storage::disk('public')->url($path);
+                    
+                    // If the URL contains 'localhost' but we are in production, fix it manually
+                    if (app()->environment('production') && str_contains($url, 'localhost')) {
+                        $url = str_replace(config('app.url'), env('APP_URL'), $url);
+                    }
+                    
+                    return $url;
+                } catch (\Exception $e) {
+                    // Fallback to manual path construction if Storage::url() fails
+                    return asset('storage/' . ltrim($path, '/'));
+                }
             }
         );
     }

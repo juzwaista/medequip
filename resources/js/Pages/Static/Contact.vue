@@ -4,6 +4,7 @@
         <div class="max-w-4xl mx-auto py-16 px-4">
             <h1 class="text-4xl font-bold text-gray-900 mb-6">Contact Us</h1>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Contact Info Section -->
                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
                     <h3 class="text-2xl font-semibold text-gray-900 mb-6">Get in Touch</h3>
                     <div class="space-y-4 text-gray-700">
@@ -23,7 +24,7 @@
                             </svg>
                             <div>
                                 <p class="font-semibold">Email</p>
-                                <p>support@medequip.com</p>
+                                <p>contact@medequip.shop</p>
                             </div>
                         </div>
                         <div class="flex items-center">
@@ -38,23 +39,53 @@
                     </div>
                 </div>
                 
+                <!-- Send Message Section -->
                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
                     <h3 class="text-2xl font-semibold text-gray-900 mb-6">Send a Message</h3>
-                    <form @submit.prevent="" class="space-y-4">
+                    <form @submit.prevent="submit" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                            <input type="text" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500">
+                            <input 
+                                v-model="form.name"
+                                type="text" 
+                                required
+                                class="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500"
+                                :class="{'border-red-500': form.errors.name}"
+                            >
+                            <span v-if="form.errors.name" class="text-xs text-red-600 mt-1">{{ form.errors.name }}</span>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500">
+                            <input 
+                                v-model="form.email"
+                                type="email" 
+                                required
+                                class="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500"
+                                :class="{'border-red-500': form.errors.email}"
+                            >
+                            <span v-if="form.errors.email" class="text-xs text-red-600 mt-1">{{ form.errors.email }}</span>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                            <textarea rows="4" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            <textarea 
+                                v-model="form.message"
+                                rows="4" 
+                                required
+                                class="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500"
+                                :class="{'border-red-500': form.errors.message}"
+                            ></textarea>
+                            <span v-if="form.errors.message" class="text-xs text-red-600 mt-1">{{ form.errors.message }}</span>
                         </div>
-                        <button type="button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition">
-                            Send Message
+                        <button 
+                            type="submit" 
+                            :disabled="form.processing"
+                            class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center shadow-lg"
+                        >
+                            <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            {{ form.processing ? 'Sending...' : 'Send Message' }}
                         </button>
                     </form>
                 </div>
@@ -64,6 +95,20 @@
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+
+const form = useForm({
+    name: '',
+    email: '',
+    message: '',
+});
+
+const submit = () => {
+    form.post('/contact', {
+        onSuccess: () => {
+            form.reset();
+        },
+    });
+};
 </script>
