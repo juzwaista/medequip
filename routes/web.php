@@ -350,8 +350,10 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
 |--------------------------------------------------------------------------
 | ADMIN ROUTES (For Normal Admins & Super Admins)
 |--------------------------------------------------------------------------
+| Protected by OTP middleware for extra security.
+|
 */
-Route::middleware(['auth', 'verified', 'role:admin,super_admin'])
+Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -416,8 +418,10 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])
 |--------------------------------------------------------------------------
 | SUPER ADMIN ROUTES (Exclusive)
 |--------------------------------------------------------------------------
+| Also protected by OTP middleware.
+|
 */
-Route::middleware(['auth', 'verified', 'role:super_admin'])
+Route::middleware(['auth', 'verified', 'role:super_admin', 'otp'])
     ->prefix('superadmin')
     ->name('superadmin.')
     ->group(function () {
@@ -451,6 +455,17 @@ Route::middleware(['auth', 'verified', 'role:courier'])->prefix('courier')->name
     Route::post('/deliveries/{delivery}/confirm-pickup', [CourierDeliveryController::class, 'confirmPickup'])->name('deliveries.confirmPickup');
     Route::post('/deliveries/{delivery}/confirm-delivery', [CourierDeliveryController::class, 'confirmDelivery'])->name('deliveries.confirmDelivery');
     Route::post('/deliveries/{delivery}/remittance-sent', [CourierDeliveryController::class, 'markRemittanceSent'])->name('deliveries.remittanceSent');
+});
+
+/*
+|--------------------------------------------------------------------------
+| OTP VERIFICATION ROUTES (Admin Only)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/admin/otp-verify', [\App\Http\Controllers\Auth\OTPController::class, 'show'])->name('admin.otp.verify');
+    Route::post('/admin/otp-verify', [\App\Http\Controllers\Auth\OTPController::class, 'verify'])->name('admin.otp.submit');
+    Route::post('/admin/otp-resend', [\App\Http\Controllers\Auth\OTPController::class, 'resend'])->name('admin.otp.resend');
 });
 
 /*
