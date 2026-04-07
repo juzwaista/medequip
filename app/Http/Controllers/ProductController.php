@@ -34,11 +34,10 @@ class ProductController extends Controller
             });
         }
 
-        // Category filter — if a parent category is selected, include its children too
+        // Category filter: selected category and all nested descendants
         if ($request->filled('category')) {
             $catId = (int) $request->category;
-            $childIds = Category::where('parent_id', $catId)->pluck('id')->toArray();
-            $query->whereIn('category_id', array_merge([$catId], $childIds));
+            $query->whereIn('category_id', Category::descendantIdsIncludingSelf($catId));
         }
 
         // Distributor filter
@@ -270,9 +269,9 @@ class ProductController extends Controller
         $distributors = \App\Models\Distributor::whereIn('status', ['approved', 'active'])
             ->where(function ($q) use ($query) {
                 $q->where('company_name', 'like', "%{$query}%")
-                  ->orWhereHas('user', function ($uq) use ($query) {
-                      $uq->where('name', 'like', "%{$query}%");
-                  });
+                    ->orWhereHas('user', function ($uq) use ($query) {
+                        $uq->where('name', 'like', "%{$query}%");
+                    });
             })
             ->withCount(['products' => function ($q) {
                 $q->where('is_active', true);
@@ -291,12 +290,14 @@ class ProductController extends Controller
      */
     public function byCategory(Category $category, Request $request)
     {
+        $categoryIds = Category::descendantIdsIncludingSelf((int) $category->id);
+
         $query = Product::with(['images', 'distributor', 'inventory'])
             ->whereHas('distributor', function ($q) {
                 $q->where('status', '!=', 'banned');
             })
             ->where('is_active', true)
-            ->where('category_id', $category->id);
+            ->whereIn('category_id', $categoryIds);
 
         // Apply same filters and sorting as index
         if ($request->filled('search')) {

@@ -36,9 +36,18 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base sm:text-sm touch-manipulation"
                         >
                             <option value="">All Categories</option>
-                            <option v-for="category in categories" :key="category.id" :value="category.id">
-                                {{ category.name }}
-                            </option>
+                            <template v-for="parent in categories" :key="parent.id">
+                                <optgroup :label="parent.name">
+                                    <option :value="parent.id">All in {{ parent.name }}</option>
+                                    <option
+                                        v-for="ch in (parent.children || [])"
+                                        :key="ch.id"
+                                        :value="ch.id"
+                                    >
+                                        {{ ch.name }}
+                                    </option>
+                                </optgroup>
+                            </template>
                         </select>
                     </div>
 
@@ -64,7 +73,7 @@
                         >
                             <option value="">All DSS flags</option>
                             <option value="expired">Expired</option>
-                            <option value="expiring">Near expiry (&lt; 30 days)</option>
+                            <option value="expiring">Near expiry (within {{ expiryWarningDays }} days)</option>
                             <option value="low_stock">Low stock (reorder-level)</option>
                             <option value="predicted_stockout">Predicted stockout (≤5 days)</option>
                         </select>
@@ -320,7 +329,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
@@ -328,6 +337,12 @@ const props = defineProps({
     products: Object,
     categories: Array,
     filters: Object,
+    expiry_warning_days: { type: Number, default: 60 },
+});
+
+const expiryWarningDays = computed(() => {
+    const n = Number(props.expiry_warning_days);
+    return Number.isFinite(n) && n >= 1 ? Math.min(365, Math.round(n)) : 60;
 });
 
 // NEW: Catch the dashboard filter

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PublicStorageUrl;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -195,23 +196,11 @@ class Product extends Model
                     $path = $this->image_path;
                 }
 
-                if (!$path) return null;
-
-                // Handle cases where Storage::url() might fail or produce incorrect URLs on shared hosting
-                try {
-                    // Standard Laravel way
-                    $url = \Storage::disk('public')->url($path);
-                    
-                    // If the URL contains 'localhost' but we are in production, fix it manually
-                    if (app()->environment('production') && str_contains($url, 'localhost')) {
-                        $url = str_replace(config('app.url'), env('APP_URL'), $url);
-                    }
-                    
-                    return $url;
-                } catch (\Exception $e) {
-                    // Fallback to manual path construction if Storage::url() fails
-                    return asset('storage/' . ltrim($path, '/'));
+                if (! $path) {
+                    return null;
                 }
+
+                return PublicStorageUrl::url($path);
             }
         );
     }

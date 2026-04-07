@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductVariation;
 use App\Services\CartService;
+use App\Support\PublicStorageUrl;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -60,7 +61,7 @@ class CartController extends Controller
         ]);
 
         $product = Product::with(['inventory', 'variations', 'distributor'])->findOrFail($request->product_id);
-        
+
         // Prevent adding products from suspended distributors
         if ($product->distributor->is_suspended) {
             return back()->with('error', 'This seller is currently suspended and cannot accept new orders at this time.');
@@ -182,17 +183,18 @@ class CartController extends Controller
     {
         $cart = CartService::normalizeCart($this->getCart());
         $uniqueItems = count($cart);
-        
+
         $previewItems = [];
         if ($uniqueItems > 0) {
             $cartItems = CartService::enrichCartItems($cart);
             $previewItems = collect($cartItems)->take(4)->values()->map(function ($item) {
                 $p = $item['product'];
                 $v = $item['variation'];
+
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
-                    'image_url' => $p->image_path ? asset('storage/'.$p->image_path) : null,
+                    'image_url' => PublicStorageUrl::url($p->image_path),
                     'price' => $item['unit_price'],
                     'quantity' => $item['quantity'],
                     'variation_name' => $v ? $v->name : null,

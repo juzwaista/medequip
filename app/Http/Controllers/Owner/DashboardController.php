@@ -125,15 +125,17 @@ class DashboardController extends Controller
             ->whereDate('expiry_date', '<', now()->toDateString())
             ->count();
 
-        $expiringWithin30 = collect($expiryAlerts)->filter(fn ($a) => ($a['days_until_expiry'] ?? 999) < 30)->count();
+        $expiryWarningDays = max(1, min(365, (int) ($dssInsights['settings']->expiry_warning_days ?? 60)));
+        $expiringSoonBatches = count($expiryAlerts);
         $stockoutRiskCount = collect($recommendations)->filter(
             fn ($r) => ($r['days_until_stockout'] ?? 999) <= 5 && ($r['days_until_stockout'] ?? -1) >= 0
         )->count();
 
         $alertCenter = $this->analytics->buildAlertCenterBanners(
             $expiredInStock,
-            $expiringWithin30,
-            $stockoutRiskCount
+            $expiringSoonBatches,
+            $stockoutRiskCount,
+            $expiryWarningDays
         );
 
         $newestOrderId = (int) (Order::where('distributor_id', $distributor->id)->max('id') ?? 0);

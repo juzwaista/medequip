@@ -63,13 +63,14 @@ class DistributorController extends Controller
             'address' => 'required|string|max:255',
             'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
             'email' => 'required|email|max:255',
-            'valid_id' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
-            'business_license' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
-            'dti_sec' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
-            'bir_form' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
-            'fda_license' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
-            'prc_id' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
-            'authorization_letter' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'extensions:pdf,jpg,jpeg,png', 'max:10240', SafeUpload::document()],
+            // Avoid strict mimes: shared hosts often report application/octet-stream for valid PDFs/images.
+            'valid_id' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'business_license' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'dti_sec' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'bir_form' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'fda_license' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'prc_id' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'authorization_letter' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);

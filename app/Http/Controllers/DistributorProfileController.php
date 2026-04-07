@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Distributor;
 use App\Models\Product;
 use App\Models\ProductReview;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,6 +14,36 @@ use Inertia\Inertia;
 
 class DistributorProfileController extends Controller
 {
+    /**
+     * Distributor account owner or staff assigned to this shop (for previewing inactive listings).
+     */
+    private function viewerManagesShop(Request $request, Distributor $distributor): bool
+    {
+        $user = $request->user();
+        if (! $user) {
+            return false;
+        }
+        if ((int) $distributor->user_id === (int) $user->id) {
+            return true;
+        }
+        if ($user->role === 'staff' && (int) ($user->distributor_id ?? 0) === (int) $distributor->id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Same rules as the main catalog for guests (see ProductController).
+     */
+    private function applyPublicListingConstraints(Builder $query): void
+    {
+        $query->where('is_active', true)
+            ->whereHas('distributor', function ($q) {
+                $q->where('status', '!=', 'banned');
+            });
+    }
+
     public function show(Request $request, $slug)
     {
         $slugKey = Str::lower(trim((string) $slug));
@@ -44,7 +75,7 @@ class DistributorProfileController extends Controller
 
         $shopCategories = $this->buildShopCategories($distributorId);
         $messagingUrl = $this->shopMessagingStartUrlFor($request->user(), $distributor, null);
-        $isOwner = $request->user()?->id === $distributor->owner_id;
+        $isOwner = $this->viewerManagesShop($request, $distributor);
 
         $payload = [
             'distributor' => $distributor,
@@ -67,9 +98,14 @@ class DistributorProfileController extends Controller
 
     private function shopTabData(int $distributorId, bool $isOwner = false): array
     {
-        $baseQuery = fn () => Product::where('distributor_id', $distributorId)
-            ->when(!$isOwner, fn($q) => $q->where('is_active', true))
-            ->with(['images', 'category', 'inventory']);
+        $baseQuery = function () use ($distributorId, $isOwner) {
+            $q = Product::where('distributor_id', $distributorId);
+            if (! $isOwner) {
+                $this->applyPublicListingConstraints($q);
+            }
+
+            return $q->with(['images', 'category', 'inventory']);
+        };
 
         // 1. Recommended (Featured first)
         $featured = $baseQuery()
@@ -93,11 +129,25 @@ class DistributorProfileController extends Controller
         }
 
         // 2. Top Sellers (Sales first, then latest fallback)
-        $topSellerIds = DB::table('order_items')
+        $topSellerQuery = DB::table('order_items')
             ->join('products', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('products.distributor_id', $distributorId)
-            ->whereIn('orders.status', ['completed', 'delivered'])
+            ->whereIn('orders.status', ['completed', 'delivered']);
+
+        if (! $isOwner) {
+            $topSellerQuery
+                ->where('products.is_active', true)
+                ->whereNull('products.deleted_at')
+                ->whereExists(function ($q) {
+                    $q->selectRaw('1')
+                        ->from('distributors')
+                        ->whereColumn('distributors.id', 'products.distributor_id')
+                        ->where('distributors.status', '!=', 'banned');
+                });
+        }
+
+        $topSellerIds = $topSellerQuery
             ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as units_sold'))
             ->groupBy('order_items.product_id')
             ->orderByDesc('units_sold')
@@ -113,6 +163,15 @@ class DistributorProfileController extends Controller
                 ->get()
                 ->sortBy(fn ($p) => array_search($p->id, $topSellerIds))
                 ->values();
+
+            if ($topSellers->isEmpty()) {
+                $topSellers = $baseQuery()
+                    ->withAvg('reviews', 'stars')
+                    ->withCount('reviews')
+                    ->latest()
+                    ->limit(8)
+                    ->get();
+            }
         } else {
             $topSellers = $baseQuery()
                 ->withAvg('reviews', 'stars')
@@ -130,9 +189,11 @@ class DistributorProfileController extends Controller
 
     private function productsTabData(Request $request, int $distributorId, bool $isOwner = false): array
     {
-        $query = Product::where('distributor_id', $distributorId)
-            ->when(!$isOwner, fn($q) => $q->where('is_active', true))
-            ->with(['images', 'category', 'inventory'])
+        $query = Product::where('distributor_id', $distributorId);
+        if (! $isOwner) {
+            $this->applyPublicListingConstraints($query);
+        }
+        $query->with(['images', 'category', 'inventory'])
             ->withAvg('reviews', 'stars')
             ->withCount('reviews');
 
@@ -147,8 +208,7 @@ class DistributorProfileController extends Controller
 
         if ($request->filled('category')) {
             $catId = (int) $request->category;
-            $childIds = Category::where('parent_id', $catId)->pluck('id')->toArray();
-            $query->whereIn('category_id', array_merge([$catId], $childIds));
+            $query->whereIn('category_id', Category::descendantIdsIncludingSelf($catId));
         }
 
         $sort = $request->get('sort', 'newest');
@@ -183,7 +243,10 @@ class DistributorProfileController extends Controller
     {
         $inStockConstraint = function ($q) use ($distributorId) {
             $q->where('distributor_id', $distributorId)
-                ->where('is_active', true);
+                ->where('is_active', true)
+                ->whereHas('distributor', function ($dq) {
+                    $dq->where('status', '!=', 'banned');
+                });
         };
 
         $categories = Category::whereNull('parent_id')

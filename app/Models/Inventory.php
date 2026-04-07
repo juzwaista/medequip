@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Facades\Log;
 
 class Inventory extends Model
 {
@@ -62,7 +61,7 @@ class Inventory extends Model
     public function availableStock(): Attribute
     {
         return Attribute::make(
-            get: fn() => max(0, $this->quantity - $this->reserved_quantity)
+            get: fn () => max(0, $this->quantity - $this->reserved_quantity)
         );
     }
 
@@ -75,16 +74,23 @@ class Inventory extends Model
     }
 
     /**
-     * Check if expiring soon (within 60 days default)
+     * True if expiry is today or in the future and on/before the end of the warning window (date-based).
      */
     public function isExpiringSoon(int $days = 60): bool
     {
-        if (!$this->expiry_date) {
+        if (! $this->expiry_date) {
             return false;
         }
 
-        $threshold = now()->addDays($days);
-        return $this->expiry_date <= $threshold && $this->expiry_date > now();
+        $days = max(1, min(365, $days));
+        $expiry = $this->expiry_date->copy()->startOfDay();
+        $today = now()->startOfDay();
+
+        if ($expiry->lt($today)) {
+            return false;
+        }
+
+        return $expiry->lte($today->copy()->addDays($days));
     }
 
     /**
@@ -97,6 +103,7 @@ class Inventory extends Model
         }
 
         $this->increment('reserved_quantity', $quantity);
+
         return true;
     }
 
@@ -110,20 +117,20 @@ class Inventory extends Model
                 'inventory_id' => $this->id,
                 'product_id' => $this->product_id,
                 'requested_release' => $quantity,
-                'current_reserved' => $this->reserved_quantity
+                'current_reserved' => $this->reserved_quantity,
             ]);
-            
+
             throw new \Exception(
                 "Cannot release {$quantity} units from inventory #{$this->id}. Only {$this->reserved_quantity} units are reserved."
             );
         }
-        
+
         $this->decrement('reserved_quantity', $quantity);
-        
+
         \Log::info('[Inventory] Reserved stock released', [
             'inventory_id' => $this->id,
             'released' => $quantity,
-            'remaining_reserved' => $this->reserved_quantity - $quantity
+            'remaining_reserved' => $this->reserved_quantity - $quantity,
         ]);
     }
 
@@ -138,6 +145,7 @@ class Inventory extends Model
 
         $this->decrement('quantity', $quantity);
         $this->decrement('reserved_quantity', min($quantity, $this->reserved_quantity));
+
         return true;
     }
 }

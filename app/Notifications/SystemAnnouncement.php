@@ -8,7 +8,9 @@ use Illuminate\Notifications\Notification;
 class SystemAnnouncement extends Notification
 {
     protected $title;
+
     protected $message;
+
     protected $adminName;
 
     /**
@@ -37,14 +39,14 @@ class SystemAnnouncement extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('System Announcement: ' . $this->title)
-            ->greeting('Hello, ' . $notifiable->name . '!')
+            ->subject('System Announcement: '.$this->title)
+            ->greeting('Hello, '.$notifiable->name.'!')
             ->line('An important announcement has been posted by the MedEquip administration:')
-            ->line('**' . $this->title . '**')
+            ->line('**'.$this->title.'**')
             ->line($this->message)
             ->action('View on Dashboard', url('/dashboard'))
             ->line('Thank you for being a part of MedEquip!')
-            ->salutation('Best regards, ' . $this->adminName);
+            ->salutation('Best regards, '.$this->adminName);
     }
 
     /**
@@ -56,8 +58,12 @@ class SystemAnnouncement extends Notification
     {
         return [
             'type' => 'announcement',
+            'kind' => 'system_announcement',
             'title' => $this->title,
+            // UI reads body/preview for most notifications; keep message for API clarity
             'message' => $this->message,
+            'body' => $this->message,
+            'preview' => $this->message,
             'admin_name' => $this->adminName,
             'icon' => 'megaphone',
         ];

@@ -12,9 +12,9 @@ use App\Models\ProductReport;
 use App\Models\User;
 use App\Models\UserReport;
 use App\Services\AdminModerationService;
+use App\Support\PublicStorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -765,7 +765,7 @@ class ReportHubController extends Controller
                 'id' => $m->id,
                 'body' => $body,
                 'kind' => $m->kind,
-                'image_url' => $m->image_path ? Storage::disk('public')->url($m->image_path) : null,
+                'image_url' => PublicStorageUrl::url($m->image_path),
                 'order_id' => $m->order_id,
                 'conversation_id' => $m->conversation_id,
                 'author' => $m->user ? [
@@ -926,7 +926,7 @@ class ReportHubController extends Controller
             'id' => $m->id,
             'kind' => $m->kind,
             'body' => trim((string) $m->body),
-            'image_url' => $m->image_path ? Storage::disk('public')->url($m->image_path) : null,
+            'image_url' => PublicStorageUrl::url($m->image_path),
             'created_at' => $m->created_at->toIso8601String(),
             'user' => $m->user ? [
                 'name' => $m->user->name,

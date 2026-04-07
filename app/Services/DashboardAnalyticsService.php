@@ -297,9 +297,10 @@ class DashboardAnalyticsService
     /**
      * @return list<array{level: string, title: string, body: string, href: string, action?: string}>
      */
-    public function buildAlertCenterBanners(int $expiredInStock, int $expiringWithin30, int $stockoutRiskCount): array
+    public function buildAlertCenterBanners(int $expiredInStock, int $expiringSoonCount, int $stockoutRiskCount, int $expiryWarningDays = 60): array
     {
         $banners = [];
+        $expiryWarningDays = max(1, min(365, $expiryWarningDays));
 
         if ($expiredInStock > 0) {
             $banners[] = [
@@ -311,11 +312,11 @@ class DashboardAnalyticsService
             ];
         }
 
-        if ($expiringWithin30 > 0) {
+        if ($expiringSoonCount > 0) {
             $banners[] = [
                 'level' => 'critical',
-                'title' => 'Expiry window under 30 days',
-                'body' => $expiringWithin30.' batch'.($expiringWithin30 === 1 ? '' : 'es').' need rotation or clearance before they expire.',
+                'title' => 'Expiry within '.$expiryWarningDays.' days',
+                'body' => $expiringSoonCount.' batch'.($expiringSoonCount === 1 ? '' : 'es').' are inside your DSS expiry window — rotate or clear before they expire.',
                 'href' => '/owner/inventory?filter=expiring',
                 'action' => 'Review batches',
             ];
@@ -671,7 +672,7 @@ class DashboardAnalyticsService
                     ->where('created_at', '>=', now()->subDay())
                     ->exists();
 
-                if (!$alreadySent) {
+                if (! $alreadySent) {
                     $distributor->user->notify(new \App\Notifications\AutomatedAccountWarningNotification($level, $dssReasons));
                 }
             }

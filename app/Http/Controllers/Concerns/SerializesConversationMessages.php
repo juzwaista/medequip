@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Concerns;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Order;
+use App\Support\PublicStorageUrl;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 trait SerializesConversationMessages
 {
@@ -149,7 +149,7 @@ trait SerializesConversationMessages
             'id' => $m->id,
             'kind' => $kind,
             'body' => trim((string) $m->body) === '' ? '' : $m->body,
-            'image_url' => $m->image_path ? Storage::disk('public')->url($m->image_path) : null,
+            'image_url' => PublicStorageUrl::url($m->image_path),
             'created_at' => $m->created_at->toIso8601String(),
             'read_at' => $isMine ? $m->read_at?->toIso8601String() : null,
             'delivered' => $deliveredToRecipient,

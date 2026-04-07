@@ -39,7 +39,24 @@ class SafeUpload implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! $value instanceof UploadedFile || ! $value->isValid()) {
+        if (! $value instanceof UploadedFile) {
+            $fail('Please choose a valid file to upload.');
+
+            return;
+        }
+
+        if (! $value->isValid()) {
+            $msg = 'The file could not be uploaded.';
+            $err = $value->getError();
+            if ($err === \UPLOAD_ERR_INI_SIZE || $err === \UPLOAD_ERR_FORM_SIZE) {
+                $msg = 'The file is too large for the server (PHP upload_max_filesize / post_max_size). Use a smaller file or ask your host to raise those limits.';
+            } elseif ($err === \UPLOAD_ERR_PARTIAL) {
+                $msg = 'The upload was interrupted. Please try again.';
+            } elseif ($err === \UPLOAD_ERR_NO_FILE) {
+                $msg = 'No file was received. Please choose a file and try again.';
+            }
+            $fail($msg);
+
             return;
         }
 

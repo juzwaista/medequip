@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PublicStorageUrl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -30,13 +31,13 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'amount'              => 'decimal:2',
-        'platform_fee_rate'   => 'decimal:4',
+        'amount' => 'decimal:2',
+        'platform_fee_rate' => 'decimal:4',
         'platform_fee_amount' => 'decimal:2',
-        'net_seller_amount'   => 'decimal:2',
-        'verified_at'         => 'datetime',
-        'released_at'         => 'datetime',
-        'refunded_at'         => 'datetime',
+        'net_seller_amount' => 'decimal:2',
+        'verified_at' => 'datetime',
+        'released_at' => 'datetime',
+        'refunded_at' => 'datetime',
         'seller_wallet_credited_at' => 'datetime',
     ];
 
@@ -51,9 +52,9 @@ class Payment extends Model
         $netAmount = round($amount - $feeAmount, 2);
 
         return [
-            'platform_fee_rate'   => $rate,
+            'platform_fee_rate' => $rate,
             'platform_fee_amount' => $feeAmount,
-            'net_seller_amount'   => $netAmount,
+            'net_seller_amount' => $netAmount,
         ];
     }
 
@@ -62,7 +63,7 @@ class Payment extends Model
      */
     public function applyEscrowFees(): void
     {
-        $fees = self::calculateFees((float)$this->amount);
+        $fees = self::calculateFees((float) $this->amount);
         $this->update(array_merge($fees, [
             'escrow_status' => 'held',
         ]));
@@ -107,7 +108,7 @@ class Payment extends Model
         DB::transaction(function () {
             $this->update([
                 'escrow_status' => 'released',
-                'released_at'   => now(),
+                'released_at' => now(),
             ]);
             $this->refresh();
 
@@ -165,9 +166,9 @@ class Payment extends Model
     {
         $this->update([
             'escrow_status' => 'refunded',
-            'refunded_at'   => now(),
+            'refunded_at' => now(),
             // Treat refunded payments as not payable anymore so invoice totals/balances stay consistent.
-            'status'         => 'rejected',
+            'status' => 'rejected',
         ]);
     }
 
@@ -184,9 +185,7 @@ class Payment extends Model
      */
     public function getProofUrlAttribute(): ?string
     {
-        return $this->proof_of_payment_path
-            ? asset('storage/' . $this->proof_of_payment_path)
-            : null;
+        return PublicStorageUrl::url($this->proof_of_payment_path);
     }
 
     /**

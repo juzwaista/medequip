@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\DssDistributorSettings;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -34,6 +35,17 @@ class InventoryController extends Controller
         $query = Product::where('distributor_id', $distributor->id)
             ->with(['category', 'inventory', 'variations']);
 
+        $dssSettings = DssDistributorSettings::firstOrCreate(
+            ['distributor_id' => $distributor->id],
+            [
+                'low_stock_threshold_days' => 7,
+                'expiry_warning_days' => 60,
+                'dead_stock_days' => 90,
+                'enable_auto_alerts' => true,
+            ]
+        );
+        $expiryWarningDays = max(1, min(365, (int) ($dssSettings->expiry_warning_days ?? 60)));
+
         // ---------------------------------------------------------
         // NEW: DASHBOARD ALERT FILTERS
         // ---------------------------------------------------------
@@ -46,11 +58,12 @@ class InventoryController extends Controller
                     ->whereDate('expiry_date', '<', now()->toDateString());
             });
         } elseif (in_array($alertFilter, ['expiring', 'near_expiry', 'near-expiry', 'near_expiry_products'], true)) {
-            $query->whereHas('inventory', function ($q) {
+            $windowEnd = now()->startOfDay()->addDays($expiryWarningDays)->toDateString();
+            $query->whereHas('inventory', function ($q) use ($windowEnd) {
                 $q->where('quantity', '>', 0)
                     ->whereNotNull('expiry_date')
                     ->whereDate('expiry_date', '>', now()->toDateString())
-                    ->whereDate('expiry_date', '<=', now()->addDays(30)->toDateString());
+                    ->whereDate('expiry_date', '<=', $windowEnd);
             });
         } elseif (in_array($alertFilter, ['low_stock', 'low_stock_products'], true)) {
             $query->whereHas('inventory', function ($q) {
@@ -83,9 +96,10 @@ class InventoryController extends Controller
             });
         }
 
-        // Filter by category
+        // Filter by category (same subtree rules as shop catalog: parent includes all descendants)
         if ($request->category_id) {
-            $query->where('category_id', $request->category_id);
+            $catIds = Category::descendantIdsIncludingSelf((int) $request->category_id);
+            $query->whereIn('category_id', $catIds);
         }
 
         // Filter by stock status — use a subquery approach to avoid invalid havingRaw inside whereHas
@@ -132,8 +146,10 @@ class InventoryController extends Controller
                 }
             })->count()) > 0;
 
-            $isExpired = $product->inventory->filter(fn ($inv) => $inv->quantity > 0 && $inv->expiry_date && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->isPast())->isNotEmpty();
-            $isNearExpiry = ! $isExpired && $product->inventory->filter(fn ($inv) => $inv->quantity > 0 && $inv->expiry_date && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->diffInDays(now()->startOfDay()) <= 30 && \Carbon\Carbon::parse($inv->expiry_date)->startOfDay()->isFuture())->isNotEmpty();
+            $isExpired = $product->inventory->filter(fn ($inv) => $inv->quantity > 0 && $inv->expiry_date && $inv->expiry_date->copy()->startOfDay()->lt(now()->startOfDay()))->isNotEmpty();
+            $isNearExpiry = ! $isExpired && $product->inventory->filter(function ($inv) use ($expiryWarningDays) {
+                return (int) $inv->quantity > 0 && $inv->expiry_date && $inv->isExpiringSoon($expiryWarningDays);
+            })->isNotEmpty();
 
             if ($totalStock === 0) {
                 $product->stock_status = 'out';
@@ -164,12 +180,16 @@ class InventoryController extends Controller
             return $product;
         });
 
-        // Get categories for filter
-        $categories = Category::whereNull('parent_id')->select('id', 'name')->get();
+        // Same tree shape as shop catalog so filters match how products are classified
+        $categories = Category::whereNull('parent_id')
+            ->with(['children' => fn ($q) => $q->orderBy('name')->select('id', 'name', 'parent_id')])
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return Inertia::render('Owner/Inventory/Index', [
             'products' => $products,
             'categories' => $categories,
+            'expiry_warning_days' => $expiryWarningDays,
             // Added 'filter' to preserve the alert state
             'filters' => $request->only(['search', 'category_id', 'stock_status', 'filter']),
         ]);

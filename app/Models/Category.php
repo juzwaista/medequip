@@ -67,4 +67,27 @@ class Category extends Model
 
         return $checked;
     }
+
+    /**
+     * This category ID plus every descendant (any depth), for listing products in a subtree.
+     */
+    public static function descendantIdsIncludingSelf(int $categoryId): array
+    {
+        $ids = [];
+        $queue = [$categoryId];
+
+        while ($queue !== []) {
+            $id = (int) array_shift($queue);
+            if (in_array($id, $ids, true)) {
+                continue;
+            }
+            $ids[] = $id;
+            $children = static::query()->where('parent_id', $id)->pluck('id')->all();
+            foreach ($children as $childId) {
+                $queue[] = (int) $childId;
+            }
+        }
+
+        return $ids;
+    }
 }
