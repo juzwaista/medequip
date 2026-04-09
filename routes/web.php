@@ -261,9 +261,14 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
         Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Owner\OrderController::class, 'receipt'])->name('orders.receipt');
         Route::post('/orders/{order}/prescription/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approvePrescription'])->name('orders.prescription.approve');
         Route::post('/orders/{order}/prescription/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectPrescription'])->name('orders.prescription.reject');
+        Route::post('/orders/{order}/discount/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approveDiscount'])->name('orders.discount.approve');
+        Route::post('/orders/{order}/discount/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectDiscount'])->name('orders.discount.reject');
         Route::patch('/orders/{order}/status', [\App\Http\Controllers\Owner\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::post('/orders/{order}/note', [\App\Http\Controllers\Owner\OrderController::class, 'addNote'])->name('orders.addNote');
         Route::post('/orders/{order}/confirm-cod-remittance', [\App\Http\Controllers\Owner\OrderController::class, 'confirmCodRemittance'])->name('orders.confirmCodRemittance');
+
+        // Review Disputes
+        Route::post('/reviews/{productReview}/dispute', [\App\Http\Controllers\Owner\ReviewDisputeController::class, 'store'])->name('reviews.dispute');
 
         // Inventory Management (Unified Product + Stock)
         Route::resource('inventory', \App\Http\Controllers\Owner\InventoryController::class, [
@@ -420,6 +425,13 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'show'])->name('orders.show');
 
+        // Review Disputes
+        Route::get('/reviews/disputes', [\App\Http\Controllers\Admin\ReviewDisputeController::class, 'index'])->name('reviews.disputes.index');
+        Route::patch('/reviews/disputes/{productReview}/resolve', [\App\Http\Controllers\Admin\ReviewDisputeController::class, 'resolve'])->name('reviews.disputes.resolve');
+
+        // Audit Logs
+        Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-logs.index');
+
         // System-wide Announcements
         Route::post('/broadcast-announcement', [\App\Http\Controllers\Admin\DashboardController::class, 'broadcastAnnouncement'])->name('broadcast-announcement');
 
@@ -467,6 +479,7 @@ Route::middleware(['auth', 'verified', 'role:courier'])->prefix('courier')->name
     Route::post('/deliveries/{delivery}/confirm-scan', [CourierDeliveryController::class, 'confirmScan'])->name('deliveries.confirmScan');
     Route::post('/deliveries/{delivery}/confirm-pickup', [CourierDeliveryController::class, 'confirmPickup'])->name('deliveries.confirmPickup');
     Route::post('/deliveries/{delivery}/confirm-delivery', [CourierDeliveryController::class, 'confirmDelivery'])->name('deliveries.confirmDelivery');
+    Route::post('/deliveries/{delivery}/report-failure', [CourierDeliveryController::class, 'reportFailure'])->name('deliveries.reportFailure');
     Route::post('/deliveries/{delivery}/remittance-sent', [CourierDeliveryController::class, 'markRemittanceSent'])->name('deliveries.remittanceSent');
 });
 

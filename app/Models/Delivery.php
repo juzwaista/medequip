@@ -36,6 +36,12 @@ class Delivery extends Model
         'proof_latitude',
         'proof_longitude',
         'is_location_flagged',
+        'attempts_count',
+        'last_attempt_at',
+        'failure_reason',
+        'failure_note',
+        'is_return_to_sender',
+        'proof_of_attempt_path',
     ];
 
     protected $casts = [
@@ -52,6 +58,9 @@ class Delivery extends Model
         'proof_latitude'      => 'decimal:8',
         'proof_longitude'     => 'decimal:8',
         'is_location_flagged' => 'boolean',
+        'last_attempt_at'     => 'datetime',
+        'attempts_count'      => 'integer',
+        'is_return_to_sender' => 'boolean',
     ];
 
     public function order(): BelongsTo

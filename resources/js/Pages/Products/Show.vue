@@ -209,8 +209,21 @@
                         </div>
                     </div>
 
-                        <!-- Unified CTA row: all screens -->
-                        <div class="flex gap-2 items-center">
+                        <!-- CTA Actions -->
+                        <div class="space-y-4">
+                            <!-- Wholesale Savings Indicator -->
+                            <div v-if="wholesaleSavings" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
+                                <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-indigo-900 leading-tight">
+                                        Saving <span class="text-indigo-600">₱{{ Number(wholesaleSavings.total).toLocaleString() }}</span> or <span class="text-indigo-600">{{ wholesaleSavings.percentage }}%</span> for this wholesale purchase!
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2 items-center pt-2">
                             <!-- Qty stepper -->
                             <div class="inline-flex items-center border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm flex-shrink-0">
                                 <button
@@ -260,7 +273,7 @@
                                 Buy Now
                             </button>
                         </div>
-
+                    </div>
                 </div>
             </div>
 
@@ -288,7 +301,10 @@
                         <dd class="font-semibold text-orange-700 mt-0.5">
                             {{ nearestExpiryDate ? new Date(nearestExpiryDate).toLocaleDateString() : 'Tracked per batch' }}
                         </dd>
-                        <dd v-if="nearestBatchNumber" class="text-xs text-gray-500 mt-1">Batch {{ nearestBatchNumber }}</dd>
+                        <dd v-if="timeBeforeExpiry" class="text-[10px] font-bold text-orange-900 bg-orange-100 px-1.5 py-0.5 rounded mt-1 inline-block uppercase tracking-tighter">
+                            {{ timeBeforeExpiry }}
+                        </dd>
+                        <dd v-if="nearestBatchNumber" class="text-xs text-gray-400 mt-1">Batch {{ nearestBatchNumber }}</dd>
                     </div>
                     <div v-if="product.has_warranty" class="rounded-lg bg-gray-50 p-3 border border-gray-100">
                         <dt class="text-gray-500">Warranty</dt>
@@ -515,6 +531,34 @@ const galleryUrls = computed(() => {
 
 const activeImageUrl = computed(() => galleryUrls.value[activeImageIndex.value] || null);
 
+const timeBeforeExpiry = computed(() => {
+    if (!props.nearestExpiryDate) return null;
+    const expiry = new Date(props.nearestExpiryDate);
+    const now = new Date();
+    
+    if (expiry <= now) return 'Expired';
+
+    let years = expiry.getFullYear() - now.getFullYear();
+    let months = expiry.getMonth() - now.getMonth();
+    
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    const parts = [];
+    if (years > 0) parts.push(`${years}yr`);
+    if (months > 0) parts.push(`${months}mo`);
+    
+    if (parts.length === 0 && years === 0 && months === 0) {
+        const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) return `${diffDays}d before expiry`;
+        return 'Expiring soon';
+    }
+    
+    return parts.join(' ') + ' before expiry';
+});
+
 function formatReviewDate(value) {
     if (!value) return '';
     const d = new Date(value);
@@ -599,6 +643,31 @@ const lineAvailable = computed(() => {
     return props.availableStock;
 });
 
+const wholesaleSavings = computed(() => {
+    if (!props.product.wholesale_price || !props.product.wholesale_min_qty) return null;
+    if (Number(quantity.value) < Number(props.product.wholesale_min_qty)) return null;
+
+    const retail = Number(effectiveRetail.value);
+    const wholesale = Number(effectiveWholesale.value);
+    const savingsPerUnit = retail - wholesale;
+    
+    if (savingsPerUnit <= 0) return null;
+
+    const totalSavings = savingsPerUnit * quantity.value;
+    const percentage = Math.round((savingsPerUnit / retail) * 100);
+
+    return {
+        total: totalSavings,
+        percentage: percentage
+    };
+});
+
+const totalPrice = computed(() => {
+    const isWholesale = wholesaleSavings.value !== null;
+    const unitPrice = isWholesale ? Number(effectiveWholesale.value) : Number(effectiveRetail.value);
+    return unitPrice * quantity.value;
+});
+
 watch(
     () => selectedVariationId.value,
     () => {
@@ -665,22 +734,19 @@ const buyNow = async () => {
 
     buyingNow.value = true;
     try {
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const payload = { product_id: props.product.id, quantity: quantity.value };
+        const payload = {
+            product_id: props.product.id,
+            quantity: quantity.value,
+            buy_now: true
+        };
         if (props.hasVariations && selectedVariationId.value) {
             payload.product_variation_id = selectedVariationId.value;
         }
-        await window.axios.post('/cart/add', payload, {
-            headers: { 'X-CSRF-TOKEN': token }
-        });
-        router.visit('/checkout');
+        
+        // Pass buy_now as query param to checkout
+        router.visit(route('checkout', payload));
     } catch (e) {
-        if (e?.response?.status === 419) {
-            window.location.reload();
-        } else {
-            alert(e?.response?.data?.message || 'Could not process. Please try again.');
-            buyingNow.value = false;
-        }
+        buyingNow.value = false;
     }
 };
 </script>

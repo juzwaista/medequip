@@ -74,9 +74,44 @@ class ProfileController extends Controller
             'featured_product_ids' => 'nullable|array|max:8',
             'featured_product_ids.*' => 'integer|exists:products,id',
             'max_cod_amount' => 'nullable|numeric|min:0',
+            'pickup_instructions' => 'nullable|string|max:5000',
+            // Expiration dates
+            'valid_id_expires_at' => 'nullable|date',
+            'business_license_expires_at' => 'nullable|date',
+            'dti_sec_expires_at' => 'nullable|date',
+            'bir_form_expires_at' => 'nullable|date',
+            'fda_license_expires_at' => 'nullable|date',
+            'prc_id_expires_at' => 'nullable|date',
+            // New documents
+            'valid_id_new' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
+            'business_license_new' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
+            'dti_sec_new' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
+            'bir_form_new' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
+            'fda_license_new' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
+            'prc_id_new' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
         ], [
             'phone.regex' => 'Phone number must be 11 digits, start with 09, and contain numbers only.',
         ]);
+
+        // Handle specific document updates
+        if ($request->hasFile('valid_id_new')) {
+            $validated['valid_id_path'] = $request->file('valid_id_new')->store('distributor_documents/valid_ids', 'local');
+        }
+        if ($request->hasFile('business_license_new')) {
+            $validated['business_license_path'] = $request->file('business_license_new')->store('distributor_documents/licenses', 'local');
+        }
+        if ($request->hasFile('dti_sec_new')) {
+            $validated['dti_sec_path'] = $request->file('dti_sec_new')->store('distributor_documents/dti_sec', 'local');
+        }
+        if ($request->hasFile('bir_form_new')) {
+            $validated['bir_form_path'] = $request->file('bir_form_new')->store('distributor_documents/bir_forms', 'local');
+        }
+        if ($request->hasFile('fda_license_new')) {
+            $validated['fda_license_path'] = $request->file('fda_license_new')->store('distributor_documents/fda_licenses', 'local');
+        }
+        if ($request->hasFile('prc_id_new')) {
+            $validated['prc_id_path'] = $request->file('prc_id_new')->store('distributor_documents/prc_ids', 'local');
+        }
 
         if ($request->hasFile('logo')) {
             if ($distributor->logo_path) {

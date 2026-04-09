@@ -36,6 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('accounts:purge-deactivated')
             ->daily()
             ->environments(['production']);
+
+        $schedule->command('medequip:alert-doc-expiry')
+            ->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

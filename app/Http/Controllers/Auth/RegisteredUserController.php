@@ -87,7 +87,7 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['nullable', 'in:customer,distributor'],
-            'contact_number' => ['required_if:role,customer', 'nullable', 'regex:/^09[0-9]{9}$/'],
+            'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
             'address_line' => ['required_if:role,customer', 'nullable', 'string', 'max:500'],
             'city' => ['required_if:role,customer', 'nullable', 'string', Rule::in($cityKeys)],
             'barangay' => ['required_if:role,customer', 'nullable', 'string', 'max:100'],
@@ -98,7 +98,7 @@ class RegisteredUserController extends Controller
             'longitude' => ['required_if:role,customer', 'nullable', 'numeric', 'between:-180,180'],
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09 and contain only numbers.',
-            'contact_number.required_if' => 'Contact number is required.',
+            'contact_number.required' => 'Contact number is required.',
             'address_line.required_if' => 'Complete Address is required.',
             'city.required_if' => 'City is required.',
             'barangay.required_if' => 'Barangay is required.',
@@ -115,6 +115,7 @@ class RegisteredUserController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'password' => $request->password,
+            'phone_number' => $request->contact_number,
             'terms_accepted_at' => now(),
             'terms_version' => User::CURRENT_TERMS_VERSION,
         ]);

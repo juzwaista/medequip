@@ -72,8 +72,20 @@ class OrderController extends Controller
      */
     public function checkout()
     {
-        $cart = CartService::pruneCart(session()->get('cart', []));
-        session()->put('cart', $cart);
+        // Handle "Buy Now" - isolate single product if params present
+        $isBuyNow = request()->boolean('buy_now') && request()->has('product_id');
+        
+        if ($isBuyNow) {
+            $buyNowItem = [
+                'product_id' => request('product_id'),
+                'product_variation_id' => request('product_variation_id'),
+                'quantity' => request('quantity', 1),
+            ];
+            $cart = [\App\Services\CartService::lineKey($buyNowItem['product_id'], $buyNowItem['product_variation_id']) => $buyNowItem];
+        } else {
+            $cart = CartService::pruneCart(session()->get('cart', []));
+            session()->put('cart', $cart);
+        }
 
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
@@ -89,10 +101,32 @@ class OrderController extends Controller
             ->count();
 
         $shippingFeeTotal = 0;
+        $codLimitExceeded = false;
+        $codLimitMessage = '';
+
         $groupedCart = collect($cartItems)->groupBy('product.distributor_id');
-        foreach ($groupedCart as $dItems) {
+        foreach ($groupedCart as $distributorId => $dItems) {
             $req = $this->calculateShippingRequirement($dItems->all());
             $shippingFeeTotal += $req['fee'];
+
+            $distributor = \App\Models\Distributor::find($distributorId);
+            if ($distributor && $distributor->max_cod_amount > 0) {
+                $orderSubtotal = (float) $dItems->sum(function ($item) {
+                    $p = $item['product'];
+                    $qty = $item['quantity'];
+                    $v = $item['variation'] ?? null;
+                    $isWholesale = $p->wholesale_price && $p->wholesale_min_qty && $qty >= $p->wholesale_min_qty;
+                    $base = $isWholesale ? (float) $p->wholesale_price : (float) $p->base_price;
+                    $adj = $v ? (float) $v->price_adjustment : 0.0;
+                    return round($base + $adj, 2) * $qty;
+                });
+
+                $orderTotal = $orderSubtotal + $req['fee'];
+                if ($orderTotal > $distributor->max_cod_amount) {
+                    $codLimitExceeded = true;
+                    $codLimitMessage = "Order total for {$distributor->company_name} (₱" . number_format($orderTotal, 2) . ") exceeds their COD limit of ₱" . number_format($distributor->max_cod_amount, 2) . ".";
+                }
+            }
         }
 
         $cartHasPrescriptionItems = collect($cartItems)->contains(fn ($line) => $line['product']->requires_prescription);
@@ -111,8 +145,11 @@ class OrderController extends Controller
             'barangays' => config('cavite.barangays'),
             'savedAddresses' => auth()->user()->addresses()->latest()->get(),
             'wallet_balance' => (float) (auth()->user()->wallet?->balance ?? 0),
-            'cod_available' => $reliability->isCodAllowedForCustomer($user),
+            'cod_available' => false, // Forced false to hide COD for now
+            'cod_limit_exceeded' => $codLimitExceeded,
+            'cod_limit_message' => $codLimitMessage,
             'cod_rejection_rate_percent' => $reliability->codRejectionRatePercent($user),
+            'queryParams' => request()->all(),
         ]);
     }
 
@@ -129,20 +166,68 @@ class OrderController extends Controller
             'customer_name' => 'required|string|min:2|max:100',
             'delivery_address' => 'required|string|max:500|min:5',
             'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
-            'delivery_latitude' => 'nullable|numeric|between:-90,90',
-            'delivery_longitude' => 'nullable|numeric|between:-180,180',
+            'delivery_latitude' => 'required|numeric|between:14.00,14.60',
+            'delivery_longitude' => 'required|numeric|between:120.50,121.20',
             'notes' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:card,gcash,paymaya,wallet,cod',
+            'payment_method' => 'required|in:card,gcash,paymaya,wallet', // 'cod' removed from allowed list
+            'fulfillment_method' => 'required|in:delivery,pickup',
+            'buy_now' => 'boolean',
+            'product_id' => 'required_if:buy_now,true|exists:products,id',
+            'product_variation_id' => 'nullable|exists:product_variations,id',
+            'quantity' => 'required_if:buy_now,true|integer|min:1',
+            'tin' => ['nullable', 'string', 'regex:/^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/'],
+            
+            // SC/PWD validation
+            'apply_discount' => 'boolean',
+            'discount_type' => 'required_if:apply_discount,true|in:senior,pwd',
+            'discount_id_number' => 'required_if:apply_discount,true|string|max:50',
+            'discount_id_name' => 'required_if:apply_discount,true|string|max:100',
+            'discount_id_image' => 'required_if:apply_discount,true|image|max:8192',
+            'discount_terms' => 'required_if:apply_discount,true|accepted',
+            
+            // Rx identity validation (if items require Rx)
+            'prescription_patient_name' => 'nullable|string|max:100',
+            'prescription_id_image' => 'nullable|image|max:8192',
+            'prescription_image' => 'nullable|image|max:8192',
+            'ocr_results' => 'nullable|string', // JSON string from frontend
         ], [
             'customer_name.required' => 'Please provide the recipient name',
             'delivery_address.required' => 'Please provide a delivery address',
             'contact_number.required' => 'Contact number is required for delivery',
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
             'payment_method.required' => 'Please choose a payment method',
+            'tin.regex' => 'TIN must follow the format 000-000-000-000',
+            'discount_id_number.required_if' => 'ID number is required for the discount.',
+            'discount_id_name.required_if' => 'Full name on ID is required for the discount.',
+            'discount_id_image.required_if' => 'ID photo is required for the discount.',
+            'discount_terms.accepted' => 'You must certify that this purchase is for your personal use.',
+            'discount_id_image.image' => 'The document uploaded must be an image (PNG, JPG, etc.).',
         ]);
 
-        $cart = CartService::pruneCart(session()->get('cart', []));
-        session()->put('cart', $cart);
+        $user = auth()->user();
+        $tin = $request->input('tin');
+
+        // If TIN is empty in request, try to get it from user profile
+        if (empty($tin) && $user && !empty($user->tin)) {
+            $tin = $user->tin;
+        }
+
+        // Save TIN to user profile if it's new or changed
+        if (!empty($tin) && $user && $user->tin !== $tin) {
+            $user->update(['tin' => $tin]);
+        }
+
+        if ($request->boolean('buy_now')) {
+            $buyNowItem = [
+                'product_id' => $request->product_id,
+                'product_variation_id' => $request->product_variation_id,
+                'quantity' => $request->quantity,
+            ];
+            $cart = [\App\Services\CartService::lineKey($buyNowItem['product_id'], $buyNowItem['product_variation_id']) => $buyNowItem];
+        } else {
+            $cart = CartService::pruneCart(session()->get('cart', []));
+            session()->put('cart', $cart);
+        }
 
         if (empty($cart)) {
             return back()->withErrors(['cart' => 'Your cart is empty'])->withInput();
@@ -152,11 +237,15 @@ class OrderController extends Controller
         $isWallet = $validated['payment_method'] === 'wallet';
         $isCod = $validated['payment_method'] === 'cod';
 
+        /* COD logic disabled for now
         if ($isCod && ! app(CustomerReliabilityService::class)->isCodAllowedForCustomer($request->user())) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'payment_method' => ['Cash on delivery is not available for your account based on past order outcomes. Please choose another payment method.'],
             ]);
         }
+        */
+
+        $ocrResults = $request->input('ocr_results') ? json_decode($request->input('ocr_results'), true) : [];
 
         try {
             DB::beginTransaction();
@@ -202,7 +291,8 @@ class OrderController extends Controller
 
             foreach ($ordersByDistributor as $distributorData) {
                 $distributor = \App\Models\Distributor::findOrFail($distributorData['distributor_id']);
-                $shippingReq = $this->calculateShippingRequirement($distributorData['items']);
+                $isPickup = $validated['fulfillment_method'] === 'pickup';
+                $shippingReq = $isPickup ? ['fee' => 0, 'vehicle' => 'motorcycle'] : $this->calculateShippingRequirement($distributorData['items']);
                 
                 $itemSubtotal = 0;
                 foreach ($distributorData['items'] as $item) {
@@ -217,13 +307,6 @@ class OrderController extends Controller
                 
                 $orderTotal = $itemSubtotal + $shippingReq['fee'];
 
-                // Enforce Distributor COD Limit
-                if ($isCod && $distributor->max_cod_amount > 0 && $orderTotal > $distributor->max_cod_amount) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'payment_method' => ["Cash on delivery is not available for {$distributor->company_name} because the order total (₱" . number_format($orderTotal, 2) . ") exceeds their COD limit of ₱" . number_format($distributor->max_cod_amount, 2) . ". Please choose another payment method."],
-                    ]);
-                }
-
                 $order = Order::create([
                     'customer_id' => auth()->id(),
                     'distributor_id' => $distributorData['distributor_id'],
@@ -237,10 +320,34 @@ class OrderController extends Controller
                     'contact_number' => $validated['contact_number'],
                     'notes' => $validated['notes'] ?? null,
                     'payment_method' => $validated['payment_method'],
+                    'fulfillment_method' => $validated['fulfillment_method'],
+                    'pickup_instructions' => $isPickup ? $distributor->pickup_instructions : null,
                     'required_vehicle_type' => $shippingReq['vehicle'],
+                    'tin' => $tin,
+                    'discount_type' => $request->boolean('apply_discount') ? $request->discount_type : 'none',
+                    'discount_id_number' => $request->boolean('apply_discount') ? $request->discount_id_number : null,
+                    'discount_id_name' => $request->boolean('apply_discount') ? $request->discount_id_name : null,
+                    'discount_status' => $request->boolean('apply_discount') ? Order::DISCOUNT_PENDING : Order::DISCOUNT_NONE,
+                    'prescription_patient_name' => $request->prescription_patient_name,
+                    'ocr_results' => $ocrResults,
                 ]);
 
+                if ($request->hasFile('discount_id_image')) {
+                    $order->update(['discount_id_image_path' => $request->file('discount_id_image')->store('discounts', 'public')]);
+                }
+                if ($request->hasFile('prescription_id_image')) {
+                    $order->update(['prescription_id_image_path' => $request->file('prescription_id_image')->store('prescriptions', 'public')]);
+                }
+                if ($request->hasFile('prescription_image')) {
+                    $order->update([
+                        'prescription_image_path' => $request->file('prescription_image')->store('prescriptions', 'public'),
+                        'prescription_status' => Order::PRESCRIPTION_PENDING_REVIEW
+                    ]);
+                }
+
                 $itemSubtotal = 0;
+                $vatableItemsTotal = 0;
+                $exemptItemsTotal = 0;
 
                 foreach ($distributorData['items'] as $item) {
                     $product = $item['product'];
@@ -287,15 +394,63 @@ class OrderController extends Controller
                     ]);
 
                     $itemSubtotal += $lineTotal;
+                    if ($product->is_vat_exempt) {
+                        $exemptItemsTotal += $lineTotal;
+                    } else {
+                        $vatableItemsTotal += $lineTotal;
+                    }
                 }
 
-                $totalAmount = $itemSubtotal + $shippingReq['fee'];
+                $shippingFee = (float) $shippingReq['fee'];
+                $totalAmount = $itemSubtotal + $shippingFee;
 
-                $order->update([
-                    'subtotal' => $itemSubtotal,
-                    'shipping_fee' => $shippingReq['fee'],
-                    'total_amount' => $totalAmount,
-                ]);
+                // VAT and Discount Calculation
+                $isDiscounted = $order->discount_type !== 'none';
+                
+                if ($isDiscounted) {
+                    // SC/PWD are VAT Exempt + 20% Discount
+                    // 1. All item sales become VAT Exempt
+                    // 2. 20% discount is applied to the VAT-exclusive price
+                    
+                    // itemSubtotal is currently VAT inclusive
+                    // Divide by 1.12 to get net-of-VAT subtotal
+                    $netOfVatSubtotal = $itemSubtotal / 1.12;
+                    $discountAmount = $netOfVatSubtotal * 0.20;
+                    
+                    $orderVatExemptSales = $itemSubtotal; // Full amount is subject to exemption
+                    $orderVatableSales = $shippingFee / 1.12; // Shipping is still vatable unless law says otherwise
+                    $orderVatAmount = $shippingFee - $orderVatableSales;
+                    
+                    $newItemSubtotal = $netOfVatSubtotal - $discountAmount;
+                    $totalAmount = $newItemSubtotal + $shippingFee;
+
+                    $order->update([
+                        'subtotal' => round($newItemSubtotal, 2),
+                        'shipping_fee' => round($shippingFee, 2),
+                        'discount' => round($discountAmount, 2), // Legacy field
+                        'discount_amount' => round($discountAmount, 2), // New field
+                        'total_amount' => round($totalAmount, 2),
+                        'vatable_sales' => round($orderVatableSales, 2),
+                        'vat_amount' => round($orderVatAmount, 2),
+                        'vat_exempt_sales' => round($itemSubtotal / 1.12, 2), // The gross sales for exempt items
+                    ]);
+                } else {
+                    // VAT Extraction Logic (Inclusive VAT)
+                    // Shipping is vatable 12%
+                    $totalVatableAmount = $vatableItemsTotal + $shippingFee;
+                    $orderVatableSales = $totalVatableAmount / 1.12;
+                    $orderVatAmount = $totalVatableAmount - $orderVatableSales;
+                    $orderVatExemptSales = $exemptItemsTotal;
+
+                    $order->update([
+                        'subtotal' => $itemSubtotal,
+                        'shipping_fee' => $shippingFee,
+                        'total_amount' => $totalAmount,
+                        'vatable_sales' => round($orderVatableSales, 2),
+                        'vat_amount' => round($orderVatAmount, 2),
+                        'vat_exempt_sales' => round($orderVatExemptSales, 2),
+                    ]);
+                }
 
                 $order->load('items.product');
                 $needsRx = $order->items->contains(fn ($line) => $line->product->requires_prescription);
@@ -328,8 +483,10 @@ class OrderController extends Controller
                 );
             }
 
-            // Clear cart
-            session()->forget('cart');
+            // Clear cart if NOT buy now (don't clear if they just bought one thing specifically)
+            if (!$request->boolean('buy_now')) {
+                session()->forget('cart');
+            }
 
             DB::commit();
 
@@ -368,9 +525,49 @@ class OrderController extends Controller
                         'status' => 'pending',
                     ]);
 
+                    // Build comprehensive line items for the entire batch
+                    $batchLineItems = [];
+                    foreach ($ordersWithInvoices as $o) {
+                        $o->loadMissing(['items.product', 'items.productVariation']);
+                        foreach ($o->items as $item) {
+                            $name = $item->product->name;
+                            if ($item->productVariation) {
+                                $name .= ' (' . $item->productVariation->name . ')';
+                            }
+
+                            $batchLineItems[] = [
+                                'currency'    => 'PHP',
+                                'amount'      => (int) round((float) $item->unit_price * 100),
+                                'description' => $name,
+                                'name'        => $name,
+                                'quantity'    => $item->quantity,
+                            ];
+                        }
+                        
+                        if ($o->shipping_fee > 0) {
+                            $batchLineItems[] = [
+                                'currency'    => 'PHP',
+                                'amount'      => (int) round((float) $o->shipping_fee * 100),
+                                'description' => 'Shipping for order ' . $o->order_number,
+                                'name'        => 'Shipping fee (' . ($o->distributor->company_name ?? 'Seller') . ')',
+                                'quantity'    => 1,
+                            ];
+                        }
+
+                        if ($o->discount_amount > 0) {
+                            $batchLineItems[] = [
+                                'currency'    => 'PHP',
+                                'amount'      => (int) round((float) $o->discount_amount * -100),
+                                'description' => ($o->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount for ' . $o->order_number,
+                                'name'        => ($o->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount',
+                                'quantity'    => 1,
+                            ];
+                        }
+                    }
+
                     // Now that batch exists, create a final checkout session with callback URLs containing batch id.
                     $session = $this->paymongo->createGenericCheckoutSession(
-                        description: 'MedEquip checkout ('.count($orderIds).' order'.(count($orderIds) > 1 ? 's' : '').')',
+                        description: 'MedEquip Checkout (' . count($orderIds) . ' order' . (count($orderIds) > 1 ? 's' : '') . ')',
                         amountCentavos: (int) round($batchTotal * 100),
                         successUrl: route('payment.batch.success', ['batch' => $batch->id]),
                         cancelUrl: route('payment.batch.cancel', ['batch' => $batch->id]),
@@ -378,7 +575,8 @@ class OrderController extends Controller
                             'batch_id' => $batch->id,
                             'invoice_ids' => implode(',', $invoiceIds),
                             'order_ids' => implode(',', $orderIds),
-                        ]
+                        ],
+                        lineItems: $batchLineItems
                     );
 
                     $batch->update(['paymongo_session_id' => $session['session_id']]);
@@ -393,10 +591,9 @@ class OrderController extends Controller
                         'error' => $e->getMessage(),
                     ]);
 
-                    // Fallback: redirect to confirmation, payment can be retried
-                    return redirect()->route('orders.confirmation', $createdOrders[0])
-                        ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
-                        ->with('warning', 'Order placed, but payment initiation failed. Please try again from your orders page.');
+                    // Fallback: redirect to details, payment can be retried
+                    return redirect()->route('orders.show', $createdOrders[0])
+                        ->with('warning', 'Order placed, but payment initiation failed. Please try again from this page.');
                 }
             }
 
@@ -582,18 +779,23 @@ class OrderController extends Controller
             ]);
         }
 
-        $session = $this->paymongo->createCheckoutSession(
-            $invoice,
-            route('payment.success', $invoice),
-            route('payment.cancel', $invoice)
-        );
+        try {
+            $session = $this->paymongo->createCheckoutSession(
+                $invoice,
+                route('payment.success', $invoice),
+                route('payment.cancel', $invoice)
+            );
 
-        $payment->update([
-            'paymongo_session_id' => $session['session_id'],
-            'paymongo_status' => 'active',
-        ]);
+            $payment->update([
+                'paymongo_session_id' => $session['session_id'],
+                'paymongo_status' => 'active',
+            ]);
 
-        return Inertia::location($session['checkout_url']);
+            return Inertia::location($session['checkout_url']);
+        } catch (\Exception $e) {
+            Log::error('[OrderController] PayNow session failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Could not initiate payment. Please try again later.');
+        }
     }
 
     /**
@@ -630,14 +832,21 @@ class OrderController extends Controller
 
         $request->validate([
             'prescription' => ['required', 'image', 'max:8192', SafeUpload::image()],
+            'prescription_patient_name' => ['required', 'string', 'max:100'],
+            'prescription_id_image' => ['required', 'image', 'max:8192', SafeUpload::image()],
         ], [
             'prescription.required' => 'Please choose a clear photo of your prescription.',
+            'prescription_patient_name.required' => 'Please provide the patient name as written on the ID.',
+            'prescription_id_image.required' => 'Please provide a photo of a valid ID for verification.',
         ]);
 
         $path = $request->file('prescription')->store('prescriptions', 'public');
+        $idPath = $request->file('prescription_id_image')->store('prescriptions', 'public');
 
         $order->update([
             'prescription_image_path' => $path,
+            'prescription_id_image_path' => $idPath,
+            'prescription_patient_name' => $request->prescription_patient_name,
             'prescription_status' => Order::PRESCRIPTION_PENDING_REVIEW,
         ]);
 

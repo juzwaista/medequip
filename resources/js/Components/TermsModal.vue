@@ -38,7 +38,7 @@
                         <p><strong>3.1 Eligibility.</strong> Customers must be at least 18 years old. Healthcare professionals ordering prescription-only medical devices must upload a valid prescription or license as required.</p>
                         <p><strong>3.2 Ordering.</strong> Orders are confirmed upon payment. You agree that prices and availability are subject to change without prior notice.</p>
                         <p><strong>3.3 Delivery.</strong> MedEquip uses third-party couriers. Estimated delivery times are not guaranteed. You are responsible for providing an accurate delivery address within the supported area (Cavite).</p>
-                        <p><strong>3.4 Returns & Refunds.</strong> Medical equipment and consumables are generally not returnable once delivered unless defective. Disputes must be raised within 48 hours of delivery.</p>
+                        <p><strong>3.4 Returns & Refunds.</strong> Medical equipment and consumables are generally not returnable once delivered unless defective. Disputes must be raised within 48 hours of delivery. <strong>All authorized refunds will be credited solely to your MedEquip Wallet. No direct refunds to bank accounts, credit cards, or other external payment methods will be issued.</strong></p>
                         <p><strong>3.5 Wallet & Payments.</strong> Wallet top-ups are non-refundable except under exceptional circumstances approved by MedEquip Admin. COD payments must be made in full at the time of delivery.</p>
                         <p><strong>3.6 Prohibited Use.</strong> You may not resell products purchased through MedEquip without a valid distributor account and approval from the platform.</p>
                     </div>
@@ -61,7 +61,7 @@
 
                 <section>
                     <h3 class="font-bold text-gray-900 mb-2 text-sm">5. Privacy & Data</h3>
-                    <p class="text-xs text-gray-600">MedEquip collects and processes personal data in accordance with the Philippine Data Privacy Act of 2012 (RA 10173). Your data is used solely for platform operations and will not be sold to third parties. By using MedEquip you consent to our Privacy Policy.</p>
+                    <p class="text-xs text-gray-600">MedEquip collects and processes personal data in accordance with the Philippine Data Privacy Act of 2012 (RA 10173). Your data is used solely for platform operations and will not be sold to third parties. <strong>To ensure community safety, reported chats may be reviewed by MedEquip administrators.</strong> By using MedEquip you consent to our Privacy Policy.</p>
                 </section>
 
                 <section>

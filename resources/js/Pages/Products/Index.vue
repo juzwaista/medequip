@@ -283,98 +283,16 @@
 
     <!-- Product Grid -->
     <div v-if="products.data.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6 auto-rows-fr">
-        <div
-            v-for="product in products.data"
-            :key="product.id"
-            class="group bg-white rounded-lg sm:rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col h-full min-h-0"
-        >
-            <Link :href="`/products/${product.id}`" class="block flex-shrink-0 relative border-b border-slate-100">
-                <div class="relative h-36 sm:h-48 md:h-60 lg:h-72 bg-slate-50 overflow-hidden p-2 sm:p-4 md:p-7 flex items-center justify-center">
-                    <img
-                        v-if="product.image_url"
-                        :src="product.image_url"
-                        :alt="product.name"
-                        class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div v-else class="flex flex-col items-center justify-center text-slate-300">
-                        <svg class="h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span class="text-xs font-medium">No Image</span>
-                    </div>
-                    
-                    <div v-if="product.wholesale_price" class="absolute top-1.5 left-1.5 sm:top-3 sm:left-3 bg-indigo-600 text-white text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 rounded sm:rounded-md font-black shadow-md border border-indigo-400/30">
-                        Wholesale
-                    </div>
-
-                    <!-- Suspension Badge -->
-                    <div v-if="product.distributor.is_suspended" class="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 transition-opacity group-hover:bg-white/40">
-                        <span class="bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg transform -rotate-12 border-2 border-white">
-                            Seller Suspended
-                        </span>
-                    </div>
-                </div>
-            </Link>
-
-            <div class="p-2.5 sm:p-4 md:p-5 flex flex-col flex-1 min-w-0 min-h-[6.5rem] sm:min-h-[7.5rem] md:min-h-[8rem]">
-                <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider sm:tracking-widest truncate">{{ product.brand || 'Generic' }}</p>
-                
-                <Link :href="`/products/${product.id}`" class="block mb-1.5 sm:mb-2 group/title min-w-0">
-                    <h3 class="font-bold text-slate-900 group-hover/title:text-blue-600 transition-colors line-clamp-2 leading-snug text-xs sm:text-base">
-                        {{ product.name }}
-                    </h3>
-                </Link>
-                
-                <div class="text-[10px] sm:text-xs text-slate-500 mb-1.5 sm:mb-2 flex items-center gap-1 mt-0.5 min-w-0">
-                    <span class="text-slate-400 flex-shrink-0">Sold by:</span>
-                    <Link
-                        :href="`/seller/${product.distributor.slug}`"
-                        class="font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate min-w-0 block"
-                    >
-                        {{ product.distributor.company_name }}
-                    </Link>
-                </div>
-
-                <div v-if="product.reviews_count > 0" class="flex items-center gap-1 mb-1.5 sm:mb-2">
-                    <div class="flex items-center">
-                        <svg
-                            v-for="s in 5"
-                            :key="s"
-                            class="w-3 h-3 sm:w-3.5 sm:h-3.5"
-                            :class="s <= Math.round(product.reviews_avg_stars || 0) ? 'text-amber-400' : 'text-slate-200'"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                        >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
-                    </div>
-                    <span class="text-[10px] sm:text-xs text-slate-500 font-medium">
-                        {{ Number(product.reviews_avg_stars || 0).toFixed(1) }}
-                        <span class="text-slate-400">({{ product.reviews_count }})</span>
-                    </span>
-                </div>
-
-                <div class="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3 mt-auto">
-                    <div class="min-w-0">
-                        <span class="text-sm sm:text-xl font-black text-slate-900 tabular-nums">
-                            ₱{{ Number(product.base_price).toLocaleString() }}
-                        </span>
-                        <p v-if="product.wholesale_price" class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                            <span class="font-bold text-indigo-600">₱{{ Number(product.wholesale_price).toLocaleString() }}</span>
-                            <span class="hidden sm:inline"> wholesale, min. {{ product.wholesale_min_qty }}</span>
-                            <span class="sm:hidden"> / min {{ product.wholesale_min_qty }}</span>
-                        </p>
-                    </div>
-                    
-                    <span class="flex-shrink-0 inline-flex items-center self-start text-[9px] sm:text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full font-bold border border-emerald-100">
-                        <span class="w-1 h-1 bg-emerald-500 rounded-full mr-1 sm:mr-1.5 flex-shrink-0"></span>
-                        <span class="hidden sm:inline">In Stock</span>
-                        <span class="sm:hidden">Stock</span>
-                    </span>
-                </div>
-
-            </div>
-        </div>
+        <ProductCard 
+            v-for="product in products.data" 
+            :key="product.id" 
+            :product="product"
+            :showWholesale="true"
+            :showStock="true"
+            :showSeller="true"
+            :showCategory="false"
+            @add-to-cart="addToCart"
+        />
     </div>
 
     <!-- No products fallback -->
@@ -426,6 +344,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import ProductCard from '@/Components/ProductCard.vue';
 
 const props = defineProps({
     products: Object,

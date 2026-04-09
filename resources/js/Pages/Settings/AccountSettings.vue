@@ -123,6 +123,33 @@
                                         </p>
                                     </div>
                                 </div>
+
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Tax Identification Number (TIN)</label>
+                                    <input 
+                                        v-model="profileForm.tin"
+                                        type="text"
+                                        @input="formatTIN"
+                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        placeholder="000-000-000-000"
+                                    />
+                                    <p class="text-[11px] text-gray-400 mt-2 font-medium italic">Philippine format: 000-000-000-000</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Contact Number *</label>
+                                    <input 
+                                        v-model="profileForm.phone_number"
+                                        type="tel"
+                                        pattern="09[0-9]{9}"
+                                        maxlength="11"
+                                        @input="sanitizePhoneNumber"
+                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        placeholder="09123456789"
+                                        required
+                                    />
+                                    <p class="text-[11px] text-gray-400 mt-2 font-medium italic">11-digit starting with 09</p>
+                                </div>
                             </div>
 
                             <div class="mt-8 flex justify-end">
@@ -347,6 +374,8 @@ const profileForm = reactive({
     name: props.user.name,
     username: props.user.username || '',
     email: props.user.email,
+    phone_number: props.user.phone_number || '',
+    tin: props.user.tin || '',
 });
 
 const passwordForm = reactive({
@@ -437,6 +466,31 @@ const deactivateAccount = () => {
             showDeactivateConfirmation.value = false;
         }
     });
+};
+
+const formatTIN = (e) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove all non-digits
+    
+    // Limit to 12 digits
+    if (value.length > 12) {
+        value = value.slice(0, 12);
+    }
+    
+    let formatted = '';
+    for (let i = 0; i < value.length; i++) {
+        if (i > 0 && i % 3 === 0) {
+            formatted += '-';
+        }
+        formatted += value[i];
+    }
+    
+    profileForm.tin = formatted;
+};
+
+const sanitizePhoneNumber = (e) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove all non-digits
+    if (value.length > 11) value = value.slice(0, 11);
+    profileForm.phone_number = value;
 };
 
 const formatDate = (dateString) => {

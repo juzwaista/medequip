@@ -12,6 +12,33 @@
                 </Link>
             </div>
 
+            <!-- Return to Sender Alert -->
+            <div v-if="order.delivery?.is_return_to_sender" class="mb-6 bg-rose-50 border-2 border-rose-200 rounded-xl p-6 shadow-sm">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15l-4 4m0 0l-4-4m4 4V9m0 0a2 2 0 012-2h2m-4 0a2 2 0 00-2 2v2m-6 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-rose-900 uppercase tracking-tight">Return To Sender</h3>
+                        <p class="text-sm text-rose-800 mt-1 font-medium italic">"{{ order.delivery.failure_note || 'Package could not be delivered after 2 attempts.' }}"</p>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-1 rounded-md border border-rose-200 uppercase">Reason: {{ order.delivery.failure_reason.replace('_', ' ') }}</span>
+                            <span class="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-1 rounded-md border border-rose-200 uppercase">Attempts: {{ order.delivery.attempts_count }}</span>
+                            <span class="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-1 rounded-md border border-rose-200 uppercase">Last Effort: {{ formatDate(order.delivery.last_attempt_at) }}</span>
+                        </div>
+                        <div v-if="order.delivery.proof_of_attempt_path" class="mt-4">
+                            <p class="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-1.5">Latest Attempt Evidence</p>
+                            <a :href="`/storage/${order.delivery.proof_of_attempt_path}`" target="_blank" class="inline-block group relative">
+                                <img :src="`/storage/${order.delivery.proof_of_attempt_path}`" class="max-w-[200px] rounded-lg border-2 border-rose-200 shadow-sm group-hover:opacity-90 transition object-cover h-32 w-48" />
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                    <span class="bg-black/50 text-white px-2 py-1 rounded-full text-[10px] font-bold uppercase">View Proof</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Error Messages -->
             <div v-if="$page.props.errors && Object.keys($page.props.errors).length > 0" class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
                 <div class="flex items-start">
@@ -42,13 +69,14 @@
                                     'bg-yellow-100 text-yellow-800': order.status === 'pending',
                                     'bg-blue-100 text-blue-800': order.status === 'approved',
                                     'bg-purple-100 text-purple-800': order.status === 'packed',
+                                    'bg-emerald-100 text-emerald-800 border border-emerald-200': order.status === 'ready_for_pickup',
                                     'bg-indigo-100 text-indigo-800': order.status === 'shipped',
                                     'bg-green-100 text-green-800': order.status === 'delivered',
                                     'bg-red-100 text-red-800': order.status === 'rejected' || order.status === 'cancelled',
                                 }"
                                 class="px-4 py-2 rounded-full text-sm font-semibold capitalize self-start shrink-0"
                             >
-                                {{ order.status }}
+                                {{ order.status.replace(/_/g, ' ') }}
                             </span>
                         </div>
 
@@ -61,10 +89,20 @@
                             <div class="min-w-0">
                                 <p class="text-sm text-gray-600">Contact Number</p>
                                 <p class="font-semibold text-gray-900">{{ order.contact_number }}</p>
+                                <p v-if="order.customer?.phone_number && order.customer.phone_number !== order.contact_number" class="text-xs text-blue-600 font-medium">
+                                    Profile: {{ order.customer.phone_number }}
+                                </p>
                             </div>
                             <div class="sm:col-span-2 min-w-0">
-                                <p class="text-sm text-gray-600">Delivery Address</p>
-                                <p class="font-semibold text-gray-900 break-words">{{ order.delivery_address }}</p>
+                                <p class="text-sm text-gray-600">
+                                    {{ order.fulfillment_method === 'pickup' ? 'Pick-up Location (Store)' : 'Delivery Address' }}
+                                </p>
+                                <p class="font-semibold text-gray-900 break-words">
+                                    {{ order.fulfillment_method === 'pickup' ? order.distributor.address : order.delivery_address }}
+                                </p>
+                                <p v-if="order.fulfillment_method === 'pickup'" class="text-xs text-emerald-600 font-bold mt-1 uppercase tracking-tighter">
+                                    Customer has chosen Store Pick-up
+                                </p>
                             </div>
                             <div v-if="order.notes" class="sm:col-span-2 min-w-0">
                                 <p class="text-sm text-gray-600">Customer Notes</p>
@@ -74,6 +112,73 @@
                     </div>
 
 
+
+                    <!-- Discount Review -->
+                    <div
+                        v-if="order.discount_status === 'pending'"
+                        class="bg-white rounded-xl shadow-md p-6 border border-blue-200"
+                    >
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Discount Request Review</h2>
+                        <div class="bg-blue-50 rounded-lg p-3 mb-4">
+                            <p class="text-sm font-bold text-blue-900 capitalize">{{ order.discount_type }} Discount Requested</p>
+                            <p class="text-xs text-blue-700 mt-1">Verify that the ID photo matches the name and valid ID number below.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Name on ID</p>
+                                <p class="text-sm font-bold text-gray-900 uppercase flex items-center gap-2">
+                                    {{ order.discount_id_name }}
+                                    <span v-if="order.ocr_results?.discount_id_image?.extracted_name" 
+                                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter"
+                                          :class="order.ocr_results.discount_id_image.extracted_name.toLowerCase() === order.discount_id_name.toLowerCase() 
+                                              ? 'bg-emerald-100 text-emerald-700' 
+                                              : 'bg-rose-100 text-rose-700 border border-rose-200'"
+                                    >
+                                        {{ order.ocr_results.discount_id_image.extracted_name.toLowerCase() === order.discount_id_name.toLowerCase() ? 'OCR Match' : 'OCR Mismatch' }}
+                                    </span>
+                                </p>
+                                <p v-if="order.ocr_results?.discount_id_image?.extracted_name && order.ocr_results.discount_id_image.extracted_name.toLowerCase() !== order.discount_id_name.toLowerCase()" 
+                                   class="text-[9px] text-rose-600 font-bold mt-1 italic">
+                                    OCR Extracted: "{{ order.ocr_results.discount_id_image.extracted_name }}"
+                                </p>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID Number</p>
+                                <p class="text-sm font-bold text-gray-900 font-mono">{{ order.discount_id_number }}</p>
+                            </div>
+                        </div>
+
+                        <div v-if="order.discount_id_image_path" class="mb-4">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">ID Photo (Click to enlarge)</p>
+                            <a :href="`/storage/${order.discount_id_image_path}`" target="_blank" class="inline-block group relative">
+                                <img :src="`/storage/${order.discount_id_image_path}`" class="max-w-xs rounded-lg border shadow-sm group-hover:opacity-90 transition" />
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                    <span class="bg-black/50 text-white px-3 py-1 rounded-full text-xs font-bold">Open Full Size</span>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                            <button
+                                @click="approveDiscount"
+                                :disabled="discountProcessing"
+                                class="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+                            >
+                                Approve Discount
+                            </button>
+                            <form @submit.prevent="rejectDiscount" class="flex-1 flex gap-2">
+                                <input v-model="discountRejectReason" required placeholder="Reason for rejection" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
+                                <button
+                                    type="submit"
+                                    :disabled="discountProcessing"
+                                    class="px-4 py-2 border-2 border-red-300 text-red-600 font-bold rounded-xl hover:bg-red-50 text-xs transition"
+                                >
+                                    Reject & Cancel
+                                </button>
+                            </form>
+                        </div>
+                    </div>
 
                     <!-- Prescription (Rx) review -->
                     <div
@@ -87,48 +192,99 @@
                         v-else-if="order.prescription_status === 'pending_review' && order.prescription_image_path"
                         class="bg-white rounded-xl shadow-md p-6 border border-indigo-200"
                     >
-                        <h2 class="text-xl font-bold text-gray-900 mb-2">Prescription review</h2>
-                        <p class="text-sm text-gray-600 mb-4">
-                            Approve if the prescription is valid. Rejecting cancels the order and releases reserved stock.
-                        </p>
-                        <a
-                            :href="`/storage/${order.prescription_image_path}`"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-block mb-4"
-                        >
-                            <img
-                                :src="`/storage/${order.prescription_image_path}`"
-                                alt="Prescription upload"
-                                class="max-w-full sm:max-w-md rounded-xl border border-gray-200 shadow-sm"
-                            />
-                            <span class="text-sm text-blue-600 font-medium mt-2 block">Open full size</span>
-                        </a>
-                        <div class="flex flex-col lg:flex-row gap-4 lg:items-start">
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Prescription Review</h2>
+                        <div class="bg-indigo-50 rounded-lg p-3 mb-4">
+                            <p class="text-sm font-bold text-indigo-900">Patient Verification Required</p>
+                            <p class="text-xs text-indigo-700 mt-1">Verify that the patient name on ID matches the prescription.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient Name</p>
+                                <p class="text-sm font-bold text-gray-900 uppercase flex items-center gap-2">
+                                    {{ order.prescription_patient_name }}
+                                    <span v-if="order.ocr_results?.prescription_id_image?.extracted_name" 
+                                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter"
+                                          :class="order.ocr_results.prescription_id_image.extracted_name.toLowerCase() === order.prescription_patient_name.toLowerCase() 
+                                              ? 'bg-emerald-100 text-emerald-700' 
+                                              : 'bg-rose-100 text-rose-700 border border-rose-200'"
+                                    >
+                                        {{ order.ocr_results.prescription_id_image.extracted_name.toLowerCase() === order.prescription_patient_name.toLowerCase() ? 'OCR Match' : 'OCR Mismatch' }}
+                                    </span>
+                                </p>
+                                <p v-if="order.ocr_results?.prescription_id_image?.extracted_name && order.ocr_results.prescription_id_image.extracted_name.toLowerCase() !== order.prescription_patient_name.toLowerCase()" 
+                                   class="text-[9px] text-rose-600 font-bold mt-1 italic">
+                                    OCR Extracted: "{{ order.ocr_results.prescription_id_image.extracted_name }}"
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 items-start">
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Prescription Photo</p>
+                                <a
+                                    :href="`/storage/${order.prescription_image_path}`"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-block group relative w-full"
+                                >
+                                    <img
+                                        :src="`/storage/${order.prescription_image_path}`"
+                                        alt="Prescription upload"
+                                        class="w-full rounded-xl border border-gray-200 shadow-sm group-hover:opacity-90 transition"
+                                    />
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                        <span class="bg-black/50 text-white px-3 py-1 rounded-full text-xs font-bold">Open Full Size</span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div v-if="order.prescription_id_image_path">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Patient ID Photo</p>
+                                <a
+                                    :href="`/storage/${order.prescription_id_image_path}`"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-block group relative w-full"
+                                >
+                                    <img
+                                        :src="`/storage/${order.prescription_id_image_path}`"
+                                        alt="Patient ID upload"
+                                        class="w-full rounded-xl border border-gray-200 shadow-sm group-hover:opacity-90 transition"
+                                    />
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                        <span class="bg-black/50 text-white px-3 py-1 rounded-full text-xs font-bold">Open Full Size</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col lg:flex-row gap-4 lg:items-start pt-2 border-t border-gray-100 mt-4">
                             <button
                                 type="button"
                                 @click="approvePrescription"
                                 :disabled="rxProcessing"
-                                class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
+                                class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-700 transition shadow-md disabled:opacity-50"
                             >
-                                Approve prescription
+                                Approve Prescription
                             </button>
                             <form class="flex-1 space-y-2 max-w-lg" @submit.prevent="rejectPrescription">
-                                <label class="block text-sm font-semibold text-gray-700">Reject with reason</label>
-                                <textarea
-                                    v-model="rejectReason"
-                                    required
-                                    rows="2"
-                                    placeholder="e.g. Illegible, expired, wrong patient name…"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                />
-                                <button
-                                    type="submit"
-                                    :disabled="rxProcessing"
-                                    class="px-5 py-2.5 rounded-xl border-2 border-red-300 text-red-700 font-semibold hover:bg-red-50 disabled:opacity-50"
-                                >
-                                    Reject prescription
-                                </button>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest">Reject with reason</label>
+                                <div class="flex gap-2">
+                                    <textarea
+                                        v-model="rejectReason"
+                                        required
+                                        rows="1"
+                                        placeholder="e.g. Expired, wrong name..."
+                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <button
+                                        type="submit"
+                                        :disabled="rxProcessing"
+                                        class="px-5 py-2 rounded-xl border-2 border-red-200 text-red-600 font-bold hover:bg-red-50 transition disabled:opacity-50 text-sm"
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -184,6 +340,67 @@
                                 <div class="flex justify-between items-center pt-2 border-t">
                                     <span class="text-lg font-semibold text-gray-900">Total Amount</span>
                                     <span class="text-2xl font-bold text-blue-600">₱{{ Number(orderGrandTotal).toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Reviews & Disputes -->
+                    <div v-if="order.product_reviews && order.product_reviews.length > 0" class="bg-white rounded-xl shadow-md p-4 sm:p-6 overflow-hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg sm:text-xl font-bold text-gray-900">Customer Reviews</h2>
+                            <div class="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+                                <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span class="text-xs font-bold text-amber-700">Customer Feedback</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div v-for="review in order.product_reviews" :key="review.id" class="border-b last:border-0 pb-6 last:pb-0">
+                                <div class="flex flex-col sm:flex-row sm:justify-between items-start gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <div class="flex">
+                                                <svg v-for="n in 5" :key="n" class="w-4 h-4" :class="n <= review.stars ? 'text-amber-400' : 'text-gray-200'" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            </div>
+                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ review.product?.name }}</span>
+                                        </div>
+                                        <p class="text-gray-700 text-sm italic">"{{ review.body || 'No comment provided.' }}"</p>
+                                        <p class="text-[10px] text-gray-400 mt-2">Received on {{ formatDate(review.created_at) }}</p>
+                                    </div>
+
+                                    <!-- Dispute Status / Action -->
+                                    <div class="w-full sm:w-auto mt-3 sm:mt-0">
+                                        <div v-if="review.dispute_status === 'none'" class="flex justify-end">
+                                            <button 
+                                                @click="initiateDispute(review)"
+                                                class="text-xs font-bold text-rose-600 px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition flex items-center gap-1.5"
+                                            >
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                Dispute Review
+                                            </button>
+                                        </div>
+                                        <div v-else class="flex flex-col items-end gap-1">
+                                            <span 
+                                                class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter"
+                                                :class="{
+                                                    'bg-amber-100 text-amber-800 border border-amber-200': review.dispute_status === 'pending',
+                                                    'bg-green-100 text-green-800 border border-green-200': review.dispute_status === 'resolved',
+                                                    'bg-gray-100 text-gray-800 border border-gray-200': review.dispute_status === 'rejected',
+                                                }"
+                                            >
+                                                Dispute: {{ review.dispute_status }}
+                                            </span>
+                                            <p v-if="review.is_hidden" class="text-[9px] font-bold text-emerald-600 flex items-center gap-1">
+                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26a4 4 0 015.486 5.486L8.146 6.783s-.012-.007-.054-.03a.5.5 0 00-.123-.054c-.053-.016-.134-.029-.23-.045zm1.512 5.097l-.027-.027L4.78 6.94A11.025 11.025 0 002.613 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.666-.105 2.446-.302l-2.435-2.435a4 4 0 01-2.711-2.712z" clip-rule="evenodd"/></svg>
+                                                Review hidden by admin
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="review.dispute_reason && review.dispute_status !== 'none'" class="mt-3 bg-gray-50 rounded-lg p-3 border border-gray-100 italic">
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Your Dispute Reason</p>
+                                    <p class="text-xs text-gray-600 leading-relaxed">{{ review.dispute_reason }}</p>
                                 </div>
                             </div>
                         </div>
@@ -249,7 +466,7 @@
                         <form @submit.prevent="updateStatus">
                             <select 
                                 v-model="statusForm.status"
-                                class="w-full px-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3 min-h-[48px] text-base sm:text-sm touch-manipulation"
+                                class="w-full px-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4 min-h-[48px] text-base sm:text-sm touch-manipulation"
                             >
                                 <option :value="order.status" disabled>{{ order.status }} (current)</option>
                                 <option
@@ -260,18 +477,101 @@
                                     {{ next.charAt(0).toUpperCase() + next.slice(1) }}
                                 </option>
                             </select>
+
+                            <!-- Packaging Photo Uploads -->
+                            <div v-if="statusForm.status === 'packed'" class="mb-5 space-y-4 p-4 rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/50">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span class="text-xs font-bold text-blue-800 uppercase tracking-widest">Evidence Required</span>
+                                </div>
+                                <p class="text-[10px] text-blue-700 leading-tight mb-3">To protect your shop, please upload photos of the items before and after packing. These will be sent to the customer.</p>
+
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Items Condition (Before Packing) <span class="text-red-500">*</span></label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        required
+                                        @change="e => statusForm.packaging_before = e.target.files[0]"
+                                        class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Ready Package (After Packed) <span class="text-red-500">*</span></label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        required
+                                        @change="e => statusForm.packaging_after = e.target.files[0]"
+                                        class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                                    />
+                                </div>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <input 
+                                        type="checkbox" 
+                                        id="is_fragile"
+                                        v-model="statusForm.is_fragile"
+                                        class="rounded border-gray-300 text-rose-600 focus:ring-rose-500 h-4 w-4"
+                                    />
+                                    <label for="is_fragile" class="text-xs font-bold text-rose-700 flex items-center gap-1.5 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        Fragile Package (Handle with care)
+                                    </label>
+                                </div>
+                            </div>
+
                             <button 
                                 type="submit"
                                 :disabled="statusForm.status === order.status || updating"
-                                class="w-full bg-blue-600 text-white px-4 py-3.5 sm:py-2 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation"
+                                class="w-full bg-blue-600 text-white px-4 py-3.5 sm:py-2 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation shadow-md"
                             >
-                                {{ updating ? 'Updating...' : 'Update Status' }}
+                                <span v-if="updating" class="flex items-center justify-center gap-2">
+                                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                    Updating...
+                                </span>
+                                <span v-else>Update Status</span>
                             </button>
                         </form>
                     </div>
 
-                    <!-- Delivery Info -->
-                    <div v-if="order.delivery" class="bg-white rounded-xl shadow-md p-4 sm:p-6 overflow-hidden">
+                    <!-- Fragile Badge -->
+                    <div v-if="order.is_fragile" class="bg-rose-50 border-2 border-rose-200 rounded-xl p-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-rose-800 uppercase tracking-widest leading-none mb-0.5">Handle with Care</p>
+                            <p class="text-sm font-bold text-rose-900">Fragile Contents Flagged</p>
+                        </div>
+                    </div>
+
+                    <!-- Display existing packaging photos if available -->
+                    <div v-if="order.packaging_before_image_path || order.packaging_after_image_path" class="bg-white rounded-xl shadow-md p-4 sm:p-6">
+                        <h3 class="font-bold text-gray-900 mb-4">Packaging Evidence</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div v-if="order.packaging_before_image_path">
+                                <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Before Packing</p>
+                                <a :href="`/storage/${order.packaging_before_image_path}`" target="_blank" class="block group relative">
+                                    <img :src="`/storage/${order.packaging_before_image_path}`" class="w-full h-24 object-cover rounded-lg border group-hover:opacity-90 transition" />
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                        <span class="bg-black/50 text-white px-2 py-0.5 rounded-full text-[8px] font-bold">View</span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div v-if="order.packaging_after_image_path">
+                                <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">After Packed</p>
+                                <a :href="`/storage/${order.packaging_after_image_path}`" target="_blank" class="block group relative">
+                                    <img :src="`/storage/${order.packaging_after_image_path}`" class="w-full h-24 object-cover rounded-lg border group-hover:opacity-90 transition" />
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                        <span class="bg-black/50 text-white px-2 py-0.5 rounded-full text-[8px] font-bold">View</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Info (Only if not pickup) -->
+                    <div v-if="order.delivery && order.fulfillment_method !== 'pickup'" class="bg-white rounded-xl shadow-md p-4 sm:p-6 overflow-hidden">
                         <h3 class="font-bold text-gray-900 mb-4">Delivery</h3>
                         <div class="space-y-3">
                             <div>
@@ -285,6 +585,9 @@
                                     <span v-if="order.delivery.courier?.user?.name" class="text-gray-500 font-normal">
                                         ({{ order.delivery.courier.user.name }})
                                     </span>
+                                </p>
+                                <p v-if="order.delivery.courier?.user?.phone_number" class="text-sm text-blue-600 font-medium mt-1 uppercase">
+                                    📞 {{ order.delivery.courier.user.phone_number }}
                                 </p>
                             </div>
                             <div>
@@ -467,6 +770,12 @@
                             </div>
                         </div>
 
+                        <!-- Fragile Flag (Waybill) -->
+                        <div v-if="order.is_fragile" class="border-2 border-rose-600 rounded-lg text-center py-2 mb-5 bg-rose-50">
+                            <p class="text-sm font-black uppercase tracking-[.25em] text-rose-600">⚠ FRAGILE ⚠</p>
+                            <p class="text-[10px] text-rose-500 font-bold uppercase mt-0.5">Handle with extreme care</p>
+                        </div>
+
                         <!-- Sender / Recipient -->
                         <div class="grid grid-cols-2 gap-0 border border-black rounded-lg overflow-hidden mb-5">
                             <div class="p-3 border-r border-black">
@@ -530,26 +839,34 @@ const props = defineProps({
 const page = usePage();
 
 // Valid status transitions (mirrors server-side state machine)
-const transitionMap = {
-    pending:   ['approved', 'rejected', 'cancelled'],
-    approved:  ['packed', 'cancelled'],
-    packed:    [],
-    shipped:   [],
-    delivered: [],
-    cancelled: [],
-    rejected:  [],
-};
+const transitionMap = computed(() => {
+    const isPickup = props.order.fulfillment_method === 'pickup';
+    
+    return {
+        pending:   ['approved', 'rejected', 'cancelled'],
+        approved:  [isPickup ? 'ready_for_pickup' : 'packed', 'cancelled'],
+        packed:    [],
+        ready_for_pickup: [],
+        shipped:   [],
+        delivered: [],
+        cancelled: [],
+        rejected:  [],
+    };
+});
 
-const validNextStatuses = computed(() => transitionMap[props.order.status] ?? []);
+const validNextStatuses = computed(() => transitionMap.value[props.order.status] ?? []);
 
 const statusForm = reactive({
     status: validNextStatuses.value[0] ?? props.order.status,
+    is_fragile: props.order.is_fragile || false,
 });
 
 const updating = ref(false);
 const showWaybill = ref(false);
 const rxProcessing = ref(false);
 const rejectReason = ref('');
+const discountProcessing = ref(false);
+const discountRejectReason = ref('');
 const confirmingRemittance = ref(false);
 
 const waybillQrSize = ref(200);
@@ -583,6 +900,24 @@ const rejectPrescription = () => {
         onFinish: () => { rxProcessing.value = false; },
     });
 };
+
+const approveDiscount = () => {
+    if (!confirm('Approve this SC/PWD discount request?')) return;
+    discountProcessing.value = true;
+    router.post(`/owner/orders/${props.order.id}/discount/approve`, {}, {
+        preserveScroll: true,
+        onFinish: () => { discountProcessing.value = false; },
+    });
+};
+
+const rejectDiscount = () => {
+    if (!confirm('Reject this discount? This will cancel the order as per system requirements.')) return;
+    discountProcessing.value = true;
+    router.post(`/owner/orders/${props.order.id}/discount/reject`, { reason: discountRejectReason.value }, {
+        preserveScroll: true,
+        onFinish: () => { discountProcessing.value = false; },
+    });
+};
 const orderSubtotal = computed(() => Number(props.order?.subtotal || 0));
 const orderShippingFee = computed(() => Number(props.order?.shipping_fee || 0));
 const orderGrandTotal = computed(() => {
@@ -590,6 +925,29 @@ const orderGrandTotal = computed(() => {
     if (total > 0) return total;
     return orderSubtotal.value + orderShippingFee.value;
 });
+
+const initiateDispute = (review) => {
+    const reason = prompt('Why are you disputing this review? (e.g., Unfair rating despite perfect condition shown in packaging photos, malicious intent, etc.)');
+    if (!reason || reason.trim() === '') return;
+    
+    router.post(`/owner/reviews/${review.id}/dispute`, { reason }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            alert('Your dispute has been submitted and will be reviewed by our admin team.');
+        }
+    });
+};
+
+const formatDate = (date) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleString('en-PH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
 
 const printWaybill = () => {
     window.print();
@@ -610,7 +968,6 @@ onUnmounted(() => {
 });
 
 const updateStatus = () => {
-    const oldStatus = statusForm.status;
     const newStatus = statusForm.status;
 
     // Confirm destructive actions
@@ -620,31 +977,30 @@ const updateStatus = () => {
         }
     }
 
+    if (newStatus === 'packed' && (!statusForm.packaging_before || !statusForm.packaging_after)) {
+        alert('Please upload both "Before Packing" and "After Packed" photos to protect your shop.');
+        return;
+    }
+
     updating.value = true;
     
-    router.patch(`/owner/orders/${props.order.id}/status`, statusForm, {
+    router.post(`/owner/orders/${props.order.id}/status`, {
+        _method: 'patch',
+        ...statusForm
+    }, {
+        forceFormData: true,
         preserveScroll: true,
         onSuccess: () => {
+            // Reset files
+            delete statusForm.packaging_before;
+            delete statusForm.packaging_after;
         },
         onError: (errors) => {
-            console.error('[OwnerOrderShow] Status update failed', {
-                order_id: props.order.id,
-                errors: errors
-            });
+            console.error('[OwnerOrderShow] Status update failed', errors);
         },
         onFinish: () => {
             updating.value = false;
         }
-    });
-};
-
-const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
     });
 };
 </script>

@@ -20,15 +20,18 @@
             </button>
         </div>
         
-        <div class="absolute bottom-2 left-2 right-2 z-[400]">
-            <p v-if="locationError" class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded shadow-sm border border-red-200 text-center font-medium">
-                {{ locationError }}
+        <div v-if="locationError" class="absolute top-14 left-1/2 -translate-x-1/2 z-[400] w-11/12 max-w-sm">
+            <p class="text-xs text-red-700 bg-red-50/95 backdrop-blur px-3 py-2 rounded-lg shadow-lg border border-red-200 text-center font-bold animate-bounce">
+                ⚠️ {{ locationError }}
             </p>
-            <p v-else-if="isGeocoding" class="text-[11px] text-blue-700 bg-blue-50/90 backdrop-blur px-2 py-1 rounded shadow-sm text-center animate-pulse">
+        </div>
+
+        <div class="absolute bottom-2 left-2 right-2 z-[400]">
+            <p v-if="isGeocoding" class="text-[11px] text-blue-700 bg-blue-50/90 backdrop-blur px-2 py-1 rounded shadow-sm text-center animate-pulse">
                 📍 Detecting location...
             </p>
             <p v-else class="text-[11px] text-gray-700 bg-white/90 backdrop-blur px-2 py-1 rounded shadow-sm text-center">
-                Drag the marker or click on the map to set the exact pin location.
+                <strong>Cavite Service Area Only.</strong> Drag the marker or click inside the red border.
             </p>
         </div>
     </div>
@@ -99,9 +102,23 @@ const initMap = () => {
     const initialLat = props.lat ? parseFloat(props.lat) : props.defaultLat;
     const initialLng = props.lng ? parseFloat(props.lng) : props.defaultLng;
 
+    const caviteBounds = [
+        [14.08, 120.62], // Southwest (refined for land-alignment)
+        [14.52, 121.08]  // Northeast (refined for land-alignment)
+    ];
+
+    // Looser view bounds to avoid feeling "trapped"
+    const viewBounds = [
+        [13.50, 120.00], 
+        [15.00, 121.50]
+    ];
+
     map = L.map(mapContainer.value, {
         center: [initialLat, initialLng],
         zoom: props.lat ? 16 : 11,
+        minZoom: 9,
+        maxBounds: viewBounds,
+        maxBoundsViscosity: 0.5, 
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -109,28 +126,62 @@ const initMap = () => {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
+    // Visual boundary - thick red dashed line
+    L.rectangle(caviteBounds, {
+        color: "#ef4444", 
+        weight: 5,
+        fill: true,
+        fillOpacity: 0.02,
+        dashArray: '10, 10',
+        interactive: false
+    }).addTo(map);
+
     if (props.lat && props.lng) {
         setMarker(initialLat, initialLng);
     }
 
     map.on('click', (e) => {
-        setMarker(e.latlng.lat, e.latlng.lng);
-        emitCoordinates(e.latlng.lat, e.latlng.lng);
-        reverseGeocode(e.latlng.lat, e.latlng.lng);
+        const wasSuccessful = setMarker(e.latlng.lat, e.latlng.lng);
+        if (wasSuccessful) {
+            emitCoordinates(e.latlng.lat, e.latlng.lng);
+            reverseGeocode(e.latlng.lat, e.latlng.lng);
+        }
     });
 };
 
 const setMarker = (lat, lng) => {
+    // Validate bounds (Lenient)
+    const isInside = lat >= 14.08 && lat <= 14.52 && lng >= 120.62 && lng <= 121.08;
+    
+    if (!isInside) {
+        // Find the last valid position or use default
+        const resetLat = props.lat ? parseFloat(props.lat) : props.defaultLat;
+        const resetLng = props.lng ? parseFloat(props.lng) : props.defaultLng;
+        
+        if (marker) {
+            marker.setLatLng([resetLat, resetLng]);
+        }
+        
+        locationError.value = "SERVICE AREA VIOLATION: Delivery is only available within Cavite province.";
+        if (window.errorTimeout) clearTimeout(window.errorTimeout);
+        window.errorTimeout = setTimeout(() => { locationError.value = ''; }, 5000);
+        return false;
+    }
+
     if (marker) {
         marker.setLatLng([lat, lng]);
     } else {
         marker = L.marker([lat, lng], { draggable: true }).addTo(map);
         marker.on('dragend', (e) => {
             const pos = marker.getLatLng();
-            emitCoordinates(pos.lat, pos.lng);
-            reverseGeocode(pos.lat, pos.lng);
+            const wasSuccessful = setMarker(pos.lat, pos.lng);
+            if (wasSuccessful) {
+                emitCoordinates(pos.lat, pos.lng);
+                reverseGeocode(pos.lat, pos.lng);
+            }
         });
     }
+    return true;
 };
 
 const emitCoordinates = (lat, lng) => {
@@ -150,6 +201,27 @@ const reverseGeocode = async (lat, lng) => {
         if (!res.ok) return;
         const data = await res.json();
         const addr = data.address || {};
+        
+        // Final strict check: Must be in Cavite province (not sea or nearby towns)
+        const province = addr.province || '';
+        const state = addr.state || '';
+        const county = addr.county || '';
+        
+        const isOfficialCavite = 
+            province.toLowerCase().includes('cavite') || 
+            state.toLowerCase().includes('cavite') ||
+            county.toLowerCase().includes('cavite');
+
+        if (!isOfficialCavite) {
+            locationError.value = "OFFICIAL LIMIT: This specific location is outside Cavite province.";
+            // Reset to last valid or default
+            const resetLat = props.lat ? parseFloat(props.lat) : props.defaultLat;
+            const resetLng = props.lng ? parseFloat(props.lng) : props.defaultLng;
+            if (marker) marker.setLatLng([resetLat, resetLng]);
+            if (window.errorTimeout) clearTimeout(window.errorTimeout);
+            window.errorTimeout = setTimeout(() => { locationError.value = ''; }, 5000);
+            return;
+        }
 
         // Barangay: OSM uses various field names for PH barangays
         const barangay = addr.suburb
@@ -179,7 +251,7 @@ const forwardGeocode = async (query) => {
     if (!query || !map) return;
     try {
         const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=ph`,
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=ph&viewbox=120.62,14.52,121.08,14.08&bounded=1`,
             { headers: { 'Accept-Language': 'en' } }
         );
         if (!res.ok) return;
@@ -214,6 +286,13 @@ const getUserLocation = () => {
             isLocating.value = false;
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
+            
+            // Validate if inside Cavite bounds
+            if (lat < 14.08 || lat > 14.52 || lng < 120.62 || lng > 121.08) {
+                locationError.value = "Your current location is outside the supported service area (Cavite).";
+                return;
+            }
+
             map.flyTo([lat, lng], 17);
             setMarker(lat, lng);
             emitCoordinates(lat, lng);

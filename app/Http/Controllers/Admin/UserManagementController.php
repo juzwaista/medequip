@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\AuditLog;
 use App\Models\AdminInvitation;
 use App\Notifications\AdminInvitation as AdminInvitationNotification;
 use Illuminate\Http\Request;
@@ -109,10 +110,9 @@ class UserManagementController extends Controller
             ->notify(new AdminInvitationNotification($rawToken, $request->email));
 
         // Audit Log
-        Log::info('Admin Invitation Issued', [
+        AuditLog::log('admin_invitation_issued', $invitation, [
             'invited_email' => $request->email,
-            'issued_by' => $currentUser->id,
-            'invitation_id' => $invitation->id,
+            'expires_at' => $invitation->expires_at->toIso8601String(),
         ]);
 
         return redirect()->back()->with('success', 'Admin invitation sent successfully to ' . $request->email);
@@ -138,7 +138,13 @@ class UserManagementController extends Controller
             return redirect()->back()->with('error', 'Super Admin role cannot be changed.');
         }
 
+        $oldRole = $user->role;
         $user->forceFill(['role' => $validated['role']])->save();
+
+        AuditLog::log('user_role_updated', $user, [
+            'old_role' => $oldRole,
+            'new_role' => $validated['role']
+        ]);
 
         return redirect()->back()->with('success', 'User role updated successfully.');
     }
@@ -167,6 +173,12 @@ class UserManagementController extends Controller
             'ban_reason' => $validated['reason'],
         ])->save();
 
+        AuditLog::log('user_banned', $user, [
+            'reason' => $validated['reason'],
+            'name' => $user->name,
+            'email' => $user->email
+        ]);
+
         return redirect()->back()->with('success', "User \"{$user->name}\" has been banned.");
     }
 
@@ -185,6 +197,11 @@ class UserManagementController extends Controller
             'banned_at' => null,
             'ban_reason' => null,
         ])->save();
+
+        AuditLog::log('user_unbanned', $user, [
+            'name' => $user->name,
+            'email' => $user->email
+        ]);
 
         return redirect()->back()->with('success', "User \"{$user->name}\" has been unbanned.");
     }

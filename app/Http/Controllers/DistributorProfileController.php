@@ -61,6 +61,7 @@ class DistributorProfileController extends Controller
 
         $shopReviewAgg = ProductReview::query()
             ->whereIn('product_id', Product::where('distributor_id', $distributorId)->select('id'))
+            ->where('is_hidden', false)
             ->selectRaw('AVG(stars) as avg_stars, COUNT(*) as review_count')
             ->first();
 
@@ -104,31 +105,30 @@ class DistributorProfileController extends Controller
                 $this->applyPublicListingConstraints($q);
             }
 
-            return $q->with(['images', 'category', 'inventory']);
+            return $q->with(['images', 'category', 'inventory'])
+                ->withSum(['orderItems as units_sold' => function ($sq) {
+                    $sq->whereHas('order', fn ($oq) => $oq->whereIn('status', ['completed', 'delivered']));
+                }], 'quantity');
         };
 
         // 1. Recommended (Featured first)
         $featured = $baseQuery()
             ->where('is_featured', true)
-            ->withAvg('reviews', 'stars')
-            ->withCount('reviews')
+            ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
+            ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)])
             ->limit(8)
             ->get();
 
         if ($featured->isNotEmpty()) {
             $recommended = $featured;
         } else {
-            // New shops won't have reviews yet, so we just show the latest products
-            // instead of filtering for having reviews_count > 0.
             $recommended = $baseQuery()
-                ->withAvg('reviews', 'stars')
-                ->withCount('reviews')
-                ->latest()
+                ->orderByPopularity()
                 ->limit(8)
                 ->get();
         }
 
-        // 2. Top Sellers (Sales first, then latest fallback)
+        // 2. Top Sellers (Popularity first fallback)
         $topSellerQuery = DB::table('order_items')
             ->join('products', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
@@ -157,8 +157,8 @@ class DistributorProfileController extends Controller
 
         if (! empty($topSellerIds)) {
             $topSellers = $baseQuery()
-                ->withAvg('reviews', 'stars')
-                ->withCount('reviews')
+                ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
+                ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)])
                 ->whereIn('id', $topSellerIds)
                 ->get()
                 ->sortBy(fn ($p) => array_search($p->id, $topSellerIds))
@@ -166,17 +166,13 @@ class DistributorProfileController extends Controller
 
             if ($topSellers->isEmpty()) {
                 $topSellers = $baseQuery()
-                    ->withAvg('reviews', 'stars')
-                    ->withCount('reviews')
-                    ->latest()
+                    ->orderByPopularity()
                     ->limit(8)
                     ->get();
             }
         } else {
             $topSellers = $baseQuery()
-                ->withAvg('reviews', 'stars')
-                ->withCount('reviews')
-                ->latest()
+                ->orderByPopularity()
                 ->limit(8)
                 ->get();
         }
@@ -194,8 +190,8 @@ class DistributorProfileController extends Controller
             $this->applyPublicListingConstraints($query);
         }
         $query->with(['images', 'category', 'inventory'])
-            ->withAvg('reviews', 'stars')
-            ->withCount('reviews');
+            ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
+            ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)]);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -229,6 +225,7 @@ class DistributorProfileController extends Controller
     {
         $reviews = ProductReview::query()
             ->whereHas('product', fn ($q) => $q->where('distributor_id', $distributorId))
+            ->where('is_hidden', false)
             ->with(['product:id,name,slug', 'user:id,name'])
             ->orderByDesc('created_at')
             ->paginate(16)

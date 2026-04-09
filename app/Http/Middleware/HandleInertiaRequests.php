@@ -75,6 +75,7 @@ class HandleInertiaRequests extends Middleware
                     'suspension_reason' => $suspensionReason,
                     'warning_reason' => $warningReason,
                     'warning_message' => $warningMessage,
+                    'tin' => $user->tin,
                 ] : null,
             ],
             'needsTermsAcceptance' => $user ? ! $user->hasAcceptedTerms() : false,

@@ -279,29 +279,60 @@
                                 <input v-model="fields.has_warranty" type="checkbox" class="rounded border-gray-300 text-blue-600" />
                                 Has warranty
                             </label>
-                            <input
-                                v-if="fields.has_warranty"
-                                v-model.number="fields.warranty_months"
-                                type="number"
-                                min="1"
-                                max="120"
-                                placeholder="Months"
-                                class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-xl"
-                            />
+                            <div v-if="fields.has_warranty" class="mt-3">
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Warranty Months <span class="text-red-500">*</span></label>
+                                <input
+                                    v-model.number="fields.warranty_months"
+                                    type="number"
+                                    min="1"
+                                    max="120"
+                                    placeholder="e.g. 12"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm"
+                                />
+                            </div>
                         </div>
                         <div class="rounded-xl border border-gray-100 p-4 bg-gray-50/80">
                             <label class="flex items-center gap-2 text-sm font-semibold text-gray-800">
                                 <input v-model="fields.has_expiry" type="checkbox" class="rounded border-gray-300 text-blue-600" />
                                 Has expiration
                             </label>
-                            <input v-if="fields.has_expiry" v-model="fields.expiry_date" type="date" class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-xl" />
-                            <input
-                                v-if="fields.has_expiry"
-                                v-model="fields.batch_number"
-                                type="text"
-                                placeholder="Batch / lot number"
-                                class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-xl"
-                            />
+                            
+                            <div v-if="fields.has_expiry" class="mt-3 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Manufacturing Date</label>
+                                        <input v-model="fields.manufacturing_date" type="date" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Expiration Date <span class="text-red-500">*</span></label>
+                                        <input v-model="fields.expiry_date" type="date" required class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm" />
+                                    </div>
+                                </div>
+
+                                <div v-if="shelfLifeText || timeUntilExpiryText" class="p-3 rounded-lg bg-blue-50 border border-blue-100 space-y-2">
+                                    <div v-if="shelfLifeText" class="flex justify-between items-center text-[10px]">
+                                        <span class="text-gray-500 font-semibold uppercase">Total Shelf Life:</span>
+                                        <span class="text-blue-700 font-bold bg-blue-100/50 px-1.5 py-0.5 rounded">{{ shelfLifeText }}</span>
+                                    </div>
+                                    <div v-if="timeUntilExpiryText" class="flex justify-between items-center text-[10px]">
+                                        <span class="text-gray-500 font-semibold uppercase">Time Remaining:</span>
+                                        <span class="font-bold px-1.5 py-0.5 rounded" :class="timeUntilExpiryText === 'Expired' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'">
+                                            {{ timeUntilExpiryText }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Batch / Lot Number</label>
+                                    <input
+                                        v-model="fields.batch_number"
+                                        type="text"
+                                        placeholder="e.g. BATCH-2024-001"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -388,6 +419,7 @@ const fields = ref({
     has_warranty: false,
     warranty_months: '',
     has_expiry: false,
+    manufacturing_date: '',
     expiry_date: '',
     batch_number: '',
     initial_quantity: 0,
@@ -428,6 +460,48 @@ const isMedicineCategory = computed(() => {
 
 watch(isMedicineCategory, (on) => {
     if (!on) fields.value.requires_prescription = false;
+});
+
+const shelfLifeText = computed(() => {
+    if (!fields.value.manufacturing_date || !fields.value.expiry_date) return '';
+    const m = new Date(fields.value.manufacturing_date);
+    const e = new Date(fields.value.expiry_date);
+    if (e <= m) return 'Invalid dates (Expiry must be after Mfg)';
+
+    const diffMonths = (e.getFullYear() - m.getFullYear()) * 12 + (e.getMonth() - m.getMonth());
+    if (diffMonths >= 12) {
+        const yrs = (diffMonths / 12).toFixed(1);
+        return `${yrs} Year${yrs != 1 ? 's' : ''}`;
+    }
+    return `${diffMonths} Month${diffMonths != 1 ? 's' : ''}`;
+});
+
+const timeUntilExpiryText = computed(() => {
+    if (!fields.value.expiry_date) return '';
+    const e = new Date(fields.value.expiry_date);
+    const now = new Date();
+    
+    if (e <= now) return 'Expired';
+
+    let years = e.getFullYear() - now.getFullYear();
+    let months = e.getMonth() - now.getMonth();
+    
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    const parts = [];
+    if (years > 0) parts.push(`${years}yr`);
+    if (months > 0) parts.push(`${months}mo`);
+    
+    if (parts.length === 0) {
+        const diffDays = Math.ceil((e - now) / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) return `${diffDays}d left`;
+        return 'Expiring soon';
+    }
+    
+    return parts.join(' ') + ' left';
 });
 
 function addOptionGroup() {
@@ -532,6 +606,7 @@ function submitForm() {
         fd.append('warranty_months', String(fields.value.warranty_months));
     }
     appendBool(fd, 'has_expiry', fields.value.has_expiry);
+    if (fields.value.has_expiry && fields.value.manufacturing_date) fd.append('manufacturing_date', fields.value.manufacturing_date);
     if (fields.value.barcode) fd.append('barcode', fields.value.barcode);
 
     imageFiles.value.forEach((file) => fd.append('images[]', file));

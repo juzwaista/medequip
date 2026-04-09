@@ -36,14 +36,32 @@
                     <p class="font-mono text-sm font-bold text-gray-900">{{ flow.delivery?.tracking_number }}</p>
                 </div>
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <div v-if="flow.delivery?.order?.is_fragile" class="mb-3 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-black uppercase tracking-widest">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Fragile: Handle with care
+                    </div>
                     <p class="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">Pickup From</p>
                     <p class="font-semibold text-amber-900">{{ flow.delivery?.order?.distributor?.company_name }}</p>
                     <p class="text-sm text-amber-700 mt-0.5">{{ flow.delivery?.seller_address || flow.delivery?.order?.distributor?.address || 'Address not available' }}</p>
+                    <div v-if="flow.delivery?.order?.distributor?.user?.phone_number" class="mt-2 flex items-center gap-2">
+                        <a :href="`tel:${flow.delivery.order.distributor.user.phone_number}`" class="bg-amber-100 text-amber-800 text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border border-amber-300 font-bold flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            Call Shop
+                        </a>
+                        <span class="text-xs font-mono font-bold text-amber-900">{{ flow.delivery.order.distributor.user.phone_number }}</span>
+                    </div>
                 </div>
                 <div class="bg-green-50 border border-green-200 rounded-xl p-4">
                     <p class="text-xs font-bold text-green-700 uppercase tracking-wider mb-1">Deliver To</p>
                     <p class="font-semibold text-green-900">{{ flow.delivery?.order?.customer?.name }}</p>
                     <p class="text-sm text-green-700 mt-0.5">{{ flow.delivery?.delivery_address }}</p>
+                    <div v-if="flow.delivery?.order?.contact_number" class="mt-2 flex items-center gap-2">
+                        <a :href="`tel:${flow.delivery.order.contact_number}`" class="bg-green-100 text-green-800 text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border border-green-300 font-bold flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            Call Customer
+                        </a>
+                        <span class="text-xs font-mono font-bold text-green-900">{{ flow.delivery.order.contact_number }}</span>
+                    </div>
                 </div>
                 <p v-if="flow.error" class="text-red-600 text-sm font-medium bg-red-50 border border-red-200 rounded-xl p-3">{{ flow.error }}</p>
                 <button @click="doStartPickup" :disabled="flow.loading"
@@ -209,6 +227,13 @@
                     <p class="text-xs font-bold text-green-700 uppercase mb-1">Delivering to</p>
                     <p class="font-semibold text-green-900">{{ flow.delivery?.order?.customer?.name }}</p>
                     <p class="text-sm text-green-700 mt-0.5">{{ flow.delivery?.delivery_address }}</p>
+                    <div v-if="flow.delivery?.order?.contact_number" class="mt-2 flex items-center gap-2">
+                        <a :href="`tel:${flow.delivery.order.contact_number}`" class="bg-green-100 text-green-800 text-[10px] sm:text-xs px-3 py-1.5 rounded-lg border border-green-300 font-bold flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            Call Customer
+                        </a>
+                        <span class="text-xs font-mono font-bold text-green-900">{{ flow.delivery.order.contact_number }}</span>
+                    </div>
                 </div>
                 <!-- Camera box (delivery) -->
                 <div class="bg-gray-900 rounded-2xl overflow-hidden">
@@ -399,6 +424,8 @@
                                 <div class="flex items-center gap-2">
                                     <span v-if="delivery.order?.payment_method === 'cod'"
                                         class="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-1 rounded-full uppercase border border-orange-200">COD</span>
+                                    <span v-if="delivery.order?.is_fragile"
+                                        class="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-1 rounded-full uppercase border border-rose-200">Fragile</span>
                                     <span class="px-2.5 py-1 text-xs font-black rounded-lg uppercase"
                                         :class="{
                                             'bg-blue-100 text-blue-800': delivery.status === 'in_transit',
@@ -408,15 +435,19 @@
                                 </div>
                             </div>
                             <div class="p-4 space-y-3">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-                                    </div>
                                     <div>
                                         <p class="text-[10px] text-gray-400 font-bold uppercase">Pickup</p>
                                         <p class="text-sm font-semibold text-gray-900">{{ delivery.order?.distributor?.company_name }}</p>
+                                        <p class="text-xs text-gray-500">{{ delivery.seller_address || delivery.order?.distributor?.address }}</p>
+                                        <div v-if="delivery.status === 'scheduled' || delivery.status === 'picking_up'" class="mt-2">
+                                            <a :href="`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(delivery.seller_address || delivery.order?.distributor?.address)}`"
+                                                target="_blank"
+                                                class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                Navigate to Shop
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
                                 <div class="flex items-start gap-3 pl-1 border-l-2 border-dashed border-gray-200 ml-3">
                                     <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 -ml-4">
                                         <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6z"/></svg>
@@ -425,6 +456,17 @@
                                         <p class="text-[10px] text-gray-400 font-bold uppercase">Dropoff</p>
                                         <p class="text-sm font-semibold text-gray-900">{{ delivery.order?.customer?.name }}</p>
                                         <p class="text-xs text-gray-500">{{ delivery.delivery_address }}</p>
+                                        <p v-if="delivery.order?.contact_number" class="text-xs text-blue-600 font-bold mt-1">📞 {{ delivery.order.contact_number }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 mt-1">
+                                    <div class="w-6 h-6 bg-amber-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase">Seller Contact</p>
+                                        <p v-if="delivery.order?.distributor?.user?.phone_number" class="text-xs text-amber-700 font-bold">📞 {{ delivery.order.distributor.user.phone_number }}</p>
+                                        <p v-else class="text-xs text-gray-400">Not listed</p>
                                     </div>
                                 </div>
                             </div>
@@ -456,10 +498,13 @@
                                     Navigate
                                 </a>
                                 <button v-if="delivery.status === 'in_transit'"
-                                    @click="markFailed(delivery.id)"
-                                    class="flex-none bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-sm">
-                                    Failed
+                                    @click="openFailureModal(delivery)"
+                                    class="flex-none bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-sm transition hover:bg-red-200">
+                                    Report Issue
                                 </button>
+                                <div v-if="delivery.attempts_count > 0" class="absolute top-2 right-2">
+                                    <span class="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-amber-200 uppercase">Attempt {{ delivery.attempts_count }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -480,6 +525,8 @@
                                         class="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-1 rounded-full border border-orange-200">COD</span>
                                     <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-2 py-1 rounded-full">{{ job.order?.items?.length || 0 }} item(s)</span>
                                     
+                                    <span v-if="job.order?.is_fragile"
+                                        class="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-1 rounded-full border border-rose-200 uppercase">Fragile</span>
                                     <span class="flex items-center gap-1 bg-gray-100 text-gray-700 text-[10px] font-black px-2 py-1 rounded-full border border-gray-200 uppercase">
                                         <svg v-if="job.order?.required_vehicle_type === 'motorcycle' || !job.order?.required_vehicle_type" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V6m0 0l-3 3m3-3l3 3M5 19h14M8 12a4 4 0 108 0 4 4 0 00-8 0z" /></svg>
                                         <svg v-else-if="job.order?.required_vehicle_type.includes('car')" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M5 10V8a2 2 0 012-2h10a2 2 0 012 2v2M4 14a2 2 0 110-4 2 2 0 010 4zm16 0a2 2 0 110-4 2 2 0 010 4z" /></svg>
@@ -492,8 +539,23 @@
                                     <p class="text-sm font-black text-green-600">+₱{{ Number(job.courier_fee).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
                                 </div>
                             </div>
-                            <p class="text-base font-bold text-gray-900 mb-1">{{ job.order?.distributor?.company_name }}</p>
-                            <p class="text-sm text-gray-500 mb-1">{{ job.order?.customer?.name }} — {{ job.delivery_address }}</p>
+                            <div class="mb-4">
+                                <p class="text-[10px] text-amber-600 font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    Pick Up From
+                                </p>
+                                <p class="text-sm font-black text-gray-900 leading-tight">{{ job.order?.distributor?.company_name }}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ job.order?.distributor?.address }}</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="text-[10px] text-blue-600 font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    Delivery Destination
+                                </p>
+                                <p class="text-sm font-bold text-gray-900 leading-tight">{{ job.delivery_address }}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">Customer: {{ job.order?.customer?.name }}</p>
+                            </div>
                             <div v-if="job.order?.payment_method === 'cod'" class="mb-3 text-xs text-orange-700 bg-orange-50 rounded-lg px-3 py-2 border border-orange-100">
                                 Collect <strong>₱{{ Number(job.order.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</strong> cash from customer
                             </div>
@@ -508,6 +570,35 @@
                     </div>
                     <div v-else class="text-center py-16">
                         <p class="text-gray-500 font-semibold">No jobs available right now</p>
+                    </div>
+
+                    <!-- Contact Admin / Support Section -->
+                    <div class="mt-8 border-t border-gray-200 pt-8 pb-12">
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Authority Support</h3>
+                        <div class="grid grid-cols-1 gap-3">
+                            <a href="tel:09123456789" class="bg-gray-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-lg active:scale-95 transition-all">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Police / Emergency</p>
+                                    <p class="text-base font-black">911 Local Hotline</p>
+                                </div>
+                                <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                </div>
+                            </a>
+                            <a href="mailto:support@medequip.com" class="bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-95 transition-all">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Platform Admin</p>
+                                    <p class="text-base font-black text-gray-900">Contact Dispatch Support</p>
+                                </div>
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                </div>
+                            </a>
+                        </div>
+                        <p class="text-center text-[10px] text-gray-400 mt-4 leading-normal">
+                            Use these contacts for missing recipients, wrong addresses, or accidents during transit. 
+                            Platform admins can see your live GPS location if you allow it.
+                        </p>
                     </div>
                 </div>
 
@@ -585,6 +676,73 @@
             </div>
         </div>
 
+        <!-- Failure Reason Modal -->
+        <div v-if="failureModal.show" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center">
+            <div class="bg-white w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-3xl p-6 sm:p-8 animate-in slide-in-from-bottom duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black text-gray-900">Report Delivery Issue</h2>
+                    <button @click="failureModal.show = false" class="p-2 text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Reason for Failure</label>
+                        <div class="grid grid-cols-1 gap-2">
+                            <button v-for="reason in failureReasons" :key="reason.value"
+                                @click="failureModal.reason = reason.value"
+                                class="w-full text-left px-4 py-3 rounded-2xl border-2 transition-all font-bold text-sm"
+                                :class="failureModal.reason === reason.value ? 'border-red-600 bg-red-50 text-red-900' : 'border-gray-100 text-gray-600 hover:border-gray-200'">
+                                {{ reason.label }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Evidence Photo (Required)</label>
+                        <div class="relative group">
+                            <input type="file" accept="image/*" @change="e => failureModal.photo = e.target.files[0]" 
+                                class="hidden" ref="failurePhotoInput" />
+                            <button @click="$refs.failurePhotoInput.click()" 
+                                class="w-full h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all"
+                                :class="failureModal.photo ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 bg-gray-50/50 hover:border-red-200'">
+                                <svg v-if="!failureModal.photo" class="w-8 h-8 text-gray-400 group-hover:text-red-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <svg v-else class="w-8 h-8 text-emerald-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <span class="text-xs font-black uppercase" :class="failureModal.photo ? 'text-emerald-700' : 'text-gray-400 group-hover:text-red-500'">
+                                    {{ failureModal.photo ? 'Photo Attached' : 'Capture Proof' }}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Additional Details</label>
+                        <textarea v-model="failureModal.note" 
+                            rows="3"
+                            class="w-full rounded-2xl border-2 border-gray-100 focus:border-red-600 focus:ring-0 text-sm font-semibold p-4"
+                            placeholder="Describe the situation (e.g. guardhouse refused entry)..."></textarea>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                        <p class="text-xs text-amber-800 font-semibold leading-relaxed">
+                            <strong>Note:</strong> Reporting a failure marks Attempt #{{ (failureModal.delivery?.attempts_count || 0) + 1 }}. 
+                            If it fails twice, the order will be automatically flagged for <strong>Return to Sender</strong>.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button @click="failureModal.show = false" class="flex-1 py-4 text-gray-500 font-bold">Cancel</button>
+                        <button @click="submitFailure" 
+                            :disabled="!failureModal.reason || flow.loading"
+                            class="flex-[2] bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-red-200 disabled:opacity-50 active:scale-95 transition-all">
+                            Submit Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </CourierLayout>
 </template>
 
@@ -607,6 +765,22 @@ const activeFlow = ref(null); // null | 'pickup' | 'delivery'
 const videoEl = ref(null);
 let codeReader = null;
 let cameraControls = null;
+
+const failureReasons = [
+    { label: "Recipient wasn't at delivery address", value: 'recipient_absent' },
+    { label: "Recipient has the wrong delivery address", value: 'wrong_address' },
+    { label: "Delivery accident or vehicle issues", value: 'delivery_accident' },
+    { label: "Recipient refused the items", value: 'customer_refused' },
+    { label: "Other problem", value: 'other' },
+];
+
+const failureModal = ref({
+    show: false,
+    delivery: null,
+    reason: '',
+    note: '',
+    photo: null,
+});
 
 const flow = ref({
     step: 1,
@@ -833,16 +1007,42 @@ const cancelDelivery = (id) => {
     }
 };
 
-const markFailed = (id) => {
-    if (confirm('Mark this delivery as failed?')) {
-        router.post('/courier/deliveries/' + id + '/status', { status: 'failed' }, { preserveScroll: true });
-    }
-};
-
 const markRemittanceSent = (id) => {
     if (confirm('Confirm that you have physically handed the cash to the distributor?')) {
         router.post('/courier/deliveries/' + id + '/remittance-sent', {}, { preserveScroll: true });
     }
+};
+
+const openFailureModal = (delivery) => {
+    failureModal.value = {
+        show: true,
+        delivery: delivery,
+        reason: '',
+        note: '',
+    };
+};
+
+const submitFailure = () => {
+    if (!failureModal.value.photo) {
+        alert("Please provide a photo as proof of attempt.");
+        return;
+    }
+    flow.value.loading = true;
+    
+    router.post(`/courier/deliveries/${failureModal.value.delivery.id}/report-failure`, {
+        reason: failureModal.value.reason,
+        note: failureModal.value.note,
+        reason_photo: failureModal.value.photo,
+    }, {
+        forceFormData: true,
+        onSuccess: () => {
+            failureModal.value.show = false;
+            flow.value.loading = false;
+        },
+        onError: () => {
+            flow.value.loading = false;
+        }
+    });
 };
 
 const goToPage = (page) => {

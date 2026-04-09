@@ -13,7 +13,21 @@ class ProductReview extends Model
         'order_id',
         'stars',
         'body',
+        'dispute_status',
+        'dispute_reason',
+        'dispute_resolved_at',
+        'is_hidden',
     ];
+
+    protected $casts = [
+        'dispute_resolved_at' => 'datetime',
+        'is_hidden' => 'boolean',
+    ];
+
+    public function isDisputed(): bool
+    {
+        return $this->dispute_status !== 'none';
+    }
 
     public function user(): BelongsTo
     {

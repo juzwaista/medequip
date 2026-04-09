@@ -30,13 +30,47 @@
                                 {{ $d->company_name }}
                             </td>
 
-                            <td class="p-4 space-y-1">
-                                @foreach($d->licenses as $l)
-                                    <a href="{{ asset('storage/' . $l->file_path) }}" target="_blank"
-                                        class="text-blue-600 hover:underline block">
-                                        {{ $l->type }} ({{ ucfirst($l->status) }})
-                                    </a>
-                                @endforeach
+                             <td class="p-4 space-y-2">
+                                <div class="font-bold text-xs uppercase text-gray-400 mb-1">Registration Docs</div>
+                                <div class="space-y-1">
+                                    @php
+                                        $docs = [
+                                            'valid_id' => ['label' => 'Valid ID', 'path' => $d->valid_id_path, 'expiry' => $d->valid_id_expires_at],
+                                            'business_license' => ['label' => 'Business Permit', 'path' => $d->business_license_path, 'expiry' => $d->business_license_expires_at],
+                                            'dti_sec' => ['label' => 'DTI/SEC', 'path' => $d->dti_sec_path, 'expiry' => $d->dti_sec_expires_at],
+                                            'bir_form' => ['label' => 'BIR Form', 'path' => $d->bir_form_path, 'expiry' => $d->bir_form_expires_at],
+                                            'fda_license' => ['label' => 'FDA License', 'path' => $d->fda_license_path, 'expiry' => $d->fda_license_expires_at],
+                                            'prc_id' => ['label' => 'PRC ID', 'path' => $d->prc_id_path, 'expiry' => $d->prc_id_expires_at],
+                                        ];
+                                    @endphp
+
+                                    @foreach($docs as $key => $doc)
+                                        @if($doc['path'])
+                                            <div class="flex items-center justify-between gap-4 text-xs">
+                                                <a href="{{ asset('storage/' . $doc['path']) }}" target="_blank" class="text-blue-600 hover:underline">
+                                                    {{ $doc['label'] }}
+                                                </a>
+                                                <span class="{{ $doc['expiry'] && \Carbon\Carbon::parse($doc['expiry'])->isPast() ? 'text-red-600 font-bold' : ($doc['expiry'] && \Carbon\Carbon::parse($doc['expiry'])->diffInDays(now()) < 30 ? 'text-amber-600 font-medium' : 'text-gray-500') }}">
+                                                    {{ $doc['expiry'] ? \Carbon\Carbon::parse($doc['expiry'])->format('M d, Y') : 'No Date' }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                @if($d->licenses->count() > 0)
+                                    <div class="font-bold text-xs uppercase text-gray-400 mt-3 mb-1">Additional Licenses</div>
+                                    @foreach($d->licenses as $l)
+                                        <div class="flex items-center justify-between gap-4 text-xs border-l-2 border-blue-500 pl-2">
+                                            <a href="{{ asset('storage/' . $l->file_path) }}" target="_blank" class="text-blue-600 hover:underline">
+                                                {{ $l->type }}
+                                            </a>
+                                            <span class="{{ $l->expires_at && \Carbon\Carbon::parse($l->expires_at)->isPast() ? 'text-red-600 font-bold' : ($l->expires_at && \Carbon\Carbon::parse($l->expires_at)->diffInDays(now()) < 30 ? 'text-amber-600 font-medium' : 'text-gray-500') }}">
+                                                {{ $l->expires_at ? \Carbon\Carbon::parse($l->expires_at)->format('M d, Y') : 'No Date' }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                @endif
                             </td>
 
                             <td class="p-4">

@@ -36,6 +36,7 @@ class Product extends Model
         'variation_options',
         'requires_prescription',
         'vehicle_requirement',
+        'is_vat_exempt',
     ];
 
     protected $casts = [
@@ -47,9 +48,10 @@ class Product extends Model
         'is_featured' => 'boolean',
         'variation_options' => 'array',
         'requires_prescription' => 'boolean',
+        'is_vat_exempt' => 'boolean',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'units_sold'];
 
     /**
      * Get the distributor that owns this product
@@ -118,6 +120,25 @@ class Product extends Model
     }
 
     /**
+     * Get total units sold for completed/delivered orders.
+     */
+    public function getUnitsSoldAttribute(): int
+    {
+        // Use eager loaded sum if available, or calculate it
+        if ($this->relationLoaded('orderItems')) {
+            return (int) $this->orderItems
+                ->filter(fn($item) => $item->order && in_array($item->order->status, ['completed', 'delivered']))
+                ->sum('quantity');
+        }
+
+        return (int) \DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('order_items.product_id', $this->id)
+            ->whereIn('orders.status', ['completed', 'delivered'])
+            ->sum('quantity');
+    }
+
+    /**
      * Check if wholesale pricing is available
      */
     public function hasWholesalePricing(): bool
@@ -177,6 +198,32 @@ class Product extends Model
         return Attribute::make(
             get: fn () => $this->aggregateStockQuantity()
         );
+    }
+
+    /**
+     * Scope to order products by a popularity score.
+     * Popularity = (Units Sold * 10) + (Avg Stars * 5).
+     * Secondary sort by latest created_at for recency.
+     */
+    public function scopeOrderByPopularity($query)
+    {
+        return $query->select('products.*')
+            ->selectRaw('
+                (
+                    SELECT COALESCE(SUM(order_items.quantity), 0)
+                    FROM order_items
+                    JOIN orders ON orders.id = order_items.order_id
+                    WHERE order_items.product_id = products.id
+                    AND orders.status IN ("completed", "delivered")
+                ) * 10 +
+                (
+                    SELECT COALESCE(AVG(product_reviews.stars), 0)
+                    FROM product_reviews
+                    WHERE product_reviews.product_id = products.id
+                ) * 5 as popularity_score
+            ')
+            ->orderByDesc('popularity_score')
+            ->orderByDesc('products.created_at');
     }
 
     /**

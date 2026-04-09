@@ -1,67 +1,65 @@
 <template>
     <MainLayout>
+        <Head :title="distributor.company_name" />
         <div class="min-h-screen bg-gray-50">
             <!-- Cover Photo Hero -->
-            <div class="relative h-56 md:h-64 bg-gradient-to-r from-blue-600 to-blue-800">
+            <div class="relative h-56 md:h-64 bg-slate-200 overflow-hidden">
                 <img
-                    v-if="distributor.cover_photo_path"
-                    :src="`/storage/${distributor.cover_photo_path}`"
+                    v-if="distributor.cover_photo_url"
+                    :src="distributor.cover_photo_url"
                     alt="Cover Photo"
                     class="w-full h-full object-cover"
                 />
+                <div v-else class="w-full h-full bg-gradient-to-r from-slate-600 to-slate-800"></div>
             </div>
 
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <!-- Profile Header -->
                 <div class="relative -mt-20 mb-6">
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <div class="flex flex-col md:flex-row gap-6 items-start">
-                            <div class="w-28 h-28 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden border-4 border-white shadow-lg">
+                    <div class="bg-white rounded-xl shadow-lg p-6 border-b-4 border-blue-600">
+                        <div class="flex flex-col md:flex-row gap-6 items-start md:items-end">
+                            <div class="w-28 h-28 flex-shrink-0 bg-white rounded-xl overflow-hidden border-4 border-white shadow-lg relative -mt-4">
                                 <img
-                                    v-if="distributor.logo_path"
-                                    :src="`/storage/${distributor.logo_path}`"
+                                    v-if="distributor.logo_url"
+                                    :src="distributor.logo_url"
                                     :alt="distributor.company_name"
                                     class="w-full h-full object-cover"
                                 />
-                                <div v-else class="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-600">
+                                <div v-else class="w-full h-full flex items-center justify-center text-4xl font-bold bg-blue-50 text-blue-600">
                                     {{ distributor.company_name.charAt(0) }}
                                 </div>
+                                <div class="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white" title="Verified Seller" v-if="distributor.is_verified"></div>
                             </div>
 
-                            <div class="flex-1 min-w-0">
-                                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 truncate">{{ distributor.company_name }}</h1>
-                                <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
-                                    <span class="flex items-center">
-                                        <svg class="h-4 w-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        Verified Seller
+                            <div class="flex-1 min-w-0 pb-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h1 class="text-2xl md:text-3xl font-bold text-slate-900 truncate">{{ distributor.company_name }}</h1>
+                                    <span v-if="distributor.is_verified" class="px-3 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full border border-blue-100 uppercase tracking-wider">Verified</span>
+                                </div>
+                                <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-600 font-medium">
+                                    <span class="flex items-center text-amber-500 font-bold bg-slate-50 px-2 py-0.5 rounded-md">
+                                        <svg class="w-4 h-4 mr-1 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                        {{ Number(distributor.rating || 0).toFixed(1) }}
                                     </span>
-                                    <span v-if="stats.shop_rating_avg" class="flex items-center text-amber-700 font-semibold">
-                                        <svg class="w-4 h-4 mr-0.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                        {{ stats.shop_rating_avg.toFixed(1) }}
-                                        <span class="text-gray-500 font-normal ml-1">({{ stats.shop_rating_count }} {{ stats.shop_rating_count === 1 ? 'review' : 'reviews' }})</span>
-                                    </span>
-                                    <span v-else class="flex items-center text-gray-400">
-                                        <svg class="w-4 h-4 mr-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                        No ratings yet
-                                    </span>
+                                    <span>{{ stats.total_products }} Products</span>
                                     <span>Member since {{ stats.active_since }}</span>
-                                    <span>{{ stats.total_products }} products</span>
                                 </div>
                             </div>
 
-                            <div class="flex flex-col gap-2 flex-shrink-0">
+                            <div class="flex gap-2 w-full md:w-auto">
                                 <Link
                                     v-if="messaging?.start_url"
                                     :href="messaging.start_url"
-                                    class="px-5 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition text-center text-sm font-medium"
+                                    class="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm shadow-md"
                                 >
-                                    Message Shop
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                    Message
                                 </Link>
                                 <a
                                     v-if="distributor.website"
                                     :href="distributor.website"
                                     target="_blank"
-                                    class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-center text-sm font-medium"
+                                    class="flex-1 md:flex-none px-6 py-2.5 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm text-center"
                                 >
                                     Website
                                 </a>
@@ -72,16 +70,16 @@
 
                 <!-- Tab Bar -->
                 <div class="mb-6 border-b border-gray-200">
-                    <nav class="flex gap-1" aria-label="Shop navigation">
+                    <nav class="flex gap-1 overflow-x-auto no-scrollbar" aria-label="Shop navigation">
                         <button
                             v-for="t in tabs"
                             :key="t.key"
                             @click="switchTab(t.key)"
                             :class="[
-                                'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
+                                'px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-all uppercase tracking-tighter',
                                 activeTab === t.key
                                     ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                             ]"
                         >
                             {{ t.label }}
@@ -155,17 +153,6 @@
                         </details>
                     </section>
 
-                    <!-- Recommended Products -->
-                    <section v-if="recommendedProducts && recommendedProducts.length">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold text-gray-900">Recommended</h2>
-                            <button @click="switchTab('products')" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View all</button>
-                        </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-fr">
-                            <ProductCard v-for="p in recommendedProducts" :key="p.id" :product="p" />
-                        </div>
-                    </section>
-
                     <!-- Top Sellers -->
                     <section v-if="topSellers && topSellers.length">
                         <div class="flex items-center justify-between mb-4">
@@ -174,6 +161,17 @@
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-fr">
                             <ProductCard v-for="p in topSellers" :key="p.id" :product="p" />
+                        </div>
+                    </section>
+
+                    <!-- Recommended Products -->
+                    <section v-if="recommendedProducts && recommendedProducts.length">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Recommended</h2>
+                            <button @click="switchTab('products')" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View all</button>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-fr">
+                            <ProductCard v-for="p in recommendedProducts" :key="p.id" :product="p" />
                         </div>
                     </section>
 
@@ -357,6 +355,7 @@
 import { ref, computed, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import ProductCard from '@/Components/ProductCard.vue';
 
 const props = defineProps({
     distributor: Object,
@@ -459,70 +458,4 @@ function goToCategory(categoryId) {
     router.get(shopUrl.value, { tab: 'products', category: categoryId }, { preserveState: false });
 }
 
-// --- ProductCard inline component ---
-const ProductCard = {
-    props: { product: Object },
-    template: `
-        <Link
-            :href="'/products/' + product.id"
-            class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-gray-300 transition group flex flex-col h-full min-h-0 relative"
-        >
-            <!-- Badges -->
-            <div class="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                <span v-if="!product.is_active" class="bg-gray-800/90 text-white text-[10px] font-black uppercase px-2 py-1 rounded-lg backdrop-blur-sm">Inactive</span>
-                <span v-if="isOutOfStock" class="bg-red-600/90 text-white text-[10px] font-black uppercase px-2 py-1 rounded-lg backdrop-blur-sm">Out of Stock</span>
-            </div>
-
-            <div class="h-36 sm:h-44 md:h-52 lg:h-56 bg-gray-100 overflow-hidden flex items-center justify-center p-2 shrink-0 relative">
-                <img
-                    v-if="productImage"
-                    :src="productImage"
-                    :alt="product.name"
-                    class="max-w-full max-h-full object-contain group-hover:scale-105 transition duration-300"
-                    :class="{'grayscale opacity-50': isOutOfStock || !product.is_active}"
-                />
-                <div v-else class="w-full h-full flex items-center justify-center">
-                    <svg class="h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                </div>
-            </div>
-            <div class="p-3 flex flex-col flex-1 min-h-[6.5rem] sm:min-h-[7.5rem]">
-                <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mb-1 min-h-[2.5rem] group-hover:text-blue-600 transition-colors">{{ product?.name || 'Unnamed Product' }}</h3>
-                <p v-if="product?.category" class="text-xs text-gray-500 mb-1.5 line-clamp-1">{{ product.category.name }}</p>
-                <div v-if="product?.reviews_avg_stars" class="flex items-center gap-1 mb-1.5 min-h-[1.25rem]">
-                    <div class="flex">
-                        <svg v-for="i in 5" :key="i" class="w-3.5 h-3.5" :class="i <= Math.round(product.reviews_avg_stars) ? 'text-amber-400' : 'text-gray-200'" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between mt-auto pt-1">
-                    <span class="text-sm font-black text-blue-600">₱{{ Number(product.base_price).toLocaleString() }}</span>
-                    <span v-if="!isOutOfStock && stockCount > 0 && stockCount <= 5" class="text-[10px] font-black text-orange-600 uppercase">Only {{ stockCount }} left</span>
-                </div>
-            </div>
-        </Link>
-    `,
-    computed: {
-        productImage() {
-            if (this.product.image_url) return this.product.image_url;
-            if (this.product.image_path) return '/storage/' + this.product.image_path;
-            if (this.product.images && this.product.images.length) {
-                const primary = this.product.images.find(i => i.is_primary);
-                const img = primary || this.product.images[0];
-                return img?.image_path ? '/storage/' + img.image_path : null;
-            }
-            return null;
-        },
-        stockCount() {
-            if (!this.product.inventory || !Array.isArray(this.product.inventory)) return 0;
-            return this.product.inventory.reduce((total, item) => {
-                const q = Number(item.quantity) || 0;
-                const r = Number(item.reserved_quantity) || 0;
-                return total + (q - r);
-            }, 0);
-        },
-        isOutOfStock() {
-            return this.stockCount <= 0;
-        }
-    },
-    components: { Link },
-};
 </script>

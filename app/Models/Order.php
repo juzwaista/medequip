@@ -11,28 +11,55 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Order extends Model
 {
     protected $fillable = [
-        'order_number',
         'customer_id',
         'distributor_id',
-        'status',
-        'prescription_status',
-        'prescription_image_path',
-        'prescription_review_note',
-        'prescription_reviewed_at',
+        'order_number',
         'subtotal',
         'shipping_fee',
         'discount',
         'total_amount',
+        'status',
+        'customer_name',
         'delivery_address',
-        'contact_number',
-        'notes',
-        'payment_method',
-        'approved_at',
-        'cancelled_at',
-        'delivered_at',
-        'received_at',
         'delivery_latitude',
         'delivery_longitude',
+        'contact_number',
+        'payment_method',
+        'payment_status',
+        'notes',
+        'approved_at',
+        'packed_at',
+        'shipped_at',
+        'delivered_at',
+        'received_at',
+        'cancelled_at',
+        'cancelled_by',
+        'cancellation_reason',
+        'prescription_status',
+        'prescription_image_path',
+        'prescription_review_note',
+        'prescription_reviewed_at',
+        'prescription_patient_name',
+        'prescription_id_image_path',
+        'packaging_before_image_path',
+        'packaging_after_image_path',
+        'is_fragile',
+        'required_vehicle_type',
+        'vatable_sales',
+        'vat_amount',
+        'vat_exempt_sales',
+        'tin',
+        'discount_type',
+        'discount_id_number',
+        'discount_id_name',
+        'discount_id_image_path',
+        'discount_status',
+        'discount_review_note',
+        'discount_reviewed_at',
+        'discount_amount',
+        'fulfillment_method', // delivery | pickup
+        'pickup_instructions',
+        'ocr_results',
     ];
 
     protected $casts = [
@@ -40,13 +67,19 @@ class Order extends Model
         'shipping_fee' => 'decimal:2',
         'discount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'vatable_sales' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
+        'vat_exempt_sales' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'approved_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'delivered_at' => 'datetime',
         'received_at' => 'datetime',
         'prescription_reviewed_at' => 'datetime',
+        'discount_reviewed_at' => 'datetime',
         'delivery_latitude' => 'decimal:8',
         'delivery_longitude' => 'decimal:8',
+        'ocr_results' => 'array',
     ];
 
     public const PRESCRIPTION_NOT_REQUIRED = 'not_required';
@@ -58,6 +91,29 @@ class Order extends Model
     public const PRESCRIPTION_APPROVED = 'approved';
 
     public const PRESCRIPTION_REJECTED = 'rejected';
+
+    public const DISCOUNT_NONE = 'none';
+
+    public const DISCOUNT_PENDING = 'pending';
+
+    public const DISCOUNT_APPROVED = 'approved';
+
+    public const DISCOUNT_REJECTED = 'rejected';
+
+    public function needsDiscountReview(): bool
+    {
+        return $this->discount_status === self::DISCOUNT_PENDING;
+    }
+
+    public function isDiscountApproved(): bool
+    {
+        return $this->discount_status === self::DISCOUNT_APPROVED;
+    }
+
+    public function discountBlocksFulfillment(): bool
+    {
+        return $this->discount_status === self::DISCOUNT_PENDING;
+    }
 
     public function needsPrescriptionUpload(): bool
     {
@@ -74,7 +130,7 @@ class Order extends Model
         return in_array($this->prescription_status, [
             self::PRESCRIPTION_AWAITING_UPLOAD,
             self::PRESCRIPTION_PENDING_REVIEW,
-        ], true);
+        ], true) || $this->discount_status === self::DISCOUNT_PENDING;
     }
 
     /**

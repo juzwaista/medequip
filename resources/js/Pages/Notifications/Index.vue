@@ -20,47 +20,151 @@
                 You're all caught up.
             </div>
 
-            <ul v-else class="space-y-3">
+            <ul v-else class="space-y-4">
                 <li
-                    v-for="n in notifications.data"
-                    :key="n.id"
-                    class="bg-white rounded-xl shadow-sm border overflow-hidden transition"
-                    :class="n.read_at ? 'border-gray-100 opacity-80' : 'border-blue-200 ring-1 ring-blue-100'"
+                    v-for="g in displayGroups"
+                    :key="g.id"
                 >
-                    <button
-                        type="button"
-                        class="block p-4 hover:bg-gray-50/80 text-left w-full"
-                        @click="openNotification(n)"
+                    <!-- Single Notification -->
+                    <div v-if="!g.isGroup" 
+                        class="bg-white rounded-xl shadow-sm border overflow-hidden transition"
+                        :class="g.latest.read_at ? 'border-gray-100 opacity-80' : 'border-blue-200 ring-1 ring-blue-100'"
                     >
-                        <div class="flex gap-3 items-start">
-                            <span
-                                class="shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center text-white"
-                                :class="iconBg(n)"
-                                v-html="iconSvg(n)"
-                            />
-                            <div class="min-w-0 flex-1">
-                                <div class="flex justify-between gap-2 items-start">
-                                    <p class="font-semibold text-gray-900 text-sm sm:text-base">
-                                        {{ n.data?.title || 'Notification' }}
-                                    </p>
-                                    <span
-                                        v-if="!n.read_at"
-                                        class="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"
-                                        aria-hidden="true"
-                                    />
-                                </div>
-                                <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ n.data?.body || n.data?.preview || n.data?.message || '' }}</p>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <p class="text-xs text-gray-400">{{ formatWhen(n.created_at) }}</p>
-                                    <span
-                                        v-if="kindLabel(n)"
-                                        class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-                                        :class="kindBadge(n)"
-                                    >{{ kindLabel(n) }}</span>
+                        <button
+                            type="button"
+                            class="block p-4 hover:bg-gray-50/80 text-left w-full"
+                            @click="openNotification(g.latest)"
+                        >
+                            <div class="flex gap-3 items-start">
+                                <span
+                                    class="shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center text-white"
+                                    :class="iconBg(g.latest)"
+                                    v-html="iconSvg(g.latest)"
+                                />
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex justify-between gap-2 items-start">
+                                        <p class="font-semibold text-gray-900 text-sm sm:text-base">
+                                            {{ g.latest.data?.title || 'Notification' }}
+                                        </p>
+                                        <span
+                                            v-if="!g.latest.read_at"
+                                            class="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ g.latest.data?.body || g.latest.data?.preview || g.latest.data?.message || '' }}</p>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <p class="text-xs text-gray-400">{{ formatWhen(g.latest.created_at) }}</p>
+                                        <span
+                                            v-if="kindLabel(g.latest)"
+                                            class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                                            :class="kindBadge(g.latest)"
+                                        >{{ kindLabel(g.latest) }}</span>
+                                    </div>
                                 </div>
                             </div>
+                        </button>
+                    </div>
+
+                    <!-- Grouped Notification -->
+                    <div v-else class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <!-- Group Header -->
+                        <div 
+                            class="flex items-center justify-between p-4 bg-gray-50/50 cursor-pointer hover:bg-gray-100/50 transition border-b border-gray-100"
+                            @click="toggleGroup(g.id)"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                                    <svg v-if="g.type === 'order'" class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    <svg v-else class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                </span>
+                                <div>
+                                    <p class="text-xs font-black text-gray-900 uppercase tracking-widest">
+                                        {{ g.type === 'order' ? 'Order' : 'Chat' }} Updates
+                                    </p>
+                                    <p class="text-[10px] text-gray-500 font-bold">
+                                        {{ g.label }} &middot; {{ g.items.length }} notifications
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span v-if="g.unreadCount > 0" class="bg-blue-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                                    {{ g.unreadCount }} new
+                                </span>
+                                <svg 
+                                    class="w-5 h-5 text-gray-400 transition-transform duration-300" 
+                                    :class="{'rotate-180': expandedGroups.includes(g.id)}"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
                         </div>
-                    </button>
+
+                        <!-- Latest Item (Always Visible if collapsed, but styled as summary) -->
+                        <div v-if="!expandedGroups.includes(g.id)" class="divide-y divide-gray-50">
+                            <button
+                                type="button"
+                                class="block p-4 hover:bg-gray-50/80 text-left w-full"
+                                @click="openNotification(g.latest)"
+                            >
+                                <div class="flex gap-3 items-start">
+                                    <span
+                                        class="shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center text-white"
+                                        :class="iconBg(g.latest)"
+                                        v-html="iconSvg(g.latest)"
+                                    />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex justify-between gap-2 items-start">
+                                            <p class="font-semibold text-gray-900 text-sm">
+                                                {{ g.latest.data?.title }}
+                                            </p>
+                                            <p class="text-[10px] text-gray-400 shrink-0">{{ formatWhen(g.latest.created_at) }}</p>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-0.5 line-clamp-1 italic">Latest: {{ g.latest.data?.body || g.latest.data?.preview }}</p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- All Items (Expanded) -->
+                        <div v-else class="divide-y divide-gray-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div 
+                                v-for="n in g.items" 
+                                :key="n.id"
+                                class="p-4 hover:bg-gray-50/80 transition group relative"
+                                :class="{'bg-blue-50/30': !n.read_at}"
+                            >
+                                <div 
+                                    class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 scale-y-0 group-hover:scale-y-100 transition-transform"
+                                    v-if="!n.read_at"
+                                ></div>
+                                <button
+                                    type="button"
+                                    class="text-left w-full"
+                                    @click="openNotification(n)"
+                                >
+                                    <div class="flex gap-3 items-start">
+                                        <span
+                                            class="shrink-0 mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-white scale-90"
+                                            :class="iconBg(n)"
+                                            v-html="iconSvg(n)"
+                                        />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex justify-between gap-2 items-start">
+                                                <p class="font-medium text-gray-900 text-sm">
+                                                    {{ n.data?.title }}
+                                                </p>
+                                                <span v-if="!n.read_at" class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0"></span>
+                                            </div>
+                                            <p class="text-xs text-gray-600 mt-0.5">{{ n.data?.body || n.data?.preview }}</p>
+                                            <p class="text-[10px] text-gray-400 mt-1">{{ formatWhen(n.created_at) }}</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </li>
             </ul>
 
@@ -83,7 +187,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
@@ -94,6 +198,66 @@ const props = defineProps({
 });
 
 const page = usePage();
+const expandedGroups = ref([]);
+
+const toggleGroup = (id) => {
+    if (expandedGroups.value.includes(id)) {
+        expandedGroups.value = expandedGroups.value.filter(gid => gid !== id);
+    } else {
+        expandedGroups.value.push(id);
+    }
+};
+
+const displayGroups = computed(() => {
+    const raw = props.notifications.data || [];
+    const groups = new Map();
+    const finalItems = [];
+
+    raw.forEach(n => {
+        let gid = null;
+        let groupType = null;
+        let groupLabel = '';
+
+        if (n.data?.order_id) {
+            gid = `order_${n.data.order_id}`;
+            groupType = 'order';
+            groupLabel = n.data.order_number || `#${n.data.order_id}`;
+        } else if (n.data?.conversation_id) {
+            gid = `chat_${n.data.conversation_id}`;
+            groupType = 'chat';
+            groupLabel = n.data.sender_name || 'Conversation';
+        }
+
+        if (gid) {
+            if (!groups.has(gid)) {
+                const groupObj = {
+                    id: gid,
+                    isGroup: true,
+                    type: groupType,
+                    label: groupLabel,
+                    items: [],
+                    latest: n,
+                    unreadCount: 0
+                };
+                groups.set(gid, groupObj);
+                finalItems.push(groupObj);
+            }
+            const g = groups.get(gid);
+            g.items.push(n);
+            if (!n.read_at) g.unreadCount++;
+            // Since they come pre-sorted by created_at desc, the first one seen is the latest
+        } else {
+            finalItems.push({
+                id: n.id,
+                isGroup: false,
+                latest: n,
+                unreadCount: n.read_at ? 0 : 1
+            });
+        }
+    });
+
+    return finalItems;
+});
 
 const layoutComponent = computed(() => {
     const role = page.props.auth?.user?.role;

@@ -43,7 +43,10 @@ class AdminModerationService
     public function approveDistributor(User $actor, Distributor $distributor): void
     {
         $this->assertStaff($actor);
-        $distributor->update(['status' => 'approved']);
+        $distributor->update([
+            'status' => 'approved',
+            'rejection_count' => 0,
+        ]);
         $distributor->refresh();
 
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_approved', $distributor));
@@ -52,14 +55,27 @@ class AdminModerationService
     public function rejectDistributor(User $actor, Distributor $distributor, ?string $reason): void
     {
         $this->assertStaff($actor);
-        $distributor->update([
+
+        $distributor->increment('rejection_count');
+
+        $updates = [
             'status' => 'rejected',
             'rejection_reason' => $reason,
-        ]);
+        ];
+
+        // If rejected 3 times, auto-suspend
+        if ($distributor->rejection_count >= 3) {
+            $updates['suspended_until'] = now()->addYears(10); // Effectively permanent
+            $updates['suspension_reason'] = 'Maximum identification/application retries exceeded (3 failed attempts). Account suspended for security review.';
+        }
+
+        $distributor->update($updates);
         $distributor->refresh();
 
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_rejected', $distributor, [
             'reason' => $reason,
+            'rejection_count' => $distributor->rejection_count,
+            'is_auto_suspended' => $distributor->rejection_count >= 3,
         ]));
     }
 

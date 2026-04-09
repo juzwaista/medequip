@@ -59,6 +59,22 @@
                                         <input v-model="form.max_cod_amount" type="number" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00 (Leave empty for no limit)" />
                                         <p class="text-xs text-gray-500 mt-1">Orders exceeding this amount will not have COD as a payment option.</p>
                                     </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            Pick-up Instructions
+                                        </label>
+                                        <p class="text-xs text-gray-500 mb-2 italic">Provide clear details for customers who choose the "Store Pick-up" option (e.g., precise directions, look for a specific person/stall, or items required like an ID/receipt).</p>
+                                        <textarea 
+                                            v-model="form.pickup_instructions" 
+                                            rows="4" 
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm" 
+                                            placeholder="Example: We are located on the 2nd floor, beside the staircase. Please present your Order ID to the cashier." 
+                                        />
+                                        <p v-if="form.errors.pickup_instructions" class="text-red-500 text-xs mt-1">{{ form.errors.pickup_instructions }}</p>
+                                    </div>
                                 </div>
                             </section>
 
@@ -139,6 +155,60 @@
                                             </p>
                                         </transition>
                                         <p v-if="form.errors.latitude" class="text-red-500 text-xs mt-1">{{ form.errors.latitude }}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Documents & Compliance -->
+                            <section class="border-b pb-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Documents & Compliance</h3>
+                                <p class="text-sm text-gray-500 mb-4">Manage your business documents and track expiration dates for compliance.</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div v-for="doc in distributorDocuments" :key="doc.key" 
+                                        class="rounded-xl border p-4 bg-gray-50 flex flex-col justify-between"
+                                        :class="{'border-amber-200 bg-amber-50': isNearExpiry(doc.expiry)}"
+                                    >
+                                        <div class="flex items-start justify-between mb-3">
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-800">{{ doc.label }}</h4>
+                                                <p v-if="doc.expiry" class="text-xs mt-0.5" :class="isNearExpiry(doc.expiry) ? 'text-amber-700 font-bold' : 'text-gray-500'">
+                                                    Expires: {{ formatDate(doc.expiry) }}
+                                                </p>
+                                                <p v-else class="text-xs text-red-500 mt-0.5 italic">No expiration date set</p>
+                                            </div>
+                                            <div v-if="isNearExpiry(doc.expiry)" class="text-amber-500">
+                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-3">
+                                            <div v-if="scanningFields[doc.key]" class="text-[10px] text-blue-600 font-bold italic animate-pulse flex items-center gap-1">
+                                                <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Scanning new document...
+                                            </div>
+                                            
+                                            <div class="flex items-center gap-2">
+                                                <label :for="`update-${doc.key}`" class="flex-1 text-center bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                                                    Update Document
+                                                </label>
+                                                <input :id="`update-${doc.key}`" type="file" class="sr-only" @change="e => onUpdateDoc(doc.key, e.target.files[0])" accept="image/*" />
+                                                
+                                                <a :href="`/storage/${doc.path}`" target="_blank" class="p-1.5 text-gray-400 hover:text-blue-600 transition" title="View Current">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                </a>
+                                            </div>
+                                            
+                                            <div v-if="form[doc.updateKey]" class="animate-in fade-in slide-in-from-top-1">
+                                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">New Expiry (from OCR)</label>
+                                                <input type="date" v-model="form[doc.expiryKey]" class="w-full px-2 py-1 border border-blue-200 rounded text-xs bg-blue-50 focus:ring-1 focus:ring-blue-500" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -324,8 +394,10 @@ import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 import MapPicker from '@/Components/MapPicker.vue';
 import axios from 'axios';
 import { debounce } from 'lodash';
+import { useOCR } from '@/Composables/useOCR';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const { scanImage, extractExpirationDate } = useOCR();
+const scanningFields = ref({});
 
 const props = defineProps({
     distributor: Object,
@@ -334,6 +406,49 @@ const props = defineProps({
     cities: Object,
     barangays: Object,
 });
+
+const distributorDocuments = computed(() => [
+    { key: 'valid_id', label: 'Primary Government ID', path: props.distributor.valid_id_path, expiry: props.distributor.valid_id_expires_at, updateKey: 'valid_id_new', expiryKey: 'valid_id_expires_at' },
+    { key: 'business_license', label: 'Business Permit', path: props.distributor.business_license_path, expiry: props.distributor.business_license_expires_at, updateKey: 'business_license_new', expiryKey: 'business_license_expires_at' },
+    { key: 'dti_sec', label: 'DTI Certificate / SEC', path: props.distributor.dti_sec_path, expiry: props.distributor.dti_sec_expires_at, updateKey: 'dti_sec_new', expiryKey: 'dti_sec_expires_at' },
+    { key: 'bir_form', label: 'BIR Form 2303', path: props.distributor.bir_form_path, expiry: props.distributor.bir_form_expires_at, updateKey: 'bir_form_new', expiryKey: 'bir_form_expires_at' },
+    { key: 'fda_license', label: 'FDA License to Operate', path: props.distributor.fda_license_path, expiry: props.distributor.fda_license_expires_at, updateKey: 'fda_license_new', expiryKey: 'fda_license_expires_at' },
+    { key: 'prc_id', label: 'PRC ID', path: props.distributor.prc_id_path, expiry: props.distributor.prc_id_expires_at, updateKey: 'prc_id_new', expiryKey: 'prc_id_expires_at' },
+]);
+
+const onUpdateDoc = async (key, file) => {
+    if (!file) return;
+    const doc = distributorDocuments.value.find(d => d.key === key);
+    form[doc.updateKey] = file;
+
+    if (file.type.match('image.*')) {
+        scanningFields.value[key] = true;
+        try {
+            const text = await scanImage(file);
+            const date = extractExpirationDate(text);
+            if (date) {
+                form[doc.expiryKey] = date;
+            }
+        } catch (error) {
+            console.error('OCR failed', error);
+        } finally {
+            scanningFields.value[key] = false;
+        }
+    }
+};
+
+const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
+const isNearExpiry = (date) => {
+    if (!date) return false;
+    const expiry = new Date(date);
+    const now = new Date();
+    const diff = expiry.getTime() - now.getTime();
+    return diff < (30 * 24 * 60 * 60 * 1000); // 30 days
+};
 
 // ─── Fuzzy match helpers (moved to top to avoid ReferenceError on init) ──────
 const normalize = (str) =>
@@ -444,8 +559,23 @@ const form = useForm({
     chat_auto_reply: props.distributor.chat_auto_reply || '',
     featured_product_ids: props.products.filter(p => p.is_featured).map(p => p.id),
     max_cod_amount: props.distributor.max_cod_amount,
+    pickup_instructions: props.distributor.pickup_instructions || '',
     logo: null,
     cover_photo: null,
+    // Expiration Dates
+    valid_id_expires_at: props.distributor.valid_id_expires_at || '',
+    business_license_expires_at: props.distributor.business_license_expires_at || '',
+    dti_sec_expires_at: props.distributor.dti_sec_expires_at || '',
+    bir_form_expires_at: props.distributor.bir_form_expires_at || '',
+    fda_license_expires_at: props.distributor.fda_license_expires_at || '',
+    prc_id_expires_at: props.distributor.prc_id_expires_at || '',
+    // Update files
+    valid_id_new: null,
+    business_license_new: null,
+    dti_sec_new: null,
+    bir_form_new: null,
+    fda_license_new: null,
+    prc_id_new: null,
     _method: 'PUT',
 });
 

@@ -32,6 +32,7 @@ class LicenseController extends Controller
         $request->validate([
             'type' => 'required|in:fda,business_permit,phic,doh,other',
             'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120', SafeUpload::document()],
+            'expires_at' => 'required|date',
         ]);
 
         $path = $request->file('file')->store('licenses', 'public');
@@ -40,6 +41,7 @@ class LicenseController extends Controller
             'distributor_id' => $distributor->id,
             'type' => $request->type,
             'file_path' => $path,
+            'expires_at' => $request->expires_at,
         ]);
 
         return redirect()

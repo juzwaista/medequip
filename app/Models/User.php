@@ -38,6 +38,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'pending_email',
         'login_otp',
         'login_otp_expires_at',
+        'tin',
     ];
 
     /**

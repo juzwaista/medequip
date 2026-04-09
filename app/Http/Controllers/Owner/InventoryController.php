@@ -253,6 +253,7 @@ class InventoryController extends Controller
             'initial_quantity' => 'nullable|integer|min:0',
             'reorder_level' => 'required|integer|min:0',
             'expiry_date' => 'nullable|date|required_if:has_expiry,1',
+            'manufacturing_date' => 'nullable|date',
             'batch_number' => 'nullable|string|max:100',
         ]);
 
@@ -358,6 +359,7 @@ class InventoryController extends Controller
                 if ($firstInv) {
                     $firstInv->update([
                         'expiry_date' => ($validated['has_expiry'] ?? false) ? ($validated['expiry_date'] ?? null) : null,
+                        'manufacturing_date' => $validated['manufacturing_date'] ?? null,
                         'batch_number' => $validated['batch_number'] ?? null,
                     ]);
                 }
@@ -456,6 +458,7 @@ class InventoryController extends Controller
             'initial_quantity' => 'nullable|integer|min:0',
             'reorder_level' => 'required|integer|min:0',
             'expiry_date' => 'nullable|date|required_if:has_expiry,1',
+            'manufacturing_date' => 'nullable|date',
             'batch_number' => 'nullable|string|max:100',
         ]);
 
@@ -584,6 +587,7 @@ class InventoryController extends Controller
                 if ($firstInv) {
                     $firstInv->update([
                         'expiry_date' => ($validated['has_expiry'] ?? false) ? ($validated['expiry_date'] ?? null) : null,
+                        'manufacturing_date' => $validated['manufacturing_date'] ?? null,
                         'batch_number' => $validated['batch_number'] ?? null,
                     ]);
                 }

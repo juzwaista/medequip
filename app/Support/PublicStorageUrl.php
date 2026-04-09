@@ -16,4 +16,9 @@ final class PublicStorageUrl
 
         return '/storage/'.ltrim($path, '/');
     }
+
+    public static function get(?string $path): ?string
+    {
+        return self::url($path);
+    }
 }

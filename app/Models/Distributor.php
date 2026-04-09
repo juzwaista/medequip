@@ -45,6 +45,14 @@ class Distributor extends Model
         'latitude',
         'longitude',
         'max_cod_amount',
+        'rejection_count',
+        'pickup_instructions',
+        'valid_id_expires_at',
+        'business_license_expires_at',
+        'dti_sec_expires_at',
+        'bir_form_expires_at',
+        'fda_license_expires_at',
+        'prc_id_expires_at',
     ];
 
     protected $casts = [
@@ -57,9 +65,39 @@ class Distributor extends Model
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'max_cod_amount' => 'decimal:2',
+        'valid_id_expires_at' => 'date',
+        'business_license_expires_at' => 'date',
+        'dti_sec_expires_at' => 'date',
+        'bir_form_expires_at' => 'date',
+        'fda_license_expires_at' => 'date',
+        'prc_id_expires_at' => 'date',
     ];
 
-    protected $appends = ['is_suspended', 'unread_alerts_count'];
+    protected $appends = ['is_suspended', 'unread_alerts_count', 'logo_url', 'cover_photo_url', 'rating'];
+
+    /**
+     * Get logo URL using PublicStorageUrl helper for Hostinger resilience
+     */
+    public function getLogoUrlAttribute()
+    {
+        return \App\Support\PublicStorageUrl::get($this->logo_path);
+    }
+
+    /**
+     * Get cover photo URL using PublicStorageUrl helper for Hostinger resilience
+     */
+    public function getCoverPhotoUrlAttribute()
+    {
+        return \App\Support\PublicStorageUrl::get($this->cover_photo_path);
+    }
+
+    /**
+     * Get shop rating based on product reviews
+     */
+    public function getRatingAttribute()
+    {
+        return (float) $this->products()->withAvg('reviews', 'stars')->get()->avg('reviews_avg_stars') ?: 0.0;
+    }
 
     /**
      * Get the user/owner

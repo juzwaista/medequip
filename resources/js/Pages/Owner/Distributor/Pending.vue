@@ -34,15 +34,30 @@
                             </svg>
                         </div>
 
-                        <h1 class="text-3xl font-bold text-gray-900 mb-4">Application Rejected</h1>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Application Rejected</h1>
                         
-                        <p class="text-lg text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
-                            Unfortunately, your distributor application was not approved.
+                        <div class="mb-6 flex flex-col items-center">
+                            <span class="text-xs font-bold uppercase tracking-widest text-red-600 mb-1">Attempt {{ distributor.rejection_count }} of 3</span>
+                            <div class="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-red-500 transition-all duration-500" :style="{ width: (distributor.rejection_count / 3 * 100) + '%' }"></div>
+                            </div>
+                        </div>
+
+                        <p v-if="!distributor.is_suspended" class="text-lg text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
+                            Unfortunately, your distributor application was not approved. You have <span class="font-bold">{{ 3 - distributor.rejection_count }}</span> attempts remaining.
+                        </p>
+                        <p v-else class="text-lg text-red-600 font-bold mb-6 max-w-lg mx-auto leading-relaxed">
+                            Your account has been suspended due to 3 failed application attempts.
                         </p>
 
                         <div v-if="distributor?.rejection_reason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-left">
                             <p class="text-xs font-bold text-red-800 uppercase tracking-widest mb-1">Reason for REJECTION</p>
                             <p class="text-sm font-medium text-red-700">{{ distributor.rejection_reason }}</p>
+                        </div>
+
+                        <div v-if="distributor.is_suspended" class="bg-gray-900 border border-gray-700 rounded-xl p-4 mb-6 text-left shadow-2xl">
+                            <p class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-1">Suspension Notice</p>
+                            <p class="text-sm font-medium text-gray-300">{{ distributor.suspension_reason || 'Account suspended after maximum rejection attempts reached.' }}</p>
                         </div>
                     </template>
 
@@ -63,17 +78,21 @@
                                 status === 'pending'
                                     ? 'bg-amber-100 text-amber-800'
                                     : 'bg-red-100 text-red-800'
-                            ]">{{ status }}</span>
+                            ]">{{ distributor.is_suspended ? 'SUSPENDED' : status }}</span>
                         </div>
                     </div>
 
                     <!-- Actions -->
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button v-if="status === 'rejected'"
+                        <button v-if="status === 'rejected' && !distributor.is_suspended"
                             @click="goResubmit"
                             class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition">
                             Re-submit Application
                         </button>
+
+                        <div v-else-if="distributor.is_suspended" class="text-center">
+                             <a href="mailto:support@medequip.ph" class="text-blue-600 hover:underline font-bold text-sm">Contact Support for Verification</a>
+                        </div>
 
                         <Link v-if="status === 'pending'" href="/products"
                             class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition">

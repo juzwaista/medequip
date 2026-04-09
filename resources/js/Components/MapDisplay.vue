@@ -68,9 +68,22 @@ const initMap = () => {
     const latNum = parseFloat(props.lat);
     const lngNum = parseFloat(props.lng);
 
+    const caviteBounds = [
+        [14.08, 120.62], // Southwest (refined for land-alignment)
+        [14.52, 121.08]  // Northeast (refined for land-alignment)
+    ];
+
+    const viewBounds = [
+        [13.50, 120.00], 
+        [15.00, 121.50]
+    ];
+
     map = L.map(mapContainer.value, {
         center: [latNum, lngNum],
         zoom: 16,
+        minZoom: 9,
+        maxBounds: viewBounds,
+        maxBoundsViscosity: 0.5,
         scrollWheelZoom: false, // Prevent accidental scrolling while scrolling page
         dragging: !L.Browser.mobile // Disable dragging on mobile to avoid trapping scroll
     });
@@ -78,6 +91,16 @@ const initMap = () => {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Visual boundary - thick red dashed line
+    L.rectangle(caviteBounds, {
+        color: "#ef4444", 
+        weight: 5,
+        fill: true,
+        fillOpacity: 0.02,
+        dashArray: '10, 10',
+        interactive: false
     }).addTo(map);
 
     marker = L.marker([latNum, lngNum]).addTo(map);

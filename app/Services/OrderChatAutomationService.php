@@ -100,6 +100,53 @@ class OrderChatAutomationService
         });
     }
 
+    public function sendPackagingPhotosMessage(Order $order): void
+    {
+        $order->loadMissing(['distributor']);
+        $distributor = $order->distributor;
+        if (! $distributor || ! $distributor->user_id) {
+            return;
+        }
+
+        $conversation = $order->getOrCreateShopConversation();
+
+        if ($order->packaging_before_image_path) {
+            $conversation->messages()->create([
+                'user_id' => $distributor->user_id,
+                'kind' => 'image',
+                'order_id' => $order->id,
+                'body' => 'Photo of your items before packing.',
+                'image_path' => $order->packaging_before_image_path,
+                'meta' => ['automated' => true, 'event' => 'packaging_before'],
+            ]);
+        }
+
+        if ($order->packaging_after_image_path) {
+            $conversation->messages()->create([
+                'user_id' => $distributor->user_id,
+                'kind' => 'image',
+                'order_id' => $order->id,
+                'body' => 'Photo of your package after it was packed.',
+                'image_path' => $order->packaging_after_image_path,
+                'meta' => ['automated' => true, 'event' => 'packaging_after'],
+            ]);
+        }
+
+        if ($order->is_fragile) {
+            $conversation->messages()->create([
+                'user_id' => $distributor->user_id,
+                'kind' => 'text',
+                'order_id' => $order->id,
+                'body' => '⚠ This package has been marked as FRAGILE for extra safety during transit. We have requested the courier to handle it with extreme care.',
+                'meta' => ['automated' => true, 'event' => 'fragile_flag'],
+            ]);
+        }
+
+        $conversation->update(['last_message_at' => now()]);
+        
+        Log::info('[OrderChatAutomation] Packaging photos posted to chat', ['order_id' => $order->id]);
+    }
+
     private function interpolate(string $template, Order $order, string $shopName): string
     {
         $customerName = $order->customer?->name ?? 'customer';

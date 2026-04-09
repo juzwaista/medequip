@@ -209,7 +209,7 @@
             >
                 <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5" @click.stop>
                     <h3 class="font-bold text-gray-900">Report message</h3>
-                    <p class="text-xs text-gray-600 mt-1">Our team reviews reports about harassment, scams, or inappropriate content.</p>
+                    <p class="text-xs text-gray-600 mt-1">Our team reviews reports about harassment, scams, or inappropriate content. <strong>To ensure community safety, reported chats may be reviewed by MedEquip administrators.</strong></p>
                     <div class="mt-4 space-y-3">
                         <label class="block text-xs font-semibold text-gray-700">Reason</label>
                         <select v-model="reportReason" class="w-full rounded-lg border-gray-300 text-sm">

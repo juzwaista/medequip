@@ -71,6 +71,13 @@ class DistributorController extends Controller
             'fda_license' => ['required', 'file', 'max:10240', SafeUpload::document()],
             'prc_id' => ['required', 'file', 'max:10240', SafeUpload::document()],
             'authorization_letter' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
+            // Expiration dates
+            'valid_id_expires_at' => 'required|date',
+            'business_license_expires_at' => 'required|date',
+            'dti_sec_expires_at' => 'required|date',
+            'bir_form_expires_at' => 'required|date',
+            'fda_license_expires_at' => 'required|date',
+            'prc_id_expires_at' => 'required|date',
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);
@@ -102,6 +109,12 @@ class DistributorController extends Controller
                 'fda_license_path' => $fdaLicensePath,
                 'prc_id_path' => $prcIdPath,
                 'authorization_letter_path' => $authLetterPath,
+                'valid_id_expires_at' => $validated['valid_id_expires_at'],
+                'business_license_expires_at' => $validated['business_license_expires_at'],
+                'dti_sec_expires_at' => $validated['dti_sec_expires_at'],
+                'bir_form_expires_at' => $validated['bir_form_expires_at'],
+                'fda_license_expires_at' => $validated['fda_license_expires_at'],
+                'prc_id_expires_at' => $validated['prc_id_expires_at'],
                 'status' => 'pending',
                 'is_verified' => 0,
                 'rejection_reason' => null,

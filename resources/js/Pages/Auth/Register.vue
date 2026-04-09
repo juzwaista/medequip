@@ -69,7 +69,7 @@
                             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">Account</h3>
 
                             <div>
-                                <label class="block text-sm font-semibold mb-1.5 text-gray-700">Username</label>
+                                <label class="block text-sm font-semibold mb-1.5 text-gray-700">Username <span class="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     v-model="form.username"
@@ -97,7 +97,7 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold mb-1.5 text-gray-700">Email Address</label>
+                                <label class="block text-sm font-semibold mb-1.5 text-gray-700">Email Address <span class="text-red-500">*</span></label>
                                 <input type="email" v-model="form.email" required placeholder="you@example.com"
                                     class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
                                 <p v-if="form.errors.email" class="text-red-600 text-xs mt-1.5">{{ form.errors.email }}</p>
@@ -105,7 +105,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Password</label>
+                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Password <span class="text-red-500">*</span></label>
                                     <div class="relative">
                                         <input :type="showPassword ? 'text' : 'password'" v-model="form.password" required placeholder="••••••••"
                                             class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
@@ -134,10 +134,18 @@
                                     </ul>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Confirm Password</label>
+                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Confirm Password <span class="text-red-500">*</span></label>
                                     <input :type="showPassword ? 'text' : 'password'" v-model="form.password_confirmation" required placeholder="••••••••"
                                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
                                 </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold mb-1.5 text-gray-700">Contact Number <span class="text-red-500">*</span></label>
+                                <input v-model="form.contact_number" @input="sanitizeContactNumber" type="tel" required inputmode="numeric" pattern="09[0-9]{9}" maxlength="11" placeholder="09XX XXX XXXX"
+                                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
+                                <p class="text-[10px] text-gray-500 mt-1">11 digits starting with 09 (e.g. 09123456789)</p>
+                                <p v-if="form.errors.contact_number" class="text-red-600 text-xs mt-1.5">{{ form.errors.contact_number }}</p>
                             </div>
                         </div>
 
@@ -171,7 +179,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">City / Municipality *</label>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">City / Municipality <span class="text-red-500">*</span></label>
                                     <select v-model="selectedCity" @change="onCityChange" required
                                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white text-sm">
                                         <option value="">Select city</option>
@@ -180,7 +188,7 @@
                                     <p v-if="form.errors.city" class="text-red-600 text-xs mt-1.5">{{ form.errors.city }}</p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay *</label>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay <span class="text-red-500">*</span></label>
                                     <select v-if="availableBarangays.length > 0" v-model="selectedBarangay" required
                                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white text-sm">
                                         <option value="">Select barangay</option>
@@ -194,13 +202,13 @@
                             </div>
 
                             <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
-                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay Name *</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay Name <span class="text-red-500">*</span></label>
                                 <input v-model="manualBarangay" type="text" required placeholder="Type your barangay name"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm placeholder-gray-300" />
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Street Address *</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Street Address <span class="text-red-500">*</span></label>
                                 <input v-model="form.address_line" type="text" required placeholder="e.g., Blk 5 Lot 10 Sampaguita St."
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm placeholder-gray-300" />
                                 <p v-if="form.errors.address_line" class="text-red-600 text-xs mt-1.5">{{ form.errors.address_line }}</p>
@@ -208,15 +216,9 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Zip Code</label>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Zip Code <span class="text-red-500">*</span></label>
                                     <input v-model="zipCode" type="text" readonly placeholder="Auto-filled"
                                         class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl bg-gray-50 text-gray-500 text-sm" />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contact Number *</label>
-                                    <input v-model="form.contact_number" @input="sanitizeContactNumber" type="tel" required inputmode="numeric" pattern="09[0-9]{9}" maxlength="11" placeholder="09XX XXX XXXX"
-                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm placeholder-gray-300" />
-                                    <p v-if="form.errors.contact_number" class="text-red-600 text-xs mt-1.5">{{ form.errors.contact_number }}</p>
                                 </div>
                             </div>
                             

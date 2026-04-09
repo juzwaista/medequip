@@ -250,8 +250,8 @@ class PaymentController extends Controller
             ->where('paymongo_status', 'active')
             ->update(['paymongo_status' => 'expired', 'status' => 'rejected']);
 
-        return redirect()->route('orders.confirmation', $invoice->order)
-            ->with('error', 'Payment was cancelled. You can retry from your orders.');
+        return redirect()->route('orders.show', $invoice->order)
+            ->with('error', 'Payment was cancelled. You can retry from this page.');
     }
 
     /**
@@ -310,9 +310,8 @@ class PaymentController extends Controller
             'cancelled_at' => now(),
         ]);
 
-        return redirect()->route('orders.confirmation', $batch->primary_order_id)
-            ->with('confirmation_order_ids', $batch->order_ids ?? [])
-            ->with('error', 'Payment was cancelled. You can retry from your orders.');
+        return redirect()->route('orders.show', $batch->primary_order_id)
+            ->with('error', 'Payment was cancelled for some or all orders. You can retry from this page or your orders list.');
     }
 
     private function finalizePaymentAsVerified(Payment $payment): void

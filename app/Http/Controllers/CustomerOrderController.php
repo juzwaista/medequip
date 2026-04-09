@@ -117,7 +117,7 @@ class CustomerOrderController extends Controller
             'items.product',
             'items.productVariation',
             'items.inventory.branch',
-            'distributor',
+            'distributor.user',
             'invoice.payments',
             'delivery.courier.user',
         ]);

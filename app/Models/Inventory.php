@@ -18,12 +18,14 @@ class Inventory extends Model
         'quantity',
         'reorder_level',
         'expiry_date',
+        'manufacturing_date',
         'batch_number',
         'reserved_quantity',
     ];
 
     protected $casts = [
         'expiry_date' => 'date',
+        'manufacturing_date' => 'date',
     ];
 
     /**

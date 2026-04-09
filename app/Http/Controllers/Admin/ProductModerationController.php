@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -63,6 +64,11 @@ class ProductModerationController extends Controller
 
         $product->update(['is_active' => false]);
 
+        AuditLog::log('product_deactivated', $product, [
+            'name' => $product->name,
+            'sku' => $product->sku
+        ]);
+
         return back()->with('success', 'Listing hidden from the public catalog. The seller can still see it in their inventory.');
     }
 
@@ -73,6 +79,11 @@ class ProductModerationController extends Controller
         }
 
         $product->delete();
+
+        AuditLog::log('product_soft_deleted', $product, [
+            'name' => $product->name,
+            'sku' => $product->sku
+        ]);
 
         return back()->with('success', 'Product removed from the catalog (soft delete).');
     }

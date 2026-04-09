@@ -147,6 +147,19 @@
                                         </label>
                                         <p v-if="doc.hint" class="text-xs text-gray-500">{{ doc.hint }}</p>
                                         <p v-if="form.errors[doc.key]" class="text-xs text-red-600 mt-1">{{ form.errors[doc.key] }}</p>
+
+                                        <!-- Expiration Date Field -->
+                                        <div v-if="form[doc.key] && doc.expiryKey" class="mt-3 animate-in fade-in slide-in-from-top-2">
+                                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Expiration Date</label>
+                                            <div class="relative">
+                                                <input type="date" v-model="form[doc.expiryKey]"
+                                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 bg-white"
+                                                    :class="{'animate-pulse bg-blue-50 border-blue-200': scanningFields[doc.key]}"/>
+                                                <div v-if="scanningFields[doc.key]" class="absolute right-2 top-1.5 flex items-center gap-1.5">
+                                                    <span class="text-[10px] text-blue-600 font-semibold italic">Scanning...</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="flex-shrink-0 flex items-center gap-2">
                                         <span v-if="form[doc.key]" class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full truncate max-w-[100px]">
@@ -156,7 +169,7 @@
                                         <label :for="doc.key" class="cursor-pointer bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition flex-shrink-0">
                                             {{ form[doc.key] ? 'Change' : 'Upload' }}
                                         </label>
-                                        <input :id="doc.key" type="file" accept=".pdf,.jpg,.jpeg,.png"
+                                        <input :id="doc.key" type="file" accept=".jpg,.jpeg,.png"
                                             @change="e => handleFileChange(doc.key, e.target.files[0])"
                                             class="sr-only"/>
                                     </div>
@@ -233,8 +246,11 @@
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
+import { useOCR } from '@/Composables/useOCR';
 
+const { scanImage, extractExpirationDate } = useOCR();
 const currentStep = ref(0);
+const scanningFields = ref({});
 
 const steps = [
     { label: 'Welcome' },
@@ -250,12 +266,12 @@ const requirements = [
 ];
 
 const docFields = [
-    { key: 'dti_sec',              label: 'DTI Certificate or SEC Registration', short: 'DTI/SEC',         hint: null,             optional: false },
-    { key: 'business_license',     label: 'Business Permit',                      short: 'Business Permit', hint: null,             optional: false },
-    { key: 'bir_form',             label: 'BIR Form (e.g. 2303)',                 short: 'BIR Form',        hint: null,             optional: false },
-    { key: 'fda_license',          label: 'FDA License to Operate (LTO)',         short: 'FDA LTO',         hint: null,             optional: false },
-    { key: 'prc_id',               label: 'Pharmacist / Qualified Person PRC ID', short: 'PRC ID',          hint: null,             optional: false },
-    { key: 'valid_id',             label: 'Primary Valid Government ID',           short: 'Gov\'t ID',       hint: 'Driver\'s License, Passport, UMID, etc.', optional: false },
+    { key: 'dti_sec',              label: 'DTI Certificate or SEC Registration', short: 'DTI/SEC',         hint: null,             optional: false, expiryKey: 'dti_sec_expires_at' },
+    { key: 'business_license',     label: 'Business Permit',                      short: 'Business Permit', hint: null,             optional: false, expiryKey: 'business_license_expires_at' },
+    { key: 'bir_form',             label: 'BIR Form (e.g. 2303)',                 short: 'BIR Form',        hint: null,             optional: false, expiryKey: 'bir_form_expires_at' },
+    { key: 'fda_license',          label: 'FDA License to Operate (LTO)',         short: 'FDA LTO',         hint: null,             optional: false, expiryKey: 'fda_license_expires_at' },
+    { key: 'prc_id',               label: 'Pharmacist / Qualified Person PRC ID', short: 'PRC ID',          hint: null,             optional: false, expiryKey: 'prc_id_expires_at' },
+    { key: 'valid_id',             label: 'Primary Valid Government ID',           short: 'Gov\'t ID',       hint: 'Driver\'s License, Passport, UMID, etc.', optional: false, expiryKey: 'valid_id_expires_at' },
     { key: 'authorization_letter', label: 'Authorization Letter',                  short: 'Auth Letter',     hint: 'Required only if you are not the business owner.', optional: true },
 ];
 
@@ -271,6 +287,13 @@ const form = useForm({
     fda_license: null,
     prc_id: null,
     authorization_letter: null,
+    // Expiration dates
+    valid_id_expires_at: '',
+    business_license_expires_at: '',
+    dti_sec_expires_at: '',
+    bir_form_expires_at: '',
+    fda_license_expires_at: '',
+    prc_id_expires_at: '',
 });
 
 const requiredDocCount = computed(() => docFields.filter((d) => !d.optional).length);
@@ -280,7 +303,7 @@ const sanitizeContactNumber = () => {
     form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
 };
 
-const handleFileChange = (key, file) => {
+const handleFileChange = async (key, file) => {
     if (!file) {
         form[key] = null;
         return;
@@ -295,6 +318,23 @@ const handleFileChange = (key, file) => {
     
     delete form.errors[key];
     form[key] = file;
+
+    // Trigger OCR for image files
+    const field = docFields.find(d => d.key === key);
+    if (field && field.expiryKey && file.type.match('image.*')) {
+        scanningFields.value[key] = true;
+        try {
+            const text = await scanImage(file);
+            const date = extractExpirationDate(text);
+            if (date) {
+                form[field.expiryKey] = date;
+            }
+        } catch (error) {
+            console.error('OCR failed for', key, error);
+        } finally {
+            scanningFields.value[key] = false;
+        }
+    }
 };
 
 const validateStep1 = () => {

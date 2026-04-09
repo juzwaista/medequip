@@ -79,6 +79,7 @@ class OrderController extends Controller
             'invoice.payments',
             'delivery.courier.user',
             'distributor',
+            'productReviews.product',
         ]);
 
         $paymentSettlement = [
@@ -187,11 +188,19 @@ class OrderController extends Controller
         }
 
         $request->validate([
-            'status' => 'required|in:pending,approved,rejected,packed,cancelled',
+            'status' => 'required|in:pending,approved,rejected,packed,cancelled,ready_for_pickup',
+            'packaging_before' => 'required_if:status,packed|image|max:5120',
+            'packaging_after' => 'required_if:status,packed|image|max:5120',
         ]);
 
         $oldStatus = $order->status;
         $newStatus = $request->status;
+
+        if ($newStatus === 'packed' && $oldStatus !== 'approved') {
+            return back()->withErrors([
+                'error' => "Order must be 'approved' before it can be marked as 'packed'.",
+            ]);
+        }
 
         if ($newStatus === 'approved' && $order->prescriptionBlocksFulfillment()) {
             return back()->withErrors([
@@ -202,12 +211,15 @@ class OrderController extends Controller
         // Bug 14: Enforce valid state machine transitions
         $validTransitions = [
             'pending' => ['approved', 'rejected', 'cancelled'],
-            'approved' => ['packed', 'cancelled'],
+            'approved' => ['packed', 'ready_for_pickup', 'cancelled'],
             'packed' => [],          // Shipped/Delivered handled by Courier
+            'ready_for_pickup' => [], // Customer confirms received
             'shipped' => [],          // Terminal for owner
             'delivered' => [],          // Terminal state
             'cancelled' => [],          // Terminal state
             'rejected' => [],          // Terminal state
+            'discount_review' => ['approved', 'rejected', 'cancelled'],
+            'prescription_review' => ['approved', 'rejected', 'cancelled'],
         ];
 
         if (! in_array($newStatus, $validTransitions[$oldStatus] ?? [])) {
@@ -285,8 +297,28 @@ class OrderController extends Controller
             }
         }
 
-        // If packed, create delivery record for the Courier Dispatch pool
+        // If packed, handle photos and create delivery record
         if ($newStatus === 'packed' && $oldStatus !== 'packed') {
+            if ($request->hasFile('packaging_before')) {
+                $order->packaging_before_image_path = $request->file('packaging_before')->store('orders/packaging', 'public');
+            }
+            if ($request->hasFile('packaging_after')) {
+                $order->packaging_after_image_path = $request->file('packaging_after')->store('orders/packaging', 'public');
+            }
+
+            // Capture fragile flag
+            if ($request->has('is_fragile')) {
+                $order->is_fragile = filter_var($request->is_fragile, FILTER_VALIDATE_BOOLEAN);
+            }
+
+            $order->packed_at = now();
+            // Store status here for fresh() notification
+            $order->status = 'packed';
+            $order->save();
+
+            // Notify via chat with photos
+            app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order->fresh());
+
             $order->loadMissing([]);
 
             Delivery::firstOrCreate(
@@ -299,7 +331,6 @@ class OrderController extends Controller
                     'status' => 'scheduled', // 'pending' is not a valid ENUM value — use 'scheduled' for pool
                 ]
             );
-
         }
 
         // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).
@@ -337,6 +368,7 @@ class OrderController extends Controller
             'rejected' => 'order_rejected',
             'packed' => 'order_packed',
             'cancelled' => 'order_cancelled',
+            'ready_for_pickup' => 'ready_for_pickup',
         ];
 
         if (isset($kindMap[$newStatus]) && $order->customer) {
@@ -557,5 +589,85 @@ class OrderController extends Controller
         }
 
         return back()->with('success', 'Prescription rejected. The order was cancelled, stock reservations released, and the customer refunded where applicable.');
+    }
+
+    /**
+     * Approve SC/PWD discount
+     */
+    public function approveDiscount(Request $request, Order $order)
+    {
+        $distributor = $this->getDistributor();
+        if ($order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
+        if (!$order->needsDiscountReview()) {
+            return back()->withErrors(['error' => 'Discount is not pending review.']);
+        }
+
+        $order->update([
+            'discount_status' => Order::DISCOUNT_APPROVED,
+            'discount_reviewed_at' => now(),
+            'discount_review_note' => null,
+        ]);
+
+        $order->loadMissing(['customer', 'distributor']);
+        if ($order->customer) {
+            $order->customer->notify(new OrderNotification($order, 'discount_approved', [
+                'shop_name' => $order->distributor?->company_name ?? 'the seller',
+                'discount_type' => $order->discount_type === 'senior' ? 'Senior Citizen' : 'PWD',
+            ]));
+        }
+
+        return back()->with('success', 'Discount approved. The VAT exemption and 20% discount are now valid for this order.');
+    }
+
+    /**
+     * Reject SC/PWD discount - cancels order as per requirements
+     */
+    public function rejectDiscount(Request $request, Order $order, OrderPrescriptionRefundService $refundService)
+    {
+        $distributor = $this->getDistributor();
+        if ($order->distributor_id !== $distributor->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        if (!$order->needsDiscountReview()) {
+            return back()->withErrors(['error' => 'Discount is not pending review.']);
+        }
+
+        DB::transaction(function () use ($order, $request, $refundService) {
+            $order->load('items.inventory');
+
+            foreach ($order->items as $item) {
+                if ($order->status === 'pending') {
+                    $item->inventory->releaseReservation($item->quantity);
+                }
+            }
+
+            $order->update([
+                'discount_status' => Order::DISCOUNT_REJECTED,
+                'discount_review_note' => $request->reason,
+                'discount_reviewed_at' => now(),
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+            ]);
+
+            $refundService->refundAfterOrderCancellation($order->fresh(), 'rejected');
+        });
+
+        $order->loadMissing(['customer', 'distributor']);
+        if ($order->customer) {
+            $order->customer->notify(new OrderNotification($order, 'discount_rejected', [
+                'shop_name' => $order->distributor?->company_name ?? 'the seller',
+                'reason' => $request->reason,
+            ]));
+        }
+
+        return back()->with('success', 'Discount rejected and order cancelled.');
     }
 }

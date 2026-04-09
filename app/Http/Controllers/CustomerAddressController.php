@@ -39,8 +39,8 @@ class CustomerAddressController extends Controller
             'province' => 'required|string|in:Cavite',
             'zip_code' => 'required|string|max:10',
             'is_default' => 'boolean',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+            'latitude' => 'required|numeric|between:14.00,14.60',
+            'longitude' => 'required|numeric|between:120.50,121.20',
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);

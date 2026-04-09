@@ -155,7 +155,7 @@
                                 <div class="min-w-0">
                                     <h3 class="text-base sm:text-lg font-bold text-gray-900 truncate">{{ order.order_number }}</h3>
                                     <p class="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
-                                        <DateFormat :date="order.created_at" format="long" />
+                                        <DateFormat :date="order.created_at" format="datetime" />
                                     </p>
                                 </div>
                                 <div class="self-start sm:self-auto">

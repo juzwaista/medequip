@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $user    = auth()->user();
 
         // Dispatch Pool: Deliveries that are scheduled (packed, awaiting courier) with no courier assigned yet
-        $availableDeliveries = Delivery::with(['order.distributor', 'order.items.product', 'order.customer'])
+        $availableDeliveries = Delivery::with(['order.distributor.user', 'order.items.product', 'order.customer'])
             ->whereNull('courier_id')
             ->where('status', 'scheduled')
             ->latest()
@@ -24,14 +24,14 @@ class DashboardController extends Controller
 
 
         // Active Deliveries: assigned to this courier, not yet completed
-        $myDeliveries = Delivery::with(['order.distributor', 'order.customer', 'order.items.product'])
+        $myDeliveries = Delivery::with(['order.distributor.user', 'order.customer', 'order.items.product'])
             ->where('courier_id', $courier->id)
             ->whereNotIn('status', ['delivered', 'failed'])
             ->latest()
             ->get();
 
         // Full paginated history
-        $history = Delivery::with(['order.distributor', 'order.customer'])
+        $history = Delivery::with(['order.distributor.user', 'order.customer'])
             ->where('courier_id', $courier->id)
             ->whereIn('status', ['delivered', 'failed'])
             ->latest()

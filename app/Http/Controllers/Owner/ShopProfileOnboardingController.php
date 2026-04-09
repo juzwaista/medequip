@@ -65,6 +65,7 @@ class ShopProfileOnboardingController extends Controller
             'slug' => 'required|alpha_dash|unique:distributors,slug,'.$distributor->id,
             'description' => 'required|string|min:30|max:2000',
             'phone' => ['nullable', 'regex:/^09[0-9]{9}$/'],
+            'pickup_instructions' => 'nullable|string|max:5000',
             'logo' => ['nullable', 'image', 'max:2048', SafeUpload::image()],
             'cover_photo' => ['nullable', 'image', 'max:5120', SafeUpload::image()],
         ], [

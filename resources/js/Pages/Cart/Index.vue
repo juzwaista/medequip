@@ -152,8 +152,21 @@
                                     </div>
 
                                     <div class="text-right">
-                                        <p class="text-xs text-gray-400">₱{{ Number(item.unit_price).toLocaleString() }} each</p>
-                                        <p class="text-xl font-black text-blue-600">₱{{ Number(item.subtotal).toLocaleString() }}</p>
+                                        <div class="flex flex-col items-end">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ item.quantity }} × ₱{{ Number(item.unit_price).toLocaleString() }}</span>
+                                            
+                                            <!-- Price / Total -->
+                                            <div class="flex flex-col items-end gap-1 shrink-0">
+                                                <!-- Original Total -->
+                                                <span v-if="item.is_wholesale" class="text-xs text-gray-300 line-through font-medium">₱{{ Number(item.product.base_price * item.quantity).toLocaleString() }}</span>
+                                                <span v-else class="text-xs text-gray-400 font-medium mt-0.5">₱{{ Number(item.quantity * item.unit_price).toLocaleString() }}</span>
+                                                
+                                                <!-- Final Price (Black) -->
+                                                <span class="text-base sm:text-lg font-black text-gray-900 tabular-nums leading-none mt-0.5">
+                                                    ₱{{ Number(item.subtotal).toLocaleString() }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -167,21 +180,31 @@
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
                         
                         <div class="space-y-3 mb-6">
-                            <div class="flex justify-between text-gray-600">
-                                <span>Selected Items</span>
-                                <span>{{ selectedCount }} of {{ cartItems.length }}</span>
+                            <div class="flex justify-between items-center text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">
+                                <span>Order Summary</span>
                             </div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>Subtotal</span>
-                                <span>₱{{ Number(selectedSubtotal).toLocaleString() }}</span>
+                            
+                            <div class="flex justify-between items-center text-sm font-medium text-gray-500 px-1 pt-1">
+                                <span>Order Total</span>
+                                <span class="text-gray-900 font-bold">₱{{ Number(selectedOriginalSubtotal).toLocaleString() }}</span>
                             </div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>Shipping</span>
-                                <span>₱{{ Number(selectedShippingFee).toLocaleString() }}</span>
+
+                            <div class="flex justify-between items-center text-sm font-medium text-gray-500 px-1">
+                                <span>Shipping Fee</span>
+                                <span class="text-gray-900">₱{{ Number(selectedShippingFee).toLocaleString() }}</span>
                             </div>
-                            <div class="border-t pt-3 flex justify-between text-lg font-bold">
-                                <span>Total</span>
-                                <span class="text-blue-600">₱{{ Number(selectedGrandTotal).toLocaleString() }}</span>
+
+                            <div v-if="selectedTotalSavings > 0" class="flex justify-between items-center text-[10px] font-bold text-emerald-600 bg-emerald-50/30 px-2 py-1 rounded-md border border-emerald-100/30">
+                                <span class="uppercase tracking-tight">Wholesale Savings</span>
+                                <span>−₱{{ Number(selectedTotalSavings).toLocaleString() }}</span>
+                            </div>
+
+                            <div class="pt-4 border-t border-gray-100 flex flex-col gap-1">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount to Pay</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span v-if="selectedTotalSavings > 0" class="text-sm text-gray-300 line-through font-medium">₱{{ Number(selectedOriginalSubtotal + selectedShippingFee).toLocaleString() }}</span>
+                                    <span class="text-3xl font-black text-gray-900 tabular-nums leading-none">₱{{ Number(selectedGrandTotal).toLocaleString() }}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -304,6 +327,16 @@ const selectedSubtotal = computed(() => {
     return props.cartItems
         .filter(item => selectedItems.value[item.line_key])
         .reduce((sum, item) => sum + Number(item.subtotal), 0);
+});
+
+const selectedOriginalSubtotal = computed(() => {
+    return props.cartItems
+        .filter(item => selectedItems.value[item.line_key])
+        .reduce((sum, item) => sum + (Number(item.product.base_price) * item.quantity), 0);
+});
+
+const selectedTotalSavings = computed(() => {
+    return Math.max(0, selectedOriginalSubtotal.value - selectedSubtotal.value);
 });
 
 const selectedShippingFee = computed(() => {

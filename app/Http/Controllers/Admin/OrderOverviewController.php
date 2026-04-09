@@ -49,12 +49,13 @@ class OrderOverviewController extends Controller
     public function show(Order $order)
     {
         $order->load([
-            'customer:id,name,email',
-            'distributor:id,company_name,contact_number,address',
+            'customer:id,name,email,phone_number',
+            'distributor:id,user_id,company_name,contact_number,address',
+            'distributor.user:id,phone_number',
             'items.product:id,name',
             'items.productVariation',
             'invoice.payments',
-            'delivery.courier.user:id,name',
+            'delivery.courier.user:id,name,phone_number',
         ]);
 
         return Inertia::render('Admin/Orders/Show', [

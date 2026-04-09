@@ -59,6 +59,17 @@
                     <p class="text-xs text-gray-500 mt-1">Shown on your public shop. You can change this anytime.</p>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1">Pick-up Instructions <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <textarea
+                        v-model="form.pickup_instructions"
+                        rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                        placeholder="Directions for customers who pick up orders in person."
+                    />
+                    <p class="text-xs text-gray-500 mt-1">Provide clear collection details for customers choosing "Store Pick-up."</p>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-800 mb-1">Logo <span class="text-gray-400 font-normal">(optional)</span></label>
@@ -103,6 +114,7 @@ const form = useForm({
     slug: props.distributor.slug || props.distributor.suggested_slug || '',
     description: props.distributor.description || '',
     phone: props.distributor.phone || '',
+    pickup_instructions: '',
     logo: null,
     cover_photo: null,
 });

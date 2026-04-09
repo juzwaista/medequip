@@ -112,13 +112,33 @@
                     <p class="text-sm text-indigo-900/80 mb-4">
                         For prescription-only items, customers will upload a prescription photo after checkout. You approve or reject before they can pay.
                     </p>
+                    <div class="space-y-4">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input
+                                v-model="form.requires_prescription"
+                                type="checkbox"
+                                class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span class="text-sm font-medium text-gray-900">Requires a valid prescription to purchase</span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="rounded-2xl border border-amber-200 bg-amber-50/40 shadow-sm p-6 sm:p-8">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-amber-800 mb-2">Tax compliance</h2>
+                    <p class="text-sm text-amber-900/80 mb-4">
+                        Identify items that are exempt from the standard 12% VAT in the Philippines.
+                    </p>
                     <label class="flex items-start gap-3 cursor-pointer">
                         <input
-                            v-model="form.requires_prescription"
+                            v-model="form.is_vat_exempt"
                             type="checkbox"
-                            class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            class="mt-1 h-5 w-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
                         />
-                        <span class="text-sm font-medium text-gray-900">Requires a valid prescription to purchase</span>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-900">VAT Exempt</span>
+                            <span class="text-xs text-gray-600">This product will be calculated without the 12% VAT extraction.</span>
+                        </div>
                     </label>
                 </section>
 
@@ -261,6 +281,7 @@ const form = useForm({
     wholesale_price: '',
     wholesale_min_qty: '',
     requires_prescription: false,
+    is_vat_exempt: false,
     images: [],
 });
 

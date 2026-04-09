@@ -16,6 +16,31 @@
 
                 <form @submit.prevent="submit" class="space-y-5">
                     <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">Patient Full Name <span class="text-red-500">*</span></label>
+                        <input
+                            v-model="form.prescription_patient_name"
+                            type="text"
+                            required
+                            placeholder="Full name as written on ID"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p v-if="form.errors.prescription_patient_name" class="text-red-600 text-sm mt-2">{{ form.errors.prescription_patient_name }}</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">Patient Valid ID Photo <span class="text-red-500">*</span></label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            required
+                            @change="e => form.prescription_id_image = e.target.files[0]"
+                            class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">Provide a clear photo of the patient's ID to match with the prescription.</p>
+                        <p v-if="form.errors.prescription_id_image" class="text-red-600 text-sm mt-2">{{ form.errors.prescription_id_image }}</p>
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-semibold text-gray-800 mb-2">Prescription photo <span class="text-red-500">*</span></label>
                         <input
                             ref="fileInput"
@@ -25,7 +50,7 @@
                             @change="onFile"
                             class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700"
                         />
-                        <p class="text-xs text-gray-500 mt-1">JPG or PNG, max 8MB. Ensure text is readable.</p>
+                        <p class="text-xs text-gray-500 mt-1">JPG or PNG, max 8MB. Ensure all details are readable.</p>
                         <p v-if="form.errors.prescription" class="text-red-600 text-sm mt-2">{{ form.errors.prescription }}</p>
                     </div>
 
@@ -36,10 +61,10 @@
                     <div class="flex flex-col sm:flex-row gap-3 pt-2">
                         <button
                             type="submit"
-                            :disabled="form.processing || !form.prescription"
+                            :disabled="form.processing || !form.prescription || !form.prescription_patient_name || !form.prescription_id_image"
                             class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50"
                         >
-                            {{ form.processing ? 'Uploading…' : 'Submit prescription' }}
+                            {{ form.processing ? 'Uploading…' : 'Submit for review' }}
                         </button>
                         <Link
                             :href="`/orders/${order.id}`"
@@ -67,6 +92,8 @@ const previewUrl = ref('');
 
 const form = useForm({
     prescription: null,
+    prescription_patient_name: '',
+    prescription_id_image: null,
 });
 
 const onFile = (e) => {

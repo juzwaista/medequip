@@ -39,7 +39,7 @@ class PayMongoService
         string $successUrl,
         string $cancelUrl
     ): array {
-        $order = $invoice->order()->with('items.product')->first();
+        $order = $invoice->order()->with(['items.product', 'items.productVariation'])->first();
 
         if (! $order) {
             throw new \RuntimeException('Invoice has no order for PayMongo checkout.');
@@ -47,11 +47,16 @@ class PayMongoService
 
         // Build line items from order items (subtotal lines)
         $lineItems = $order->items->map(function ($item) {
+            $name = $item->product->name;
+            if ($item->productVariation) {
+                $name .= ' (' . $item->productVariation->name . ')';
+            }
+            
             return [
                 'currency'    => 'PHP',
                 'amount'      => (int) round((float) $item->unit_price * 100), // unit price in centavos
-                'description' => $item->product->name,
-                'name'        => $item->product->name,
+                'description' => $name,
+                'name'        => $name,
                 'quantity'    => $item->quantity,
             ];
         })->values()->toArray();
@@ -63,6 +68,16 @@ class PayMongoService
                 'amount'      => (int) round($shippingFee * 100),
                 'description' => 'Shipping for order '.$order->order_number,
                 'name'        => 'Shipping fee',
+                'quantity'    => 1,
+            ];
+        }
+
+        if ($order->discount_amount > 0) {
+            $lineItems[] = [
+                'currency'    => 'PHP',
+                'amount'      => (int) round((float) $order->discount_amount * -100),
+                'description' => ($order->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount for ' . $order->order_number,
+                'name'        => ($order->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount',
                 'quantity'    => 1,
             ];
         }
@@ -183,8 +198,20 @@ class PayMongoService
         int    $amountCentavos,
         string $successUrl,
         string $cancelUrl,
-        array  $metadata = []
+        array  $metadata = [],
+        array  $lineItems = []
     ): array {
+        // Fallback to generic description if no specific line items provided
+        if (empty($lineItems)) {
+            $lineItems = [[
+                'currency'    => 'PHP',
+                'amount'      => $amountCentavos,
+                'description' => $description,
+                'name'        => $description,
+                'quantity'    => 1,
+            ]];
+        }
+
         $payload = [
             'data' => [
                 'attributes' => [
@@ -192,13 +219,7 @@ class PayMongoService
                     'send_email_receipt'   => false,
                     'show_description'     => true,
                     'show_line_items'      => true,
-                    'line_items'           => [[
-                        'currency'    => 'PHP',
-                        'amount'      => $amountCentavos,
-                        'description' => $description,
-                        'name'        => $description,
-                        'quantity'    => 1,
-                    ]],
+                    'line_items'           => $lineItems,
                     'payment_method_types' => ['card', 'gcash', 'paymaya'],
                     'description'          => $description,
                     'success_url'          => $successUrl,

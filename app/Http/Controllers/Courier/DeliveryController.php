@@ -385,6 +385,53 @@ class DeliveryController extends Controller
     }
 
     /**
+     * Report a failure during delivery attempt.
+     */
+    public function reportFailure(Request $request, Delivery $delivery)
+    {
+        if ($delivery->courier_id != auth()->user()->courier->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'reason' => 'required|in:recipient_absent,wrong_address,delivery_accident,customer_refused,other',
+            'note' => 'nullable|string|max:1000',
+            'reason_photo' => 'required|image|max:10240',
+        ]);
+
+        $path = $request->file('reason_photo')->store('failure_proofs', 'public');
+
+        $delivery->attempts_count += 1;
+        $delivery->last_attempt_at = now();
+        $delivery->failure_reason = $request->reason;
+        $delivery->failure_note = $request->note;
+        $delivery->proof_of_attempt_path = $path;
+
+        if ($delivery->attempts_count >= 2) {
+            // Max attempts reached — mark as failed and return to sender
+            $delivery->status = 'failed';
+            $delivery->is_return_to_sender = true;
+            
+            // Notify distributor
+            $order = $delivery->order;
+            if ($order && $order->distributor && $order->distributor->user) {
+                $order->distributor->user->notify(new CourierDeliveryUpdateNotification($delivery, 'returned_to_sender'));
+            }
+            
+            $msg = 'Max attempts reached. Package must be returned to sender.';
+        } else {
+            // Re-schedule for another attempt (remains in courier's active list but goes back to 'scheduled' state or a new 'reattempt_pending' state)
+            // For now, let's keep it in his list but marked as 'scheduled' again so he can "Start Delivery" again tomorrow.
+            $delivery->status = 'scheduled'; 
+            $msg = 'Failure reported. You can re-attempt this delivery later.';
+        }
+
+        $delivery->save();
+
+        return back()->with('success', $msg);
+    }
+
+    /**
      * Courier signals they have physically handed cash to the distributor.
      */
     public function markRemittanceSent(Delivery $delivery)

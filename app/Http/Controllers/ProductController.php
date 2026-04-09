@@ -16,8 +16,13 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['category', 'distributor', 'images', 'inventory'])
-            ->withAvg('reviews', 'stars')
-            ->withCount('reviews')
+            ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
+            ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)])
+            ->withSum(['orderItems as units_sold' => function($q) {
+                $q->whereHas('order', function($oq) {
+                    $oq->whereIn('status', ['completed', 'delivered']);
+                });
+            }], 'quantity')
             ->whereHas('distributor', function ($q) {
                 $q->where('status', '!=', 'banned');
             })
@@ -59,8 +64,11 @@ class ProductController extends Controller
         }
 
         // Sorting
-        $sort = $request->get('sort', 'newest');
+        $sort = $request->get('sort', 'popularity');
         switch ($sort) {
+            case 'popularity':
+                $query->orderByPopularity();
+                break;
             case 'price_low':
                 $query->orderBy('base_price', 'asc');
                 break;
@@ -201,11 +209,13 @@ class ProductController extends Controller
 
         $reviewAgg = ProductReview::query()
             ->where('product_id', $product->id)
+            ->where('is_hidden', false)
             ->selectRaw('AVG(stars) as avg_stars, COUNT(*) as review_count')
             ->first();
 
         $productReviews = ProductReview::query()
             ->where('product_id', $product->id)
+            ->where('is_hidden', false)
             ->with(['user:id,name'])
             ->orderByDesc('created_at')
             ->limit(40)

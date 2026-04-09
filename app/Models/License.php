@@ -14,6 +14,7 @@ class License extends Model
         'type',
         'file_path',
         'status',
+        'expires_at',
     ];
 
     public function distributor()

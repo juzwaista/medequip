@@ -45,6 +45,38 @@
                 <p v-if="order.prescription_review_note" class="text-sm text-red-800 mt-1">{{ order.prescription_review_note }}</p>
             </div>
 
+            <!-- Discount Status -->
+            <div
+                v-if="order.discount_status === 'pending'"
+                class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4"
+            >
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                    <p class="font-semibold text-blue-900 capitalize">{{ order.discount_type }} Discount requested</p>
+                </div>
+                <p class="text-sm text-blue-800 mt-1 ml-7">The distributor is reviewing your ID for the 20% discount and VAT exemption.</p>
+            </div>
+            <div
+                v-else-if="order.discount_status === 'approved'"
+                class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+            >
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <p class="font-semibold text-emerald-900 capitalize">{{ order.discount_type }} Discount Approved</p>
+                </div>
+                <p class="text-sm text-emerald-800 mt-1 ml-7">Your 20% discount and VAT exemption have been applied to this order.</p>
+            </div>
+             <div
+                v-else-if="order.discount_status === 'rejected'"
+                class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4"
+            >
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <p class="font-semibold text-red-900 capitalize">{{ order.discount_type }} Discount Rejected</p>
+                </div>
+                <p v-if="order.discount_review_note" class="text-sm text-red-800 mt-1 ml-7">{{ order.discount_review_note }}</p>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Content -->
                 <div class="lg:col-span-2 space-y-6">
@@ -100,6 +132,12 @@
                                 >
                                     {{ statusMessage(order.status) }}
                                 </p>
+                                <div v-if="order.is_fragile" class="mt-3 sm:ml-auto flex items-center justify-end">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        Fragile Package
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -115,18 +153,38 @@
                                 </Link>
                                 <p v-else class="font-semibold text-gray-900">{{ order.distributor.company_name }}</p>
                                 <p class="text-sm text-gray-600">{{ order.distributor.email }}</p>
+                                <p v-if="order.distributor.user?.phone_number" class="text-sm text-gray-600 mt-1">
+                                    <span class="font-medium text-gray-900">Contact:</span> {{ order.distributor.user.phone_number }}
+                                </p>
                             </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-600 mb-1">Delivery Address</p>
-                                <p class="text-gray-900">{{ order.delivery_address }}</p>
+                             <div>
+                                <p class="text-sm font-medium text-gray-600 mb-1">
+                                    {{ order.fulfillment_method === 'pickup' ? 'Pick-up Location' : 'Delivery Address' }}
+                                </p>
+                                <p class="text-gray-900">{{ order.fulfillment_method === 'pickup' ? order.distributor.address : order.delivery_address }}</p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-600 mb-1">Contact Number</p>
                                 <p class="font-semibold text-gray-900">{{ order.contact_number }}</p>
                             </div>
-                            <div v-if="order.notes">
+                            <div v-if="order.tin">
+                                <p class="text-sm font-medium text-gray-600 mb-1">TIN</p>
+                                <p class="font-mono font-semibold text-gray-900">{{ order.tin }}</p>
+                            </div>
+                             <div v-if="order.notes" :class="{'md:col-span-2': !order.tin}">
                                 <p class="text-sm font-medium text-gray-600 mb-1">Notes</p>
                                 <p class="text-sm text-gray-700">{{ order.notes }}</p>
+                            </div>
+                            <!-- Pickup Instructions -->
+                            <div v-if="order.fulfillment_method === 'pickup' && order.status !== 'pending' && order.status !== 'rejected' && order.status !== 'cancelled'" class="md:col-span-2 mt-4 p-4 rounded-xl border-2 border-emerald-100 bg-emerald-50">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 011 1v2.5a.5.5 0 01-1 0V16zm-1.833 3.333H6.833a1.167 1.167 0 01-1.167-1.167V10H15v8.167a1.167 1.167 0 01-1.167 1.167z" />
+                                    </svg>
+                                    <h3 class="font-bold text-emerald-900">Pick-up Instructions</h3>
+                                </div>
+                                <p v-if="order.pickup_instructions" class="text-sm text-emerald-800 whitespace-pre-wrap">{{ order.pickup_instructions }}</p>
+                                <p v-else class="text-sm text-emerald-800 italic">Distributor has not provided specific instructions. Please contact them through chat for details.</p>
                             </div>
                         </div>
                     </div>
@@ -299,6 +357,23 @@
                                     <span class="text-gray-600">Shipping Fee</span>
                                     <PriceDisplay :amount="orderShippingFee" />
                                 </div>
+
+                                <!-- VAT Breakdown -->
+                                <div class="pt-3 pb-1 border-t border-gray-100 space-y-1 mt-2">
+                                    <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                        <span>VATable Sales</span>
+                                        <span>₱{{ Number(order.vatable_sales || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                        <span>VAT Amount (12%)</span>
+                                        <span>₱{{ Number(order.vat_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                    </div>
+                                    <div v-if="order.vat_exempt_sales > 0" class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                        <span>VAT-Exempt Sales</span>
+                                        <span>₱{{ Number(order.vat_exempt_sales || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                    </div>
+                                </div>
+
                                 <div class="flex justify-between items-center pt-2 border-t">
                                     <span class="text-xl font-bold text-gray-900">Total Amount</span>
                                     <PriceDisplay :amount="orderGrandTotal" size="large" color="blue" />
@@ -307,8 +382,8 @@
                         </div>
                     </div>
 
-                    <!-- Delivery Tracking -->
-                    <div v-if="order.delivery" class="bg-white rounded-xl shadow-md p-6">
+                    <!-- Delivery Tracking (Only if not pickup) -->
+                    <div v-if="order.delivery && order.fulfillment_method !== 'pickup'" class="bg-white rounded-xl shadow-md p-6">
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Delivery Tracking</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -322,6 +397,9 @@
                                     <span v-if="order.delivery.courier?.user?.name" class="text-gray-500 font-normal">
                                         ({{ order.delivery.courier.user.name }})
                                     </span>
+                                </p>
+                                <p v-if="order.delivery.courier?.user?.phone_number" class="text-sm text-gray-600 mt-1">
+                                    <span class="font-medium text-gray-900">Driver Contact:</span> {{ order.delivery.courier.user.phone_number }}
                                 </p>
                             </div>
                             <div>
@@ -559,7 +637,11 @@ const canPayNow = computed(() => {
 });
 
 const canConfirmReceived = computed(() => {
-    return props.order?.status === 'delivered' && !props.order?.received_at;
+    if (props.order?.received_at) return false;
+    if (props.order?.fulfillment_method === 'pickup') {
+        return props.order?.status === 'ready_for_pickup';
+    }
+    return props.order?.status === 'delivered';
 });
 
 const orderSubtotal = computed(() => Number(props.order?.subtotal || 0));
