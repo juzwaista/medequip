@@ -115,6 +115,17 @@
                                 <p v-if="form.errors.email" class="text-red-500 text-xs mt-1">{{ form.errors.email }}</p>
                             </div>
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Location Pin <span class="text-red-500">*</span></label>
+                            <p class="text-[11px] text-gray-500 mb-2 italic">Drag the marker or click on your exact business location on the map.</p>
+                            <MapPicker 
+                                v-model:lat="form.latitude" 
+                                v-model:lng="form.longitude"
+                                height="250px"
+                            />
+                            <p v-if="form.errors.latitude" class="text-red-500 text-xs mt-1">{{ form.errors.latitude }}</p>
+                        </div>
                     </div>
 
                     <div class="flex gap-3 mt-8">
@@ -201,6 +212,9 @@
                             <p class="font-semibold text-gray-900 mt-0.5">{{ form.company_name }}</p>
                             <p class="text-gray-600 text-xs mt-1 line-clamp-2">{{ form.address }}</p>
                             <p class="text-gray-600 text-xs mt-1">{{ form.contact_number }} · {{ form.email }}</p>
+                            <p class="text-[10px] text-blue-600 font-bold mt-1 uppercase tracking-tighter">
+                                📍 {{ form.latitude }}, {{ form.longitude }}
+                            </p>
                         </div>
                         <div class="pt-2 border-t border-gray-100">
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Documents</p>
@@ -246,7 +260,13 @@
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
+import MapPicker from '@/Components/MapPicker.vue';
 import { useOCR } from '@/Composables/useOCR';
+
+const props = defineProps({
+    ownerEmail: String,
+    ownerPhone: String,
+});
 
 const { scanImage, extractExpirationDate } = useOCR();
 const currentStep = ref(0);
@@ -278,8 +298,10 @@ const docFields = [
 const form = useForm({
     company_name: '',
     address: '',
-    contact_number: '',
-    email: '',
+    contact_number: props.ownerPhone || '',
+    email: props.ownerEmail || '',
+    latitude: '',
+    longitude: '',
     valid_id: null,
     business_license: null,
     dti_sec: null,
@@ -342,11 +364,13 @@ const validateStep1 = () => {
     if (!form.address.trim())      { form.errors.address = 'Address is required.'; return; }
     if (!/^09[0-9]{9}$/.test(form.contact_number)) { form.errors.contact_number = 'Must be 11 digits starting with 09.'; return; }
     if (!form.email.trim())        { form.errors.email = 'Email is required.'; return; }
+    if (!form.latitude || !form.longitude) { form.errors.latitude = 'Please pin your location on the map.'; return; }
     // Clear manual errors
     delete form.errors.company_name;
     delete form.errors.address;
     delete form.errors.contact_number;
     delete form.errors.email;
+    delete form.errors.latitude;
     currentStep.value = 2;
 };
 

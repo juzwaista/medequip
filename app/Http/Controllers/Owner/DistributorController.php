@@ -53,7 +53,10 @@ class DistributorController extends Controller
             return redirect()->route('owner.dashboard');
         }
 
-        return \Inertia\Inertia::render('Owner/Distributor/Create');
+        return \Inertia\Inertia::render('Owner/Distributor/Create', [
+            'ownerEmail' => auth()->user()->email,
+            'ownerPhone' => auth()->user()->phone_number,
+        ]);
     }
 
     public function store(Request $request)
@@ -63,6 +66,8 @@ class DistributorController extends Controller
             'address' => 'required|string|max:255',
             'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
             'email' => 'required|email|max:255',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
             // Avoid strict mimes: shared hosts often report application/octet-stream for valid PDFs/images.
             'valid_id' => ['required', 'file', 'max:10240', SafeUpload::document()],
             'business_license' => ['required', 'file', 'max:10240', SafeUpload::document()],
@@ -80,6 +85,8 @@ class DistributorController extends Controller
             'prc_id_expires_at' => 'required|date',
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
+            'latitude.required' => 'Please pin your business location on the map.',
+            'longitude.required' => 'Please pin your business location on the map.',
         ]);
 
         // Store the uploaded files securely on the local disk
@@ -102,6 +109,8 @@ class DistributorController extends Controller
                 'address' => $validated['address'],
                 'contact_number' => $validated['contact_number'],
                 'email' => $validated['email'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
                 'valid_id_path' => $validIdPath,
                 'business_license_path' => $licensePath,
                 'dti_sec_path' => $dtiSecPath,

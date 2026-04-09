@@ -4,7 +4,7 @@
             <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">Product listings</h1>
-                    <p class="text-gray-500 mt-1">Moderate catalog listings: hide from buyers or soft-delete serious cases.</p>
+                    <p class="text-gray-500 mt-1">Moderate catalog listings: hide from buyers or delete serious cases.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <div class="relative flex-1 sm:w-72">
