@@ -90,15 +90,57 @@
                             <p v-if="form.errors.company_name" class="text-red-500 text-xs mt-1">{{ form.errors.company_name }}</p>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Address <span class="text-red-500">*</span></label>
-                            <textarea v-model="form.address" rows="3" placeholder="Unit, Street, Barangay, City, Province"
-                                class="w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-                                :class="form.errors.address ? 'border-red-300 bg-red-50' : 'border-gray-300'"></textarea>
-                            <p v-if="form.errors.address" class="text-red-500 text-xs mt-1">{{ form.errors.address }}</p>
+                        <!-- Structured Address -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Street / Building / Unit <span class="text-red-500">*</span></label>
+                                <input v-model="form.address_line" type="text" placeholder="e.g. Blk 5 Lot 10 Sampaguita St."
+                                    class="w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    :class="form.errors.address_line ? 'border-red-300 bg-red-50' : 'border-gray-300'"/>
+                                <p v-if="form.errors.address_line" class="text-red-500 text-xs mt-1">{{ form.errors.address_line }}</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">City / Municipality <span class="text-red-500">*</span></label>
+                                    <select v-model="selectedCity" @change="onCityChange"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                                        :class="form.errors.city ? 'border-red-300 bg-red-50' : ''">
+                                        <option value="">Select city</option>
+                                        <option v-for="(data, city) in cities" :key="city" :value="city">{{ city }}</option>
+                                    </select>
+                                    <p v-if="form.errors.city" class="text-red-500 text-xs mt-1">{{ form.errors.city }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay <span class="text-red-500">*</span></label>
+                                    <select v-if="availableBarangays.length > 0" v-model="selectedBarangay"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                                        :class="form.errors.barangay ? 'border-red-300 bg-red-50' : ''">
+                                        <option value="">Select barangay</option>
+                                        <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">{{ brgy }}</option>
+                                        <option value="other">Other (type manually)</option>
+                                    </select>
+                                    <input v-else v-model="manualBarangay" type="text" placeholder="Enter barangay name"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                        :class="form.errors.barangay ? 'border-red-300 bg-red-50' : ''"/>
+                                    <p v-if="form.errors.barangay" class="text-red-500 text-xs mt-1">{{ form.errors.barangay }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay Name <span class="text-red-500">*</span></label>
+                                <input v-model="manualBarangay" type="text" placeholder="Type your barangay name"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                            </div>
+
+                            <div class="max-w-[150px]">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Zip Code</label>
+                                <input v-model="zipCode" type="text" readonly placeholder="Auto-filled"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 text-sm cursor-not-allowed"/>
+                            </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contact Number <span class="text-red-500">*</span></label>
                                 <input v-model="form.contact_number" @input="sanitizeContactNumber"
@@ -117,13 +159,31 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Location Pin <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2">
+                                Business Location Pin <span class="text-red-500">*</span>
+                                <span class="text-[10px] font-normal text-gray-400 italic">(Drop a pin to detect address)</span>
+                            </label>
                             <p class="text-[11px] text-gray-500 mb-2 italic">Drag the marker or click on your exact business location on the map.</p>
                             <MapPicker 
                                 v-model:lat="form.latitude" 
                                 v-model:lng="form.longitude"
+                                :geocodeQuery="geocodeQuery"
                                 height="250px"
+                                @update:address="onMapAddressPicked"
                             />
+                            <transition
+                                enter-active-class="transition ease-out duration-200"
+                                enter-from-class="opacity-0 -translate-y-1"
+                                enter-to-class="opacity-100 translate-y-0"
+                                leave-active-class="transition ease-in duration-150"
+                                leave-from-class="opacity-100 translate-y-0"
+                                leave-to-class="opacity-0 -translate-y-1"
+                            >
+                                <p v-if="detectedLocation" class="mt-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
+                                    <svg class="h-3.5 w-3.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                    {{ detectedLocation }}
+                                </p>
+                            </transition>
                             <p v-if="form.errors.latitude" class="text-red-500 text-xs mt-1">{{ form.errors.latitude }}</p>
                         </div>
                     </div>
@@ -210,7 +270,7 @@
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Business</p>
                             <p class="font-semibold text-gray-900 mt-0.5">{{ form.company_name }}</p>
-                            <p class="text-gray-600 text-xs mt-1 line-clamp-2">{{ form.address }}</p>
+                            <p class="text-gray-600 text-xs mt-1 line-clamp-3">{{ form.address }}</p>
                             <p class="text-gray-600 text-xs mt-1">{{ form.contact_number }} · {{ form.email }}</p>
                             <p class="text-[10px] text-blue-600 font-bold mt-1 uppercase tracking-tighter">
                                 📍 {{ form.latitude }}, {{ form.longitude }}
@@ -257,7 +317,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
 import MapPicker from '@/Components/MapPicker.vue';
@@ -266,6 +326,8 @@ import { useOCR } from '@/Composables/useOCR';
 const props = defineProps({
     ownerEmail: String,
     ownerPhone: String,
+    cities: Object,
+    barangays: Object,
 });
 
 const { scanImage, extractExpirationDate } = useOCR();
@@ -295,9 +357,24 @@ const docFields = [
     { key: 'authorization_letter', label: 'Authorization Letter',                  short: 'Auth Letter',     hint: 'Required only if you are not the business owner.', optional: true },
 ];
 
+// Structured Address Refs
+const selectedCity = ref('');
+const selectedBarangay = ref('');
+const manualBarangay = ref('');
+const zipCode = ref('');
+
+// For map <-> form sync
+const geocodeQuery = ref(null);
+const detectedLocation = ref('');
+let detectedTimer = null;
+let isProgrammaticChange = false;
+
 const form = useForm({
     company_name: '',
-    address: '',
+    address: '',        // Final composed string
+    address_line: '',   // Street/Unit
+    city: '',
+    barangay: '',
     contact_number: props.ownerPhone || '',
     email: props.ownerEmail || '',
     latitude: '',
@@ -320,6 +397,111 @@ const form = useForm({
 
 const requiredDocCount = computed(() => docFields.filter((d) => !d.optional).length);
 const uploadedDocCount = computed(() => docFields.filter((d) => !d.optional && form[d.key]).length);
+
+// ─── Fuzzy match helper ──────────────────────────────────────────────────────
+const normalize = (str) =>
+    String(str)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const fuzzyMatch = (input, list) => {
+    if (!input || !list || !list.length) return null;
+    const normalInput = normalize(input);
+    if (!normalInput) return null;
+    const exact = list.find(item => normalize(item) === normalInput);
+    if (exact) return exact;
+    const startsWith = list.find(item => normalize(item).startsWith(normalInput + ' ') || normalize(item) === normalInput);
+    if (startsWith) return startsWith;
+    const subString = list.find(item => normalize(item).includes(normalInput));
+    if (subString) return subString;
+    return null;
+};
+
+// ─── Internal city-change helper ─────────────────────────────────────────────
+const _applyCityChange = (city) => {
+    selectedBarangay.value = '';
+    manualBarangay.value = '';
+    if (city && props.cities[city]) {
+        zipCode.value = props.cities[city].zip;
+        if ((props.barangays?.[city] || []).length === 0) {
+            selectedBarangay.value = 'other';
+        }
+    } else {
+        zipCode.value = '';
+    }
+};
+
+const onCityChange = () => {
+    _applyCityChange(selectedCity.value);
+    if (!isProgrammaticChange && selectedCity.value) {
+        geocodeQuery.value = `${selectedCity.value}, Cavite, Philippines`;
+    }
+};
+
+// ─── User changes barangay — pan map ─────────────────────────────────────────
+watch(selectedBarangay, (brgy) => {
+    if (!isProgrammaticChange && brgy && brgy !== 'other' && selectedCity.value) {
+        geocodeQuery.value = `Barangay ${brgy}, ${selectedCity.value}, Cavite, Philippines`;
+    }
+});
+
+// ─── Sync structured fields to form.address ───────────────────────────────
+watch([() => form.address_line, selectedCity, selectedBarangay, manualBarangay], () => {
+    const b = selectedBarangay.value === 'other' ? manualBarangay.value : selectedBarangay.value;
+    const parts = [];
+    if (form.address_line) parts.push(form.address_line);
+    if (b) parts.push(`Brgy. ${b}`);
+    if (selectedCity.value) parts.push(selectedCity.value);
+    parts.push('Cavite');
+    
+    form.address = parts.join(', ');
+    form.city = selectedCity.value;
+    form.barangay = b;
+});
+
+const availableBarangays = computed(() => {
+    if (!selectedCity.value || !props.barangays) return [];
+    return props.barangays[selectedCity.value] || [];
+});
+
+// ─── Map pin → form ────────────────────────────────────────────────────────
+const onMapAddressPicked = ({ city, barangay }) => {
+    if (!city && !barangay) return;
+    isProgrammaticChange = true;
+
+    const cityKeys = Object.keys(props.cities || {});
+    const matchedCity = fuzzyMatch(city, cityKeys);
+    let matchedBrgy = null;
+
+    if (matchedCity) {
+        selectedCity.value = matchedCity;
+        _applyCityChange(matchedCity);
+
+        if (barangay) {
+            const brgys = props.barangays?.[matchedCity] || [];
+            matchedBrgy = fuzzyMatch(barangay, brgys);
+            if (matchedBrgy) {
+                selectedBarangay.value = matchedBrgy;
+            } else {
+                selectedBarangay.value = 'other';
+                manualBarangay.value = barangay;
+            }
+        }
+    }
+
+    const cityLabel = matchedCity || city || '';
+    const brgyLabel = matchedBrgy || (barangay ? `${barangay} (unmatched)` : '');
+    if (cityLabel) {
+        detectedLocation.value = `Detected: ${cityLabel}${brgyLabel ? ' · Brgy. ' + brgyLabel : ''}`;
+        clearTimeout(detectedTimer);
+        detectedTimer = setTimeout(() => { detectedLocation.value = ''; }, 5000);
+    }
+    isProgrammaticChange = false;
+};
 
 const sanitizeContactNumber = () => {
     form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);
@@ -360,17 +542,23 @@ const handleFileChange = async (key, file) => {
 };
 
 const validateStep1 = () => {
-    if (!form.company_name.trim()) { form.errors.company_name = 'Company name is required.'; return; }
-    if (!form.address.trim())      { form.errors.address = 'Address is required.'; return; }
+    if (!form.company_name.trim())    { form.errors.company_name = 'Company name is required.'; return; }
+    if (!form.address_line.trim())    { form.errors.address_line = 'Street address is required.'; return; }
+    if (!selectedCity.value)          { form.errors.city = 'City is required.'; return; }
+    if (!form.barangay)               { form.errors.barangay = 'Barangay is required.'; return; }
     if (!/^09[0-9]{9}$/.test(form.contact_number)) { form.errors.contact_number = 'Must be 11 digits starting with 09.'; return; }
-    if (!form.email.trim())        { form.errors.email = 'Email is required.'; return; }
-    if (!form.latitude || !form.longitude) { form.errors.latitude = 'Please pin your location on the map.'; return; }
+    if (!form.email.trim())           { form.errors.email = 'Email is required.'; return; }
+    if (!form.latitude || !form.longitude) { form.errors.latitude = 'Please pin your business location on the map.'; return; }
+    
     // Clear manual errors
     delete form.errors.company_name;
-    delete form.errors.address;
+    delete form.errors.address_line;
+    delete form.errors.city;
+    delete form.errors.barangay;
     delete form.errors.contact_number;
     delete form.errors.email;
     delete form.errors.latitude;
+    
     currentStep.value = 2;
 };
 
@@ -381,6 +569,12 @@ const validateStep2 = () => {
         form.errors[missing.key] = `${missing.label} is required.`;
         return;
     }
+    // Check expiration dates
+    const expiryMissing = required.find(d => d.expiryKey && !form[d.expiryKey]);
+    if (expiryMissing) {
+        form.errors[expiryMissing.key] = `Please provide expiration date for ${expiryMissing.short}.`;
+        return;
+    }
     currentStep.value = 3;
 };
 
@@ -389,7 +583,7 @@ const submit = () => {
         forceFormData: true,
         onError: () => {
             // If there are validation errors from server, jump to the relevant step
-            const step1Keys = ['company_name', 'address', 'contact_number', 'email'];
+            const step1Keys = ['company_name', 'address_line', 'city', 'barangay', 'contact_number', 'email'];
             const hasStep1Err = step1Keys.some(k => form.errors[k]);
             if (hasStep1Err) { currentStep.value = 1; return; }
             const hasDocErr = docFields.some(d => form.errors[d.key]);

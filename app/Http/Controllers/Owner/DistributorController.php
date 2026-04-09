@@ -7,6 +7,7 @@ use App\Models\Distributor;
 use App\Rules\SafeUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class DistributorController extends Controller
@@ -54,16 +55,22 @@ class DistributorController extends Controller
         }
 
         return \Inertia\Inertia::render('Owner/Distributor/Create', [
-            'ownerEmail' => auth()->user()->email,
-            'ownerPhone' => auth()->user()->phone_number,
+            'ownerEmail' => Auth::user()->email,
+            'ownerPhone' => Auth::user()->phone_number,
+            'cities' => config('cavite.cities'),
+            'barangays' => config('cavite.barangays'),
         ]);
     }
 
     public function store(Request $request)
     {
+        $cityKeys = array_keys(config('cavite.cities', []));
+
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
+            'address_line' => 'required|string|max:255',
+            'city' => ['required', 'string', Rule::in($cityKeys)],
+            'barangay' => 'required|string|max:100',
             'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
             'email' => 'required|email|max:255',
             'latitude' => 'required|numeric',
@@ -87,6 +94,7 @@ class DistributorController extends Controller
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
             'latitude.required' => 'Please pin your business location on the map.',
             'longitude.required' => 'Please pin your business location on the map.',
+            'address_line.required' => 'Street / Building / Unit is required.',
         ]);
 
         // Store the uploaded files securely on the local disk
@@ -102,11 +110,20 @@ class DistributorController extends Controller
             $authLetterPath = $request->file('authorization_letter')->store('distributor_documents/auth_letters', 'local');
         }
 
+        $zipCode = data_get(config('cavite.cities'), $validated['city'].'.zip', '');
+        
+        // Full address string for backward compatibility
+        $fullAddress = "{$validated['address_line']}, Brgy. {$validated['barangay']}, {$validated['city']}, Cavite";
+
         Distributor::updateOrCreate(
             ['user_id' => auth()->id()],
             [
                 'company_name' => $validated['company_name'],
-                'address' => $validated['address'],
+                'address' => $fullAddress,
+                'city' => $validated['city'],
+                'barangay' => $validated['barangay'],
+                'province' => 'Cavite',
+                'zip_code' => $zipCode,
                 'contact_number' => $validated['contact_number'],
                 'email' => $validated['email'],
                 'latitude' => $validated['latitude'],

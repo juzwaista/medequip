@@ -546,6 +546,10 @@ const form = useForm({
     email: props.distributor.email || '',
     website: props.distributor.website || '',
     address: props.distributor.address || '',
+    city: props.distributor.city || '',
+    province: props.distributor.province || 'Cavite',
+    barangay: props.distributor.barangay || '',
+    zip_code: props.distributor.zip_code || '',
     social_links: {
         facebook: props.distributor.social_links?.facebook || '',
         instagram: props.distributor.social_links?.instagram || '',
@@ -609,6 +613,11 @@ watch([streetAddress, selectedCity, selectedBarangay, manualBarangay], () => {
     if (selectedCity.value) parts.push(selectedCity.value);
     parts.push('Cavite');
     form.address = parts.join(', ');
+    
+    // Also sync to new structured fields
+    form.city = selectedCity.value;
+    form.barangay = b;
+    form.zip_code = zipCode.value;
 });
 
 const availableBarangays = computed(() => {
