@@ -234,7 +234,7 @@ class Order extends Model
      */
     public function canBeConfirmedReceived(): bool
     {
-        return $this->status === 'delivered' && is_null($this->received_at);
+        return in_array($this->status, ['delivered', 'ready_for_pickup']) && is_null($this->received_at);
     }
 
     /**

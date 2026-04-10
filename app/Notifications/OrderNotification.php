@@ -129,6 +129,10 @@ class OrderNotification extends Notification
                 'Order completed',
                 "Customer confirmed receipt of order {$num}. Payment held by the platform has been released to your wallet.",
             ],
+            'ready_for_pickup' => [
+                'Order ready for pickup',
+                "Your order {$num} from {$shop} is ready for pickup! Please proceed to the store with your order details.",
+            ],
             'review_prompt' => [
                 'Rate your order',
                 "How was your experience with order {$num}? Tap to leave a rating.",
