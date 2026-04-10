@@ -3,7 +3,7 @@
         <div class="w-full max-w-2xl">
 
             <!-- Step indicator -->
-            <div class="flex items-center justify-center gap-0 mb-8">
+            <div class="flex items-center justify-center gap-0 mb-4">
                 <template v-for="(s, i) in steps" :key="i">
                     <div class="flex flex-col items-center">
                         <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2"
@@ -27,6 +27,16 @@
                         :class="currentStep > i ? 'bg-blue-600' : 'bg-gray-200'">
                     </div>
                 </template>
+            </div>
+
+            <!-- Draft Status -->
+            <div v-if="lastSaved" class="flex justify-center mb-6">
+                <div class="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold border border-blue-100">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    Draft Saved: {{ lastSaved }}
+                </div>
             </div>
 
             <!-- Flash errors -->
@@ -369,6 +379,10 @@ const detectedLocation = ref('');
 let detectedTimer = null;
 let isProgrammaticChange = false;
 
+// Persistence state
+const STORAGE_KEY = 'distributor_application_draft';
+const lastSaved = ref(null);
+
 const form = useForm({
     company_name: '',
     address: '',        // Final composed string
@@ -394,6 +408,57 @@ const form = useForm({
     fda_license_expires_at: '',
     prc_id_expires_at: '',
 });
+
+onMounted(() => {
+    const draft = localStorage.getItem(STORAGE_KEY);
+    if (draft) {
+        try {
+            const parsed = JSON.parse(draft);
+            Object.keys(parsed).forEach(key => {
+                // Don't load file objects
+                if (['valid_id', 'business_license', 'dti_sec', 'bir_form', 'fda_license', 'prc_id', 'authorization_letter'].includes(key)) return;
+                if (parsed[key]) form[key] = parsed[key];
+            });
+
+            // Re-sync local refs
+            selectedCity.value = form.city;
+            _applyCityChange(form.city);
+            
+            if (form.city && props.barangays?.[form.city]) {
+                const list = props.barangays[form.city];
+                if (list.includes(form.barangay)) {
+                    selectedBarangay.value = form.barangay;
+                } else if (form.barangay) {
+                    selectedBarangay.value = 'other';
+                    manualBarangay.value = form.barangay;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load application draft', e);
+        }
+    }
+});
+
+// Auto-save draft
+watch(() => ({
+    company_name: form.company_name,
+    address_line: form.address_line,
+    city: form.city,
+    barangay: form.barangay,
+    contact_number: form.contact_number,
+    email: form.email,
+    latitude: form.latitude,
+    longitude: form.longitude,
+    valid_id_expires_at: form.valid_id_expires_at,
+    business_license_expires_at: form.business_license_expires_at,
+    dti_sec_expires_at: form.dti_sec_expires_at,
+    bir_form_expires_at: form.bir_form_expires_at,
+    fda_license_expires_at: form.fda_license_expires_at,
+    prc_id_expires_at: form.prc_id_expires_at,
+}), (newVal) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
+    lastSaved.value = new Date().toLocaleTimeString();
+}, { deep: true });
 
 const requiredDocCount = computed(() => docFields.filter((d) => !d.optional).length);
 const uploadedDocCount = computed(() => docFields.filter((d) => !d.optional && form[d.key]).length);
@@ -581,6 +646,9 @@ const validateStep2 = () => {
 const submit = () => {
     form.post('/owner/distributor/store', {
         forceFormData: true,
+        onSuccess: () => {
+            localStorage.removeItem(STORAGE_KEY);
+        },
         onError: () => {
             // If there are validation errors from server, jump to the relevant step
             const step1Keys = ['company_name', 'address_line', 'city', 'barangay', 'contact_number', 'email'];

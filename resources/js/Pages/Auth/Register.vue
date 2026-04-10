@@ -57,7 +57,24 @@
                 </div>
 
                 <!-- Registration Card -->
-                <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 transition-all relative overflow-hidden">
+                    <!-- Draft Saved Badge -->
+                    <transition
+                        enter-active-class="transition ease-out duration-300 transform"
+                        enter-from-class="translate-x-full opacity-0"
+                        enter-to-class="translate-x-0 opacity-100"
+                        leave-active-class="transition ease-in duration-200 transform"
+                        leave-from-class="translate-x-0 opacity-100"
+                        leave-to-class="translate-x-full opacity-0"
+                    >
+                        <div v-if="lastSaved" class="absolute top-4 right-4 z-20">
+                            <div class="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black border border-emerald-100 shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Draft Saved: {{ lastSaved }}
+                            </div>
+                        </div>
+                    </transition>
+
                     <div class="mb-7">
                         <h2 class="text-2xl font-black text-gray-900">Get started</h2>
                         <p class="text-gray-500 text-sm mt-1.5">Create your free MedEquip account</p>
@@ -347,6 +364,60 @@ const form = useForm({
     terms_accepted: false,
 });
 
+// Persistence state
+const STORAGE_KEY = 'registration_draft';
+const lastSaved = ref(null);
+
+import { onMounted } from 'vue';
+
+onMounted(() => {
+    const draft = localStorage.getItem(STORAGE_KEY);
+    if (draft) {
+        try {
+            const parsed = JSON.parse(draft);
+            Object.keys(parsed).forEach(key => {
+                // NEVER save or load passwords from local storage
+                if (['password', 'password_confirmation'].includes(key)) return;
+                if (parsed[key] !== undefined) form[key] = parsed[key];
+            });
+
+            // Re-sync local refs
+            if (form.city) {
+                selectedCity.value = form.city;
+                _applyCityChange(form.city);
+                
+                if (props.barangays?.[form.city]) {
+                    const list = props.barangays[form.city];
+                    if (list.includes(form.barangay)) {
+                        selectedBarangay.value = form.barangay;
+                    } else if (form.barangay) {
+                        selectedBarangay.value = 'other';
+                        manualBarangay.value = form.barangay;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load registration draft', e);
+        }
+    }
+});
+
+// Auto-save draft
+watch(() => ({
+    username: form.username,
+    email: form.email,
+    role: form.role,
+    contact_number: form.contact_number,
+    address_line: form.address_line,
+    city: form.city,
+    barangay: form.barangay,
+    latitude: form.latitude,
+    longitude: form.longitude,
+}), (newVal) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
+    lastSaved.value = new Date().toLocaleTimeString();
+}, { deep: true });
+
 const sanitizeContactNumber = (e) => {
     let val = e.target.value.replace(/\D/g, '');
     if (val.length > 11) val = val.slice(0, 11);
@@ -518,6 +589,9 @@ watch(
 
 const submit = () => {
     form.post('/register', {
+        onSuccess: () => {
+            localStorage.removeItem(STORAGE_KEY);
+        },
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };

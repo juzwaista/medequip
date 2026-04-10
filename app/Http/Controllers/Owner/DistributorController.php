@@ -28,6 +28,13 @@ class DistributorController extends Controller
     {
         $existing = Distributor::where('user_id', Auth::id())->first();
 
+        $props = [
+            'ownerEmail' => Auth::user()->email,
+            'ownerPhone' => Auth::user()->phone_number,
+            'cities' => config('cavite.cities'),
+            'barangays' => config('cavite.barangays'),
+        ];
+
         if ($existing) {
             if ($existing->status === 'rejected') {
                 // Don't delete — reset in place to avoid FK constraint failures (orders etc.)
@@ -42,9 +49,10 @@ class DistributorController extends Controller
                     'prc_id_path' => null,
                     'authorization_letter_path' => null,
                     'is_verified' => 0,
+                    'status' => 'rejected', // Keep it rejected until re-submission
                 ]);
 
-                return \Inertia\Inertia::render('Owner/Distributor/Create');
+                return \Inertia\Inertia::render('Owner/Distributor/Create', $props);
             }
             if ($existing->status === 'pending') {
                 return redirect()->route('owner.distributors.pending')
@@ -54,12 +62,7 @@ class DistributorController extends Controller
             return redirect()->route('owner.dashboard');
         }
 
-        return \Inertia\Inertia::render('Owner/Distributor/Create', [
-            'ownerEmail' => Auth::user()->email,
-            'ownerPhone' => Auth::user()->phone_number,
-            'cities' => config('cavite.cities'),
-            'barangays' => config('cavite.barangays'),
-        ]);
+        return \Inertia\Inertia::render('Owner/Distributor/Create', $props);
     }
 
     public function store(Request $request)

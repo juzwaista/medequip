@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\DssAlert;
+use App\Models\Distributor;
 use App\Models\DssDistributorSettings;
 use App\Models\DssReorderRecommendation;
 use App\Models\DssSalesAnalytics;
 use App\Models\Inventory;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Notifications\DssAlertNotification;
 
 class DssEngineService
 {
@@ -135,6 +137,32 @@ class DssEngineService
                 ],
                 'is_read' => false,
             ]);
+        }
+
+        // Send a summary notification if critical alerts exist and we haven't notified recently
+        $criticalCount = DssAlert::where('distributor_id', $distributorId)
+            ->where('is_read', false)
+            ->where('severity', 'critical')
+            ->count();
+
+        if ($criticalCount > 0) {
+            $distributor = Distributor::with('user')->find($distributorId);
+            if ($distributor?->user) {
+                $alreadyNotified = $distributor->user->notifications()
+                    ->where('type', DssAlertNotification::class)
+                    ->where('created_at', '>=', now()->subDay())
+                    ->exists();
+
+                if (! $alreadyNotified) {
+                    $latestCritical = DssAlert::where('distributor_id', $distributorId)
+                        ->where('is_read', false)
+                        ->where('severity', 'critical')
+                        ->latest()
+                        ->first();
+                        
+                    $distributor->user->notify(new DssAlertNotification($latestCritical));
+                }
+            }
         }
     }
 
