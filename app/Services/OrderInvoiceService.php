@@ -36,7 +36,7 @@ class OrderInvoiceService
                 'subtotal'       => $itemSubtotal,
                 'shipping_fee'   => $shipping,
                 'tax'            => (float) ($order->vat_amount ?? 0),
-                'discount'       => (float) ($order->discount_amount ?? 0),
+                'discount'       => (float) ($order->discount ?? 0),
                 'total_amount'   => $totalAmount,
                 'status'         => $isWallet ? 'paid' : 'unpaid',
                 'due_date'       => now()->addDays(7),

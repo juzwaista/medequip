@@ -70,6 +70,7 @@ class DashboardController extends Controller
                 'company_name' => $d->company_name,
                 'user_name' => $d->owner?->name ?? '—',
                 'status' => $d->status,
+                'rejection_count' => $d->rejection_count ?? 0,
                 'created_at' => $d->created_at->diffForHumans(),
             ]);
 

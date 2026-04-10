@@ -1573,9 +1573,9 @@ const form = useForm({
     notes: "",
     fulfillment_method: "delivery", // delivery | pickup
     payment_method: "gcash",
-    buy_now: String(props.queryParams?.buy_now) === 'true' || String(props.queryParams?.buy_now) === '1',
-    product_id: props.queryParams?.product_id || null,
-    product_variation_id: props.queryParams?.product_variation_id || null,
+    buy_now: !!(props.queryParams?.buy_now && (props.queryParams.buy_now === 'true' || props.queryParams.buy_now === '1' || props.queryParams.buy_now === true || props.queryParams.buy_now === 1)),
+    product_id: props.queryParams?.product_id ? Number(props.queryParams.product_id) : null,
+    product_variation_id: props.queryParams?.product_variation_id ? Number(props.queryParams.product_variation_id) : null,
     quantity: props.queryParams?.quantity ? parseInt(props.queryParams.quantity) : null,
     tin: props.auth?.user?.tin || "",
     reference_number: "",

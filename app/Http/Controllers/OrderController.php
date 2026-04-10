@@ -424,27 +424,29 @@ class OrderController extends Controller
                     // 1. All item sales become VAT Exempt
                     // 2. 20% discount is applied to the VAT-exclusive price
                     
-                    // itemSubtotal is currently VAT inclusive
-                    // Divide by 1.12 to get net-of-VAT subtotal
-                    $netOfVatSubtotal = $itemSubtotal / 1.12;
-                    $discountAmount = $netOfVatSubtotal * 0.20;
+                    // Standard PH SC/PWD Discount:
+                    // 1. VAT-Exempt on vatable items (Item / 1.12)
+                    // 2. 20% discount on the net-of-VAT amount
                     
-                    $orderVatExemptSales = $itemSubtotal; // Full amount is subject to exemption
-                    $orderVatableSales = $shippingFee / 1.12; // Shipping is still vatable unless law says otherwise
+                    $netVatableItems = $vatableItemsTotal / 1.12;
+                    $totalNetPrice = $netVatableItems + $exemptItemsTotal;
+                    $discountAmount = $totalNetPrice * 0.20;
+                    
+                    $orderVatableSales = $shippingFee / 1.12; 
                     $orderVatAmount = $shippingFee - $orderVatableSales;
+                    $orderVatExemptSales = $totalNetPrice;
                     
-                    $newItemSubtotal = $netOfVatSubtotal - $discountAmount;
+                    $newItemSubtotal = $totalNetPrice - $discountAmount;
                     $totalAmount = $newItemSubtotal + $shippingFee;
 
                     $order->update([
                         'subtotal' => round($newItemSubtotal, 2),
                         'shipping_fee' => round($shippingFee, 2),
-                        'discount' => round($discountAmount, 2), // Legacy field
-                        'discount_amount' => round($discountAmount, 2), // New field
+                        'discount' => round($discountAmount, 2),
                         'total_amount' => round($totalAmount, 2),
                         'vatable_sales' => round($orderVatableSales, 2),
                         'vat_amount' => round($orderVatAmount, 2),
-                        'vat_exempt_sales' => round($itemSubtotal / 1.12, 2), // The gross sales for exempt items
+                        'vat_exempt_sales' => round($orderVatExemptSales, 2),
                     ]);
                 } else {
                     // VAT Extraction Logic (Inclusive VAT)
@@ -566,10 +568,10 @@ class OrderController extends Controller
                             ];
                         }
 
-                        if ($o->discount_amount > 0) {
+                        if ($o->discount > 0) {
                             $batchLineItems[] = [
                                 'currency'    => 'PHP',
-                                'amount'      => (int) round((float) $o->discount_amount * -100),
+                                'amount'      => (int) round((float) $o->discount * -100),
                                 'description' => ($o->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount for ' . $o->order_number,
                                 'name'        => ($o->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount',
                                 'quantity'    => 1,

@@ -207,17 +207,16 @@ const props = defineProps({
     filters: Object,
 });
 
-const resolutions = reactive({});
-
-onMounted(() => {
-    props.disputes.data.forEach(d => {
-        resolutions[d.id] = {
+const resolutions = reactive(
+    props.disputes.data.reduce((acc, d) => {
+        acc[d.id] = {
             resolution: '',
             should_hide: false,
             admin_note: '',
         };
-    });
-});
+        return acc;
+    }, {})
+);
 
 const resolveDispute = (dispute) => {
     if (!confirm('Are you sure you want to apply this resolution? This action will be logged for transparency.')) return;

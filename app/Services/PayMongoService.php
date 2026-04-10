@@ -72,10 +72,10 @@ class PayMongoService
             ];
         }
 
-        if ($order->discount_amount > 0) {
+        if ($order->discount > 0) {
             $lineItems[] = [
                 'currency'    => 'PHP',
-                'amount'      => (int) round((float) $order->discount_amount * -100),
+                'amount'      => (int) round((float) $order->discount * -100),
                 'description' => ($order->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount for ' . $order->order_number,
                 'name'        => ($order->discount_type === 'senior' ? 'Senior Citizen' : 'PWD') . ' Discount',
                 'quantity'    => 1,

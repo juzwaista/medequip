@@ -56,7 +56,6 @@ class Order extends Model
         'discount_status',
         'discount_review_note',
         'discount_reviewed_at',
-        'discount_amount',
         'fulfillment_method', // delivery | pickup
         'pickup_instructions',
         'ocr_results',
@@ -70,7 +69,6 @@ class Order extends Model
         'vatable_sales' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'vat_exempt_sales' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
         'approved_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'delivered_at' => 'datetime',

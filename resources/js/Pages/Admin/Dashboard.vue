@@ -222,7 +222,12 @@
                         <div v-for="a in recentActivity" :key="a.id" class="px-8 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                             <div class="min-w-0">
                                 <p class="text-sm font-black text-gray-900 truncate">{{ a.company_name }}</p>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{{ a.created_at }}</p>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ a.created_at }}</p>
+                                    <span v-if="a.rejection_count > 0" class="text-[9px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded uppercase border border-red-100">
+                                        Attempts: {{ a.rejection_count }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="text-right ml-4">
                                 <span :class="statusClasses(a.status)" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">{{ a.status }}</span>
