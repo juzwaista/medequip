@@ -299,38 +299,50 @@ class OrderController extends Controller
 
         // If packed, handle photos and create delivery record
         if ($newStatus === 'packed' && $oldStatus !== 'packed') {
-            if ($request->hasFile('packaging_before')) {
-                $order->packaging_before_image_path = $request->file('packaging_before')->store('orders/packaging', 'public');
+            try {
+                if ($request->hasFile('packaging_before')) {
+                    $order->packaging_before_image_path = $request->file('packaging_before')->store('orders/packaging', 'public');
+                }
+                if ($request->hasFile('packaging_after')) {
+                    $order->packaging_after_image_path = $request->file('packaging_after')->store('orders/packaging', 'public');
+                }
+
+                // Capture fragile flag
+                if ($request->has('is_fragile')) {
+                    $order->is_fragile = filter_var($request->is_fragile, FILTER_VALIDATE_BOOLEAN);
+                }
+
+                $order->packed_at = now();
+                $order->status = 'packed';
+                $order->save();
+
+                // Create or update delivery record
+                Delivery::updateOrCreate(
+                    ['order_id' => $order->id],
+                    [
+                        'tracking_number' => Delivery::generateTrackingNumber(),
+                        'delivery_address' => $order->delivery_address ?? 'No address provided',
+                        'courier_fee' => round((float) ($order->shipping_fee ?? 0) * (float) config('services.shipping.courier_share_rate', 0.8), 2),
+                        'courier_payout_status' => 'pending',
+                        'status' => 'scheduled',
+                    ]
+                );
+
+                // Notify via chat with photos - wrapped in try/catch internal to service but safe here too
+                $order->loadMissing(['distributor', 'items.product']);
+                app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order);
+
+            } catch (\Exception $e) {
+                Log::error('[OrderController] Failed during packed status update', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // We let the order status update persist even if secondary actions fail, 
+                // but we should probably inform the user if it was a hard failure.
+                if ($newStatus === 'packed' && !$order->exists) {
+                     return back()->withErrors(['error' => 'Failed to process packaging: ' . $e->getMessage()]);
+                }
             }
-            if ($request->hasFile('packaging_after')) {
-                $order->packaging_after_image_path = $request->file('packaging_after')->store('orders/packaging', 'public');
-            }
-
-            // Capture fragile flag
-            if ($request->has('is_fragile')) {
-                $order->is_fragile = filter_var($request->is_fragile, FILTER_VALIDATE_BOOLEAN);
-            }
-
-            $order->packed_at = now();
-            // Store status here for fresh() notification
-            $order->status = 'packed';
-            $order->save();
-
-            // Notify via chat with photos
-            app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order->fresh());
-
-            $order->loadMissing([]);
-
-            Delivery::firstOrCreate(
-                ['order_id' => $order->id],
-                [
-                    'tracking_number' => Delivery::generateTrackingNumber(),
-                    'delivery_address' => $order->delivery_address ?? 'No address provided',
-                    'courier_fee' => round((float) $order->shipping_fee * (float) config('services.shipping.courier_share_rate', 0.8), 2),
-                    'courier_payout_status' => 'pending',
-                    'status' => 'scheduled', // 'pending' is not a valid ENUM value — use 'scheduled' for pool
-                ]
-            );
         }
 
         // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).

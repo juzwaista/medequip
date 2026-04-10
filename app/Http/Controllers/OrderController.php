@@ -204,7 +204,7 @@ class OrderController extends Controller
             'discount_id_image.image' => 'The document uploaded must be an image (PNG, JPG, etc.).',
         ]);
 
-        $buyNow = filter_var($request->input('buy_now'), FILTER_VALIDATE_BOOLEAN);
+        $isBuyNow = filter_var($request->input('buy_now'), FILTER_VALIDATE_BOOLEAN) && $request->has('product_id');
         $applyDiscount = filter_var($request->input('apply_discount'), FILTER_VALIDATE_BOOLEAN);
 
         $user = auth()->user();
@@ -220,12 +220,13 @@ class OrderController extends Controller
             $user->update(['tin' => $tin]);
         }
 
-        if ($buyNow) {
+        if ($isBuyNow) {
             $buyNowItem = [
                 'product_id' => $request->product_id,
                 'product_variation_id' => $request->product_variation_id,
-                'quantity' => $request->quantity,
+                'quantity' => (int) $request->quantity,
             ];
+            // Force $cart to ONLY contain the Buy Now item
             $cart = [\App\Services\CartService::lineKey($buyNowItem['product_id'], $buyNowItem['product_variation_id']) => $buyNowItem];
         } else {
             $cart = CartService::pruneCart(session()->get('cart', []));
@@ -235,7 +236,7 @@ class OrderController extends Controller
         if (empty($cart)) {
             Log::warning('[OrderController] PlaceOrder failed: Cart is empty.', [
                 'user_id' => auth()->id(),
-                'buy_now' => $buyNow,
+                'is_buy_now' => $isBuyNow,
                 'product_id' => $request->product_id,
                 'session_cart' => session()->get('cart'),
             ]);
