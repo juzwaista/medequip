@@ -316,20 +316,29 @@ class OrderController extends Controller
                 $order->status = 'packed';
                 $order->save();
 
-                // Create or update delivery record
-                Delivery::updateOrCreate(
-                    ['order_id' => $order->id],
-                    [
-                        'tracking_number' => Delivery::generateTrackingNumber(),
-                        'delivery_address' => $order->delivery_address ?? 'No address provided',
-                        'courier_fee' => round((float) ($order->shipping_fee ?? 0) * (float) config('services.shipping.courier_share_rate', 0.8), 2),
-                        'courier_payout_status' => 'pending',
-                        'status' => 'scheduled',
-                    ]
-                );
-
-                // Notify via chat with photos - wrapped in try/catch internal to service but safe here too
+                // Load required relations for delivery and chat automation
                 $order->loadMissing(['distributor', 'items.product']);
+                $distributor = $order->distributor;
+                $sellerAddress = $distributor->branch_address ?? $distributor->address ?? $distributor->company_name ?? 'Seller Address Not Provided';
+
+                // Check if delivery already exists to preserve tracking number
+                $delivery = Delivery::where('order_id', $order->id)->first();
+                $deliveryData = [
+                    'delivery_address' => $order->delivery_address ?? 'No address provided',
+                    'seller_address' => $sellerAddress,
+                    'courier_fee' => round((float) ($order->shipping_fee ?? 0) * (float) config('services.shipping.courier_share_rate', 0.8), 2),
+                    'courier_payout_status' => 'pending',
+                    'status' => 'scheduled',
+                ];
+
+                if (!$delivery) {
+                    $deliveryData['tracking_number'] = Delivery::generateTrackingNumber();
+                    Delivery::create(array_merge(['order_id' => $order->id], $deliveryData));
+                } else {
+                    $delivery->update($deliveryData);
+                }
+
+                // Notify via chat with photos 
                 app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order);
 
             } catch (\Exception $e) {
