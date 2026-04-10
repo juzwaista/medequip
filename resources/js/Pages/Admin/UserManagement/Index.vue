@@ -116,6 +116,9 @@
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h3 class="font-bold text-gray-900">{{ d.company_name }}</h3>
                                     <span :class="shopStatusClasses(d.status)" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">{{ d.status }}</span>
+                                    <span v-if="d.rejection_count > 0" class="px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold border border-red-100" title="Number of times this application was rejected">
+                                        Attempts: {{ d.rejection_count }}
+                                    </span>
                                     <span v-if="d.is_suspended" class="px-2 py-0.5 rounded-full bg-gray-800 text-white text-[10px] font-bold uppercase">Suspended until {{ d.suspended_until }}</span>
                                 </div>
                                 <p class="text-sm text-gray-500 mt-1">{{ d.owner_name }} &middot; {{ d.owner_email }}</p>

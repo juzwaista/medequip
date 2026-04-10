@@ -207,23 +207,17 @@ class Product extends Model
      */
     public function scopeOrderByPopularity($query)
     {
-        return $query->select('products.*')
-            ->selectRaw('
-                (
-                    SELECT COALESCE(SUM(order_items.quantity), 0)
-                    FROM order_items
-                    JOIN orders ON orders.id = order_items.order_id
-                    WHERE order_items.product_id = products.id
-                    AND orders.status IN ("completed", "delivered")
-                ) * 10 +
-                (
-                    SELECT COALESCE(AVG(product_reviews.stars), 0)
-                    FROM product_reviews
-                    WHERE product_reviews.product_id = products.id
-                ) * 5 as popularity_score
-            ')
-            ->orderByDesc('popularity_score')
-            ->orderByDesc('products.created_at');
+        return $query->addSelect([
+            'popularity_score' => \App\Models\OrderItem::selectRaw('SUM(quantity) * 10')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->whereColumn('order_items.product_id', 'products.id')
+                ->whereIn('orders.status', ['completed', 'delivered']),
+            'avg_stars_component' => \App\Models\ProductReview::selectRaw('COALESCE(AVG(stars) * 5, 0)')
+                ->whereColumn('product_reviews.product_id', 'products.id')
+        ])
+        ->orderByDesc('popularity_score')
+        ->orderByDesc('avg_stars_component') // Also sort by stars as secondary popularity factor
+        ->orderByDesc('products.created_at');
     }
 
     /**

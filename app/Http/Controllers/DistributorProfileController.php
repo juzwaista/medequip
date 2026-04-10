@@ -106,6 +106,8 @@ class DistributorProfileController extends Controller
             }
 
             return $q->with(['images', 'category', 'inventory'])
+                ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
+                ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)])
                 ->withSum(['orderItems as units_sold' => function ($sq) {
                     $sq->whereHas('order', fn ($oq) => $oq->whereIn('status', ['completed', 'delivered']));
                 }], 'quantity');

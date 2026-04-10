@@ -21,16 +21,16 @@
 
         <!-- Dropdown Panel -->
         <transition
-            enter-active-class="transition ease-out duration-200 transform origin-top-right"
-            enter-from-class="opacity-0 scale-95 -translate-y-2"
+            enter-active-class="transition ease-out duration-200 transform"
+            enter-from-class="opacity-0 scale-95 md:-translate-y-2"
             enter-to-class="opacity-100 scale-100 translate-y-0"
-            leave-active-class="transition ease-in duration-150 transform origin-top-right"
+            leave-active-class="transition ease-in duration-150 transform"
             leave-from-class="opacity-100 scale-100 translate-y-0"
-            leave-to-class="opacity-0 scale-95 -translate-y-2"
+            leave-to-class="opacity-0 scale-95 md:-translate-y-2"
         >
             <div 
                 v-if="isOpen" 
-                class="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 bg-white shadow-2xl ring-1 ring-black/5 rounded-2xl z-[100] flex flex-col max-h-[85vh] sm:max-h-[32rem] overflow-hidden"
+                class="fixed inset-0 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 w-full h-[100dvh] md:h-auto md:w-96 bg-white md:shadow-2xl ring-1 ring-black/5 md:rounded-2xl z-[100] flex flex-col max-h-[100dvh] md:max-h-[32rem] overflow-hidden"
             >
                 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/80 shrink-0">
                     <div class="flex items-center gap-2">

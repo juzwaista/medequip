@@ -39,6 +39,7 @@ class UserManagementController extends Controller
             'owner_name' => $d->owner?->name ?? '—',
             'owner_email' => $d->owner?->email ?? '—',
             'status' => $d->status,
+            'rejection_count' => $d->rejection_count ?? 0,
             'contact_number' => $d->contact_number,
             'address' => $d->address,
             'created_at' => $d->created_at->toDateString(),

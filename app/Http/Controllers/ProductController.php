@@ -303,6 +303,8 @@ class ProductController extends Controller
         $categoryIds = Category::descendantIdsIncludingSelf((int) $category->id);
 
         $query = Product::with(['images', 'distributor', 'inventory'])
+            ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
+            ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)])
             ->whereHas('distributor', function ($q) {
                 $q->where('status', '!=', 'banned');
             })

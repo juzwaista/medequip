@@ -179,17 +179,17 @@ class OrderController extends Controller
             
             // SC/PWD validation
             'apply_discount' => 'boolean',
-            'discount_type' => 'required_if:apply_discount,true|in:senior,pwd',
-            'discount_id_number' => 'required_if:apply_discount,true|string|max:50',
-            'discount_id_name' => 'required_if:apply_discount,true|string|max:100',
-            'discount_id_image' => 'required_if:apply_discount,true|image|max:8192',
-            'discount_terms' => 'required_if:apply_discount,true|accepted',
+            'discount_type' => 'required_if:apply_discount,true|nullable|in:senior,pwd',
+            'discount_id_number' => 'required_if:apply_discount,true|nullable|string|max:50',
+            'discount_id_name' => 'required_if:apply_discount,true|nullable|string|max:100',
+            'discount_id_image' => 'required_if:apply_discount,true|nullable|image|max:8192',
+            'discount_terms' => 'exclude_if:apply_discount,false|accepted',
             
             // Rx identity validation (if items require Rx)
             'prescription_patient_name' => 'nullable|string|max:100',
             'prescription_id_image' => 'nullable|image|max:8192',
             'prescription_image' => 'nullable|image|max:8192',
-            'ocr_results' => 'nullable|string', // JSON string from frontend
+            'ocr_results' => 'nullable', // Can be array from Inertia or string from hidden input
         ], [
             'customer_name.required' => 'Please provide the recipient name',
             'delivery_address.required' => 'Please provide a delivery address',
@@ -202,6 +202,7 @@ class OrderController extends Controller
             'discount_id_image.required_if' => 'ID photo is required for the discount.',
             'discount_terms.accepted' => 'You must certify that this purchase is for your personal use.',
             'discount_id_image.image' => 'The document uploaded must be an image (PNG, JPG, etc.).',
+            'discount_terms.required_if' => 'You must certify that this purchase is for your personal use.',
         ]);
 
         $user = auth()->user();
@@ -245,7 +246,12 @@ class OrderController extends Controller
         }
         */
 
-        $ocrResults = $request->input('ocr_results') ? json_decode($request->input('ocr_results'), true) : [];
+        $ocrResults = $request->input('ocr_results');
+        if (is_string($ocrResults)) {
+            $ocrResults = json_decode($ocrResults, true) ?? [];
+        } elseif (!is_array($ocrResults)) {
+            $ocrResults = [];
+        }
 
         try {
             DB::beginTransaction();
