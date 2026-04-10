@@ -84,7 +84,12 @@ class OrderController extends Controller
             $cart = [\App\Services\CartService::lineKey($buyNowItem['product_id'], $buyNowItem['product_variation_id']) => $buyNowItem];
         } else {
             $cart = CartService::pruneCart(session()->get('cart', []));
-            session()->put('cart', $cart);
+            
+            // Handle Selective Checkout from Cart
+            if (request()->has('selected_items')) {
+                $selectedKeys = explode(',', request('selected_items'));
+                $cart = array_intersect_key($cart, array_flip($selectedKeys));
+            }
         }
 
         if (empty($cart)) {
@@ -176,6 +181,7 @@ class OrderController extends Controller
             'product_variation_id' => 'nullable|exists:product_variations,id',
             'quantity' => 'required_if:buy_now,1,true|nullable|integer|min:1',
             'tin' => ['nullable', 'string', 'regex:/^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/'],
+            'selected_items' => 'nullable|string', // Comma-separated list of line keys
             
             // SC/PWD validation
             'apply_discount' => 'nullable', // Use manual boolean check to avoid standard boolean rule quirks with FormData
@@ -230,7 +236,12 @@ class OrderController extends Controller
             $cart = [\App\Services\CartService::lineKey($buyNowItem['product_id'], $buyNowItem['product_variation_id']) => $buyNowItem];
         } else {
             $cart = CartService::pruneCart(session()->get('cart', []));
-            session()->put('cart', $cart);
+
+            // Handle Selective Checkout
+            if ($request->has('selected_items')) {
+                $selectedKeys = explode(',', $request->input('selected_items'));
+                $cart = array_intersect_key($cart, array_flip($selectedKeys));
+            }
         }
 
         if (empty($cart)) {

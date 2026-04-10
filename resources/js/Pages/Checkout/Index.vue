@@ -1602,6 +1602,7 @@ const form = useForm({
     prescription_id_image: null,
     prescription_image: null,
     ocr_results: {},
+    selected_items: props.queryParams?.selected_items || null,
 });
 
 const localDiscountAmount = computed(() => {

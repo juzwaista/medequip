@@ -403,14 +403,18 @@ const removeSelected = () => {
 };
 
 const proceedToCheckout = () => {
-    // Store selected items in session before checkout
-    const selectedProductIds = Object.entries(selectedItems.value)
+    const selectedKeys = Object.entries(selectedItems.value)
         .filter(([_, selected]) => selected)
-        .map(([id, _]) => parseInt(id));
+        .map(([key]) => key);
     
-    // For now, just go to checkout (backend will handle all cart items)
-    // TODO: Implement selected-only checkout
-    router.visit('/checkout');
+    if (selectedKeys.length === 0) return;
+
+    // Redirect to checkout with selected items as a query parameter
+    router.visit('/checkout', {
+        data: {
+            selected_items: selectedKeys.join(',')
+        }
+    });
 };
 
 const redirectToLogin = () => {
