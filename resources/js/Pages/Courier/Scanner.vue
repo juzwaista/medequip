@@ -409,66 +409,104 @@ const handlePhotoUpload = async (e) => {
     if (!file) return;
 
     photoPreview.value = 'processing';
+    let lat = null;
+    let lng = null;
     
     try {
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
-        });
-        
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
+        // Try GPS with a race against a fallback timeout
+        try {
+            const position = await Promise.race([
+                new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: false, // Switch to false for faster response
+                        timeout: 5000,
+                        maximumAge: 60000
+                    });
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('GPS Timeout')), 6000))
+            ]);
+            lat = position.coords.latitude;
+            lng = position.coords.longitude;
+        } catch (gpsErr) {
+            console.warn("GPS failed, continuing without watermark coordinates:", gpsErr);
+        }
+
         form.proof_latitude = lat;
         form.proof_longitude = lng;
         
         const photoUrl = URL.createObjectURL(file);
         const img = new Image();
-        img.src = photoUrl;
         
-        await new Promise(r => img.onload = r);
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = photoUrl;
+            // timeout for image load
+            setTimeout(() => reject(new Error('Image Load Timeout')), 10000);
+        });
         
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
+        // Cap resolution for faster processing and lower memory usage
+        const MAX_DIM = 1600;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+            if (width > MAX_DIM) {
+                height *= MAX_DIM / width;
+                width = MAX_DIM;
+            }
+        } else {
+            if (height > MAX_DIM) {
+                width *= MAX_DIM / height;
+                height = MAX_DIM;
+            }
+        }
         
-        ctx.drawImage(img, 0, 0);
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
         
         // Watermark styling
-        const fontSize = Math.max(16, canvas.height * 0.03); 
-        const boxHeight = fontSize * 3 + 40;
+        const fontSize = Math.max(14, height * 0.025); 
+        const padding = fontSize;
+        const lineCount = 3;
+        const boxHeight = (fontSize * lineCount) + (padding * 2) + (fontSize * 0.5 * (lineCount - 1));
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, height - boxHeight, width, boxHeight);
         
         ctx.fillStyle = 'white';
         ctx.font = `bold ${fontSize}px monospace`;
         
         const dateStr = new Date().toLocaleString() + ' (Local)';
-        const locStr = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        const locStr = lat ? `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}` : 'GPS: Data Unavailable';
         const orderStr = `Order: ${form.order_number}`;
         
-        ctx.fillText(orderStr, 20, canvas.height - boxHeight + fontSize + 10);
-        ctx.fillText(locStr, 20, canvas.height - boxHeight + (fontSize * 2) + 20);
-        ctx.fillText(dateStr, 20, canvas.height - boxHeight + (fontSize * 3) + 30);
+        ctx.fillText(orderStr, padding, height - boxHeight + padding + fontSize * 0.8);
+        ctx.fillText(locStr, padding, height - boxHeight + padding + (fontSize * 2));
+        ctx.fillText(dateStr, padding, height - boxHeight + padding + (fontSize * 3.2));
         
         canvas.toBlob((blob) => {
-            const newFile = new File([blob], file.name, { type: file.type });
-            form.photo = newFile;
-            photoPreview.value = URL.createObjectURL(newFile);
-        }, file.type, 0.9);
+            if (blob) {
+                const newFile = new File([blob], file.name, { type: 'image/jpeg' });
+                form.photo = newFile;
+                photoPreview.value = URL.createObjectURL(newFile);
+            } else {
+                throw new Error('Canvas conversion failed');
+            }
+        }, 'image/jpeg', 0.85);
+        
+        URL.revokeObjectURL(photoUrl);
         
     } catch (err) {
-        console.error("GPS or Watermark Error:", err);
-        alert("Could not attach GPS location. Ensure location services are enabled on your device/browser.");
-        form.proof_latitude = null;
-        form.proof_longitude = null;
+        console.error("Proof of Delivery Image Error:", err);
+        // Final fallback: Use the original file if everything failed
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+        if (err.message !== 'GPS Timeout') {
+            alert("Warning: Could not process photo watermark, using original image.");
+        }
     }
 };
 

@@ -51,7 +51,15 @@ class Product extends Model
         'is_vat_exempt' => 'boolean',
     ];
 
-    protected $appends = ['image_url', 'units_sold'];
+    protected $appends = ['image_url', 'units_sold', 'reviews_avg_stars'];
+
+    /**
+     * Ensure reviews_avg_stars is always numeric and rounded.
+     */
+    public function getReviewsAvgStarsAttribute($value): float
+    {
+        return $value ? round((float) $value, 1) : 0.0;
+    }
 
     /**
      * Get the distributor that owns this product

@@ -37,6 +37,8 @@ class BranchController extends Controller
 
         return Inertia::render('Owner/Branches/Create', [
             'distributor' => $distributor,
+            'cities'      => config('cavite.cities'),
+            'barangays'   => config('cavite.barangays'),
         ]);
     }
 
@@ -54,6 +56,9 @@ class BranchController extends Controller
             'branch_name' => 'required|string|max:255',
             'address' => 'required|string',
             'contact_number' => ['nullable', 'regex:/^09[0-9]{9}$/'],
+            'email' => 'nullable|email',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09, and contain numbers only.',
         ]);

@@ -11,11 +11,16 @@ class Branch extends Model
         'branch_name',
         'address',
         'contact_number',
+        'email',
+        'latitude',
+        'longitude',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     /**

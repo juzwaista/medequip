@@ -1553,6 +1553,17 @@ watch(
     { immediate: true },
 );
 
+// Clear discount errors when toggled off
+watch(() => form.apply_discount, (val) => {
+    if (!val) {
+        delete form.errors.discount_type;
+        delete form.errors.discount_id_number;
+        delete form.errors.discount_id_name;
+        delete form.errors.discount_id_image;
+        delete form.errors.discount_terms;
+    }
+});
+
 const form = useForm({
     customer_name: "",
     delivery_address: "",
@@ -1562,10 +1573,10 @@ const form = useForm({
     notes: "",
     fulfillment_method: "delivery", // delivery | pickup
     payment_method: "gcash",
-    buy_now: props.queryParams?.buy_now === 'true' || props.queryParams?.buy_now === true,
+    buy_now: String(props.queryParams?.buy_now) === 'true' || String(props.queryParams?.buy_now) === '1',
     product_id: props.queryParams?.product_id || null,
     product_variation_id: props.queryParams?.product_variation_id || null,
-    quantity: props.queryParams?.quantity || null,
+    quantity: props.queryParams?.quantity ? parseInt(props.queryParams.quantity) : null,
     tin: props.auth?.user?.tin || "",
     reference_number: "",
     proof: null,

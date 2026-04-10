@@ -103,16 +103,40 @@ const initMap = () => {
         interactive: false
     }).addTo(map);
 
-    marker = L.marker([latNum, lngNum]).addTo(map);
+    marker = L.marker([latNum, lngNum], { draggable: true }).addTo(map);
+
+    marker.on('dragend', async function (event) {
+        const position = marker.getLatLng();
+        emit('moved', { lat: position.lat, lng: position.lng });
+
+        // Reverse geocode to get city/barangay
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&addressdetails=1`);
+            const data = await response.json();
+            if (data && data.address) {
+                const city = data.address.city || data.address.town || data.address.municipality || data.address.village;
+                const barangay = data.address.neighbourhood || data.address.suburb || data.address.village;
+                emit('picked', { city, barangay, lat: position.lat, lng: position.lng });
+            }
+        } catch (error) {
+            console.error('Reverse geocoding failed:', error);
+        }
+    });
 };
+
+const emit = defineEmits(['picked', 'moved']);
 
 // Re-center if props wildly change
 watch(() => [props.lat, props.lng], ([newLat, newLng]) => {
     if (newLat && newLng && map) {
         const latNum = parseFloat(newLat);
         const lngNum = parseFloat(newLng);
-        marker.setLatLng([latNum, lngNum]);
-        map.setView([latNum, lngNum], 16);
+        const current = marker.getLatLng();
+        // Only update if change is significant to avoid jitter
+        if (Math.abs(current.lat - latNum) > 0.0001 || Math.abs(current.lng - lngNum) > 0.0001) {
+            marker.setLatLng([latNum, lngNum]);
+            map.setView([latNum, lngNum], map.getZoom());
+        }
     } else if (newLat && newLng && !map) {
         initMap();
     }

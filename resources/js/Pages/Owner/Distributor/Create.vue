@@ -374,7 +374,7 @@ const manualBarangay = ref('');
 const zipCode = ref('');
 
 // For map <-> form sync
-const geocodeQuery = ref(null);
+const geocodeQuery = ref('');
 const detectedLocation = ref('');
 let detectedTimer = null;
 let isProgrammaticChange = false;
@@ -475,14 +475,17 @@ const normalize = (str) =>
 
 const fuzzyMatch = (input, list) => {
     if (!input || !list || !list.length) return null;
-    const normalInput = normalize(input);
-    if (!normalInput) return null;
-    const exact = list.find(item => normalize(item) === normalInput);
+    const nInput = normalize(input);
+    if (!nInput) return null;
+    const exact = list.find(it => normalize(it) === nInput);
     if (exact) return exact;
-    const startsWith = list.find(item => normalize(item).startsWith(normalInput + ' ') || normalize(item) === normalInput);
+    const startsWith = list.find(it => normalize(it).startsWith(nInput + ' ') || normalize(it) === nInput);
     if (startsWith) return startsWith;
-    const subString = list.find(item => normalize(item).includes(normalInput));
-    if (subString) return subString;
+    // Super-string: input contains the list item (e.g., "City of Imus" contains "Imus")
+    const superStr = list.find(it => nInput.includes(normalize(it)));
+    if (superStr) return superStr;
+    const subStr = list.find(it => normalize(it).includes(nInput));
+    if (subStr) return subStr;
     return null;
 };
 
@@ -534,9 +537,14 @@ const availableBarangays = computed(() => {
 });
 
 // ─── Map pin → form ────────────────────────────────────────────────────────
-const onMapAddressPicked = ({ city, barangay }) => {
-    if (!city && !barangay) return;
+const onMapAddressPicked = ({ city, barangay, lat, lng }) => {
+    if (!city && !barangay && !lat) return;
     isProgrammaticChange = true;
+
+    if (lat && lng) {
+        form.latitude = lat;
+        form.longitude = lng;
+    }
 
     const cityKeys = Object.keys(props.cities || {});
     const matchedCity = fuzzyMatch(city, cityKeys);
@@ -567,6 +575,37 @@ const onMapAddressPicked = ({ city, barangay }) => {
     }
     isProgrammaticChange = false;
 };
+
+const onMapMoved = ({ lat, lng }) => {
+    form.latitude = lat;
+    form.longitude = lng;
+};
+
+// ─── External Geocoding ───────────────────────────────────────────────────
+watch(geocodeQuery, async (query) => {
+    if (!query || isProgrammaticChange) return;
+    
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+        const data = await response.json();
+        if (data && data[0]) {
+            form.latitude = parseFloat(data[0].lat);
+            form.longitude = parseFloat(data[0].lon);
+            
+            // Also try to get city/brgy from the results if possible
+            const res = data[0].display_name.split(',');
+            // Simple heuristic
+            const cityGuess = res[0].trim();
+            const matched = fuzzyMatch(cityGuess, Object.keys(props.cities || {}));
+            if (matched) {
+                selectedCity.value = matched;
+                _applyCityChange(matched);
+            }
+        }
+    } catch (e) {
+        console.error('Geocoding failed', e);
+    }
+});
 
 const sanitizeContactNumber = () => {
     form.contact_number = String(form.contact_number || '').replace(/\D/g, '').slice(0, 11);

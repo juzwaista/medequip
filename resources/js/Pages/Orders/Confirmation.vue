@@ -69,14 +69,19 @@
                         </div>
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-2">
                         <div
                             v-for="item in (entry.items || [])"
                             :key="item.id"
-                            class="flex justify-between text-sm"
+                            class="flex flex-col text-sm border-b last:border-b-0 pb-2 mb-2 last:pb-0 last:mb-0"
                         >
-                            <span class="text-gray-700">{{ item.product?.name }} ({{ item.quantity }}x)</span>
-                            <span class="font-semibold text-gray-900">₱{{ Number(item.total_price || 0).toLocaleString() }}</span>
+                            <div class="flex justify-between">
+                                <span class="text-gray-700 font-medium">{{ item.product?.name }} ({{ item.quantity }}x)</span>
+                                <span class="font-bold text-gray-900">₱{{ Number(item.total_price || 0).toLocaleString() }}</span>
+                            </div>
+                            <p v-if="item.product_variation" class="text-xs text-blue-600 font-medium mt-0.5">
+                                {{ item.product_variation.display_label || `${item.product_variation.option_name}: ${item.product_variation.option_value}` }}
+                            </p>
                         </div>
                     </div>
                 </div>

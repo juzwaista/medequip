@@ -172,9 +172,9 @@ class OrderController extends Controller
             'payment_method' => 'required|in:card,gcash,paymaya,wallet', // 'cod' removed from allowed list
             'fulfillment_method' => 'required|in:delivery,pickup',
             'buy_now' => 'boolean',
-            'product_id' => 'required_if:buy_now,true|exists:products,id',
+            'product_id' => 'required_if:buy_now,true|nullable|exists:products,id',
             'product_variation_id' => 'nullable|exists:product_variations,id',
-            'quantity' => 'required_if:buy_now,true|integer|min:1',
+            'quantity' => 'required_if:buy_now,true|nullable|integer|min:1',
             'tin' => ['nullable', 'string', 'regex:/^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/'],
             
             // SC/PWD validation
@@ -231,6 +231,12 @@ class OrderController extends Controller
         }
 
         if (empty($cart)) {
+            Log::warning('[OrderController] PlaceOrder failed: Cart is empty.', [
+                'user_id' => auth()->id(),
+                'buy_now' => $request->boolean('buy_now'),
+                'product_id' => $request->product_id,
+                'session_cart' => session()->get('cart'),
+            ]);
             return back()->withErrors(['cart' => 'Your cart is empty'])->withInput();
         }
 
@@ -538,7 +544,7 @@ class OrderController extends Controller
                         foreach ($o->items as $item) {
                             $name = $item->product->name;
                             if ($item->productVariation) {
-                                $name .= ' (' . $item->productVariation->name . ')';
+                                $name .= ' (' . $item->productVariation->display_label . ')';
                             }
 
                             $batchLineItems[] = [
@@ -648,7 +654,7 @@ class OrderController extends Controller
             $requestedIds->prepend($order->id);
         }
 
-        $orders = Order::with(['items.product', 'distributor', 'invoice.payments'])
+        $orders = Order::with(['items.product', 'items.productVariation', 'distributor', 'invoice.payments'])
             ->where('customer_id', auth()->id())
             ->whereIn('id', $requestedIds->all())
             ->orderByDesc('created_at')
