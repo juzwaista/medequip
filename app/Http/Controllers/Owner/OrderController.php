@@ -368,11 +368,25 @@ class OrderController extends Controller
             // No inventory change here - already deducted at approval
         }
 
+        if ($newStatus === 'ready_for_pickup') {
+            $order->update(['ready_for_pickup_at' => now()]);
+            // Optional: Auto-notify via chat for pickup
+            try {
+                app(OrderChatAutomationService::class)->sendReadyForPickupMessage($order);
+            } catch (\Exception $e) {
+                Log::warning('[OrderController] Failed to send pickup chat message', ['error' => $e->getMessage()]);
+            }
+        }
+
         // Update order status
         $order->update(['status' => $newStatus]);
 
         if ($newStatus === 'approved' && $oldStatus === 'pending') {
-            app(OrderChatAutomationService::class)->sendOrderAcceptedMessage($order->fresh());
+            try {
+                app(OrderChatAutomationService::class)->sendOrderAcceptedMessage($order->fresh());
+            } catch (\Exception $e) {
+                Log::warning('[OrderController] Failed to send order accepted chat message', ['error' => $e->getMessage()]);
+            }
         }
 
         // If owner cancels/rejects after payment, refund customer and claw back seller proceeds.
@@ -393,9 +407,17 @@ class OrderController extends Controller
         ];
 
         if (isset($kindMap[$newStatus]) && $order->customer) {
-            $order->customer->notify(new OrderNotification($order, $kindMap[$newStatus], [
-                'shop_name' => $shopName,
-            ]));
+            try {
+                $order->customer->notify(new OrderNotification($order, $kindMap[$newStatus], [
+                    'shop_name' => $shopName,
+                ]));
+            } catch (\Exception $e) {
+                Log::error('[OrderController] Failed to send customer notification', [
+                    'order_id' => $order->id,
+                    'status' => $newStatus,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
 
         return back()->with('success', "Order status updated to {$newStatus}");

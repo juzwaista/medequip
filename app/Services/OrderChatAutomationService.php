@@ -147,6 +147,37 @@ class OrderChatAutomationService
         Log::info('[OrderChatAutomation] Packaging photos posted to chat', ['order_id' => $order->id]);
     }
 
+    public function sendReadyForPickupMessage(Order $order): void
+    {
+        $order->loadMissing(['distributor']);
+        $distributor = $order->distributor;
+        if (! $distributor || ! $distributor->user_id) {
+            return;
+        }
+
+        $conversation = $order->getOrCreateShopConversation();
+
+        $address = $distributor->address ?? 'our store';
+        $instructions = $order->pickup_instructions ?: 'Please bring your order ID and a valid ID for verification.';
+
+        $body = "Your order {$order->order_number} is ready for pickup!\n\nLocation: {$address}\nInstructions: {$instructions}";
+
+        $conversation->messages()->create([
+            'user_id' => $distributor->user_id,
+            'kind' => 'automated',
+            'order_id' => $order->id,
+            'body' => $body,
+            'meta' => [
+                'automated_event' => 'ready_for_pickup',
+                'shop_name' => $distributor->company_name,
+            ],
+        ]);
+
+        $conversation->update(['last_message_at' => now()]);
+
+        Log::info('[OrderChatAutomation] Ready for pickup notification sent', ['order_id' => $order->id]);
+    }
+
     private function interpolate(string $template, Order $order, string $shopName): string
     {
         $customerName = $order->customer?->name ?? 'customer';

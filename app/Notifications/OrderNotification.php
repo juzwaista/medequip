@@ -18,7 +18,14 @@ class OrderNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+        
+        // Only include mail if it's explicitly enabled in config
+        if (config('mail.enabled', true) && config('mail.mailers.smtp.host')) {
+            $channels[] = 'mail';
+        }
+        
+        return $channels;
     }
 
     public function toDatabase(object $notifiable): array
