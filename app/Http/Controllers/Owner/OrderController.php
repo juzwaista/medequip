@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Throwable;
 
 class OrderController extends Controller
 {
@@ -339,18 +340,23 @@ class OrderController extends Controller
                 }
 
                 // Notify via chat with photos 
-                app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order);
+                try {
+                    app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order);
+                } catch (\Throwable $e) {
+                    Log::error('[OrderController] Chat photos automation failed', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::error('[OrderController] Failed during packed status update', [
                     'order_id' => $order->id,
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
-                // We let the order status update persist even if secondary actions fail, 
-                // but we should probably inform the user if it was a hard failure.
-                if ($newStatus === 'packed' && !$order->exists) {
-                     return back()->withErrors(['error' => 'Failed to process packaging: ' . $e->getMessage()]);
-                }
+                return back()->withErrors(['error' => 'Failed to process packaging: ' . $e->getMessage()]);
             }
         }
 

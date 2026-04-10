@@ -102,49 +102,63 @@ class OrderChatAutomationService
 
     public function sendPackagingPhotosMessage(Order $order): void
     {
-        $order->loadMissing(['distributor']);
-        $distributor = $order->distributor;
-        if (! $distributor || ! $distributor->user_id) {
-            return;
-        }
+        try {
+            Log::info('[OrderChatAutomation] Starting packaging photos message', ['order_id' => $order->id]);
+            
+            $order->loadMissing(['distributor']);
+            $distributor = $order->distributor;
+            if (! $distributor || ! $distributor->user_id) {
+                Log::warning('[OrderChatAutomation] No distributor user found for order', ['order_id' => $order->id]);
+                return;
+            }
 
-        $conversation = $order->getOrCreateShopConversation();
+            $conversation = $order->getOrCreateShopConversation();
+            Log::info('[OrderChatAutomation] Conversation ID', ['id' => $conversation->id]);
 
-        if ($order->packaging_before_image_path) {
-            $conversation->messages()->create([
-                'user_id' => $distributor->user_id,
-                'kind' => 'image',
+            if ($order->packaging_before_image_path) {
+                Log::info('[OrderChatAutomation] Creating before photo message', ['path' => $order->packaging_before_image_path]);
+                $conversation->messages()->create([
+                    'user_id' => $distributor->user_id,
+                    'kind' => 'image',
+                    'order_id' => $order->id,
+                    'body' => 'Photo of your items before packing.',
+                    'image_path' => $order->packaging_before_image_path,
+                    'meta' => ['automated' => true, 'event' => 'packaging_before'],
+                ]);
+            }
+
+            if ($order->packaging_after_image_path) {
+                Log::info('[OrderChatAutomation] Creating after photo message', ['path' => $order->packaging_after_image_path]);
+                $conversation->messages()->create([
+                    'user_id' => $distributor->user_id,
+                    'kind' => 'image',
+                    'order_id' => $order->id,
+                    'body' => 'Photo of your package after it was packed.',
+                    'image_path' => $order->packaging_after_image_path,
+                    'meta' => ['automated' => true, 'event' => 'packaging_after'],
+                ]);
+            }
+
+            if ($order->is_fragile) {
+                $conversation->messages()->create([
+                    'user_id' => $distributor->user_id,
+                    'kind' => 'text',
+                    'order_id' => $order->id,
+                    'body' => '⚠ This package has been marked as FRAGILE for extra safety during transit. We have requested the courier to handle it with extreme care.',
+                    'meta' => ['automated' => true, 'event' => 'fragile_flag'],
+                ]);
+            }
+
+            $conversation->update(['last_message_at' => now()]);
+            
+            Log::info('[OrderChatAutomation] Packaging photos posted to chat successfully', ['order_id' => $order->id]);
+        } catch (\Throwable $e) {
+            Log::error('[OrderChatAutomation] Failed to send packaging photos message', [
                 'order_id' => $order->id,
-                'body' => 'Photo of your items before packing.',
-                'image_path' => $order->packaging_before_image_path,
-                'meta' => ['automated' => true, 'event' => 'packaging_before'],
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
-
-        if ($order->packaging_after_image_path) {
-            $conversation->messages()->create([
-                'user_id' => $distributor->user_id,
-                'kind' => 'image',
-                'order_id' => $order->id,
-                'body' => 'Photo of your package after it was packed.',
-                'image_path' => $order->packaging_after_image_path,
-                'meta' => ['automated' => true, 'event' => 'packaging_after'],
-            ]);
-        }
-
-        if ($order->is_fragile) {
-            $conversation->messages()->create([
-                'user_id' => $distributor->user_id,
-                'kind' => 'text',
-                'order_id' => $order->id,
-                'body' => '⚠ This package has been marked as FRAGILE for extra safety during transit. We have requested the courier to handle it with extreme care.',
-                'meta' => ['automated' => true, 'event' => 'fragile_flag'],
-            ]);
-        }
-
-        $conversation->update(['last_message_at' => now()]);
-        
-        Log::info('[OrderChatAutomation] Packaging photos posted to chat', ['order_id' => $order->id]);
     }
 
     public function sendReadyForPickupMessage(Order $order): void
