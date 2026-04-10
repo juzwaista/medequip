@@ -171,19 +171,19 @@ class OrderController extends Controller
             'notes' => 'nullable|string|max:1000',
             'payment_method' => 'required|in:card,gcash,paymaya,wallet', // 'cod' removed from allowed list
             'fulfillment_method' => 'required|in:delivery,pickup',
-            'buy_now' => 'boolean',
-            'product_id' => 'required_if:buy_now,true|nullable|exists:products,id',
+            'buy_now' => 'nullable', // Handle as truthy check later
+            'product_id' => 'required_if:buy_now,1,true|nullable|exists:products,id',
             'product_variation_id' => 'nullable|exists:product_variations,id',
-            'quantity' => 'required_if:buy_now,true|nullable|integer|min:1',
+            'quantity' => 'required_if:buy_now,1,true|nullable|integer|min:1',
             'tin' => ['nullable', 'string', 'regex:/^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/'],
             
             // SC/PWD validation
-            'apply_discount' => 'boolean',
-            'discount_type' => 'required_if:apply_discount,true|nullable|in:senior,pwd',
-            'discount_id_number' => 'required_if:apply_discount,true|nullable|string|max:50',
-            'discount_id_name' => 'required_if:apply_discount,true|nullable|string|max:100',
-            'discount_id_image' => 'required_if:apply_discount,true|nullable|image|max:8192',
-            'discount_terms' => 'exclude_if:apply_discount,false|accepted',
+            'apply_discount' => 'nullable', // Use manual boolean check to avoid standard boolean rule quirks with FormData
+            'discount_type' => 'required_if:apply_discount,1,true|nullable|in:senior,pwd',
+            'discount_id_number' => 'required_if:apply_discount,1,true|nullable|string|max:50',
+            'discount_id_name' => 'required_if:apply_discount,1,true|nullable|string|max:100',
+            'discount_id_image' => 'required_if:apply_discount,1,true|nullable|image|max:8192',
+            'discount_terms' => 'exclude_unless:apply_discount,1,true|accepted',
             
             // Rx identity validation (if items require Rx)
             'prescription_patient_name' => 'nullable|string|max:100',
@@ -200,10 +200,12 @@ class OrderController extends Controller
             'discount_id_number.required_if' => 'ID number is required for the discount.',
             'discount_id_name.required_if' => 'Full name on ID is required for the discount.',
             'discount_id_image.required_if' => 'ID photo is required for the discount.',
-            'discount_terms.accepted' => 'You must certify that this purchase is for your personal use.',
+            'discount_terms.accepted' => 'You must certify that this purchase is for your personal use to apply the discount.',
             'discount_id_image.image' => 'The document uploaded must be an image (PNG, JPG, etc.).',
-            'discount_terms.required_if' => 'You must certify that this purchase is for your personal use.',
         ]);
+
+        $buyNow = filter_var($request->input('buy_now'), FILTER_VALIDATE_BOOLEAN);
+        $applyDiscount = filter_var($request->input('apply_discount'), FILTER_VALIDATE_BOOLEAN);
 
         $user = auth()->user();
         $tin = $request->input('tin');
@@ -218,7 +220,7 @@ class OrderController extends Controller
             $user->update(['tin' => $tin]);
         }
 
-        if ($request->boolean('buy_now')) {
+        if ($buyNow) {
             $buyNowItem = [
                 'product_id' => $request->product_id,
                 'product_variation_id' => $request->product_variation_id,
@@ -233,7 +235,7 @@ class OrderController extends Controller
         if (empty($cart)) {
             Log::warning('[OrderController] PlaceOrder failed: Cart is empty.', [
                 'user_id' => auth()->id(),
-                'buy_now' => $request->boolean('buy_now'),
+                'buy_now' => $buyNow,
                 'product_id' => $request->product_id,
                 'session_cart' => session()->get('cart'),
             ]);
@@ -336,10 +338,10 @@ class OrderController extends Controller
                     'pickup_instructions' => $isPickup ? $distributor->pickup_instructions : null,
                     'required_vehicle_type' => $shippingReq['vehicle'],
                     'tin' => $tin,
-                    'discount_type' => $request->boolean('apply_discount') ? $request->discount_type : 'none',
-                    'discount_id_number' => $request->boolean('apply_discount') ? $request->discount_id_number : null,
-                    'discount_id_name' => $request->boolean('apply_discount') ? $request->discount_id_name : null,
-                    'discount_status' => $request->boolean('apply_discount') ? Order::DISCOUNT_PENDING : Order::DISCOUNT_NONE,
+                    'discount_type' => $applyDiscount ? ($request->discount_type ?? 'senior') : 'none',
+                    'discount_id_number' => $applyDiscount ? $request->discount_id_number : null,
+                    'discount_id_name' => $applyDiscount ? $request->discount_id_name : null,
+                    'discount_status' => $applyDiscount ? Order::DISCOUNT_PENDING : Order::DISCOUNT_NONE,
                     'prescription_patient_name' => $request->prescription_patient_name,
                     'ocr_results' => $ocrResults,
                 ]);

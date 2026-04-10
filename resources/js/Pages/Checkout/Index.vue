@@ -1556,11 +1556,20 @@ watch(
 // Clear discount errors when toggled off
 watch(() => form.apply_discount, (val) => {
     if (!val) {
-        delete form.errors.discount_type;
-        delete form.errors.discount_id_number;
-        delete form.errors.discount_id_name;
-        delete form.errors.discount_id_image;
-        delete form.errors.discount_terms;
+        // Clear all discount related errors immediately when unchecked
+        const fieldsToClear = [
+            'discount_type',
+            'discount_id_number',
+            'discount_id_name',
+            'discount_id_image',
+            'discount_terms'
+        ];
+        fieldsToClear.forEach(field => {
+            if (form.errors[field]) delete form.errors[field];
+        });
+        
+        // Also ensure any lingering validation errors from backend for these fields are cleared
+        form.clearErrors(...fieldsToClear);
     }
 });
 

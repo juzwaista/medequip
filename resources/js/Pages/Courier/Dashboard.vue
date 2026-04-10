@@ -864,12 +864,27 @@ const onPhotoSelected = async (e) => {
     flow.value.photoPreview = 'processing';
 
     try {
+        // GPS retrieval with absolute safety timeout
         const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
+            const timeoutId = setTimeout(() => {
+                reject(new Error("GPS_TIMEOUT"));
+            }, 5000); // 5 seconds max for GPS
+            
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    clearTimeout(timeoutId);
+                    resolve(pos);
+                },
+                (err) => {
+                    clearTimeout(timeoutId);
+                    reject(err);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 4500, // Slightly less than our own timeout
+                    maximumAge: 0
+                }
+            );
         });
 
         const lat = position.coords.latitude;
@@ -881,7 +896,10 @@ const onPhotoSelected = async (e) => {
         const img = new Image();
         img.src = photoUrl;
 
-        await new Promise(r => img.onload = r);
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error("IMG_LOAD_ERROR"));
+        });
 
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -915,11 +933,17 @@ const onPhotoSelected = async (e) => {
 
     } catch (err) {
         console.error("GPS or Watermark Error:", err);
-        alert("Could not attach GPS location. Ensure location services are enabled.");
+        // If GPS fails or times out, we still let them proceed with the original photo
         flow.value.proof_latitude = null;
         flow.value.proof_longitude = null;
         flow.value.photoFile = file;
         flow.value.photoPreview = URL.createObjectURL(file);
+        
+        if (err.message === "GPS_TIMEOUT") {
+            console.warn("GPS timed out. Proceeding without watermark.");
+        } else if (err.code === 1) {
+            console.warn("User denied Geolocation. Proceeding without watermark.");
+        }
     }
 };
 
