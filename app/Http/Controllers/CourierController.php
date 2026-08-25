@@ -146,19 +146,15 @@ class CourierController extends Controller
             ]);
 
             if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
-                $courierWallet = $user->wallet;
-                if ($courierWallet) {
-                    $courierWallet->credit(
-                        (float) $delivery->courier_fee,
-                        'delivery_fee',
-                        (string) $delivery->id,
-                        "Courier fee for {$delivery->tracking_number}"
-                    );
+                $payoutService = app(\App\Services\AutomatedPayoutService::class);
+                if ($delivery->courier) {
+                    $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
+                } else {
+                    $delivery->update([
+                        'courier_payout_status' => 'paid',
+                        'courier_paid_at' => now(),
+                    ]);
                 }
-                $delivery->update([
-                    'courier_payout_status' => 'paid',
-                    'courier_paid_at' => now(),
-                ]);
             }
 
             return back()->with('success', 'Order delivered successfully!');

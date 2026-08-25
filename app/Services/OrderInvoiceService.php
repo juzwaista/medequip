@@ -27,8 +27,7 @@ class OrderInvoiceService
             $shipping = (float) $order->shipping_fee;
             $totalAmount = (float) $order->total_amount;
 
-            $isWallet = $order->payment_method === 'wallet';
-            $isCod    = $order->payment_method === 'cod';
+            $isCod = $order->payment_method === 'cod';
 
             $invoice = Invoice::create([
                 'order_id'       => $order->id,
@@ -38,7 +37,7 @@ class OrderInvoiceService
                 'tax'            => (float) ($order->vat_amount ?? 0),
                 'discount'       => (float) ($order->discount ?? 0),
                 'total_amount'   => $totalAmount,
-                'status'         => $isWallet ? 'paid' : 'unpaid',
+                'status'         => 'unpaid',
                 'due_date'       => now()->addDays(7),
             ]);
 
@@ -60,26 +59,18 @@ class OrderInvoiceService
                     'paymongo_status'      => null,
                 ]);
             } else {
-                $paymentMethod = $isWallet ? 'wallet' : 'paymongo';
-                $paymentStatus = $isWallet ? 'verified' : 'pending';
-                $paymongoStatus = $isWallet ? null : 'pending';
-
                 $payment = Payment::create([
                     'invoice_id'           => $invoice->id,
-                    'payment_method'       => $paymentMethod,
+                    'payment_method'       => 'paymongo',
                     'amount'               => $totalAmount,
-                    'status'               => $paymentStatus,
+                    'status'               => 'pending',
                     'escrow_status'        => 'held',
                     'platform_fee_rate'    => $fees['platform_fee_rate'],
                     'platform_fee_amount'  => $fees['platform_fee_amount'],
                     'net_seller_amount'    => $fees['net_seller_amount'],
-                    'verified_at'          => $isWallet ? now() : null,
-                    'paymongo_status'      => $paymongoStatus,
+                    'verified_at'          => null,
+                    'paymongo_status'      => 'pending',
                 ]);
-
-                if ($isWallet) {
-                    $payment->creditSellerWalletOnVerification();
-                }
             }
 
             return $invoice->fresh(['payments']);

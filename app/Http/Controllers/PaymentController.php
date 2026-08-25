@@ -331,7 +331,7 @@ class PaymentController extends Controller
             $payment->applyEscrowFees();
         }
 
-        $payment->refresh()->creditSellerWalletOnVerification();
+
 
         if (! $invoice) {
             return;

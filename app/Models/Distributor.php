@@ -57,6 +57,9 @@ class Distributor extends Model
         'bir_form_expires_at',
         'fda_license_expires_at',
         'prc_id_expires_at',
+        'payout_bank',
+        'payout_account_name',
+        'payout_account_number',
     ];
 
     protected $casts = [
@@ -77,7 +80,7 @@ class Distributor extends Model
         'prc_id_expires_at' => 'date',
     ];
 
-    protected $appends = ['is_suspended', 'unread_alerts_count', 'logo_url', 'cover_photo_url', 'rating'];
+    protected $appends = ['is_suspended', 'unread_alerts_count', 'logo_url', 'cover_photo_url', 'rating', 'available_payout_balance'];
 
     /**
      * Get logo URL using PublicStorageUrl helper for Hostinger resilience
@@ -211,5 +214,29 @@ class Distributor extends Model
         }
 
         return $this->suspended_until->isFuture();
+    }
+
+    /**
+     * Get withdrawal requests
+     */
+    public function withdrawalRequests()
+    {
+        return $this->hasMany(WithdrawalRequest::class);
+    }
+
+    /**
+     * Calculate available payout balance
+     */
+    public function getAvailablePayoutBalanceAttribute(): float
+    {
+        $totalReleased = (float) Payment::whereHas('invoice.order', function ($q) {
+            $q->where('distributor_id', $this->id);
+        })->where('escrow_status', 'released')->sum('net_seller_amount');
+
+        $totalWithdrawn = (float) $this->withdrawalRequests()
+            ->whereIn('status', ['pending', 'approved'])
+            ->sum('amount');
+
+        return max(0, $totalReleased - $totalWithdrawn);
     }
 }

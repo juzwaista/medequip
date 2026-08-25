@@ -153,6 +153,18 @@
                                     <span v-if="earningsDelta >= 0">+</span>{{ earningsDelta.toFixed(1) }}% {{ earnings.comparison_label }}
                                 </p>
                                 <p class="text-xs font-medium text-emerald-50 mt-2 leading-snug relative z-10 max-w-[80%] opacity-90">Verified payments only, net after platform fee.</p>
+
+                                <!-- Pending & Transferred Breakdown -->
+                                <div class="relative z-10 mt-4 border-t border-emerald-400/30 pt-3 flex items-center justify-between gap-4">
+                                    <div>
+                                        <p class="text-[10px] font-bold text-emerald-100 uppercase tracking-wider">Pending Earnings</p>
+                                        <p class="text-lg font-bold text-white mt-0.5">{{ formatCurrency(earnings?.pending_earnings || 0) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-emerald-100 uppercase tracking-wider text-right">Transferred</p>
+                                        <p class="text-lg font-bold text-white mt-0.5 text-right">{{ formatCurrency(earnings?.transferred_earnings || 0) }}</p>
+                                    </div>
+                                </div>
                             </div>
                             <!-- Period presets -->
                             <div class="flex flex-wrap items-center gap-2">

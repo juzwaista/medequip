@@ -71,14 +71,7 @@ Route::delete('/cart/{lineKey}', [\App\Http\Controllers\CartController::class, '
 Route::delete('/cart', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 Route::get('/cart/count', [\App\Http\Controllers\CartController::class, 'count'])->name('cart.count');
 
-// Wallet (Auth + verified email)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet.index');
-    Route::post('/wallet/topup', [\App\Http\Controllers\WalletController::class, 'topup'])->name('wallet.topup');
-    Route::get('/wallet/topup/success', [\App\Http\Controllers\WalletController::class, 'topupSuccess'])->name('wallet.topup.success');
-    Route::get('/wallet/topup/cancel', [\App\Http\Controllers\WalletController::class, 'topupCancel'])->name('wallet.topup.cancel');
-    Route::post('/wallet/withdraw', [\App\Http\Controllers\WalletController::class, 'withdraw'])->name('wallet.withdraw');
-});
+
 
 // Terms acceptance (Auth required)
 Route::middleware('auth')->post('/terms/accept', [\App\Http\Controllers\TermsController::class, 'accept'])->name('terms.accept');
@@ -137,6 +130,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/addresses/{address}', [\App\Http\Controllers\CustomerAddressController::class, 'update'])->name('addresses.update');
     Route::delete('/addresses/{address}', [\App\Http\Controllers\CustomerAddressController::class, 'destroy'])->name('addresses.destroy');
     Route::post('/addresses/{address}/default', [\App\Http\Controllers\CustomerAddressController::class, 'setDefault'])->name('addresses.setDefault');
+
+    // Saved Discount IDs
+    Route::get('/discount-ids', [\App\Http\Controllers\CustomerDiscountIdController::class, 'index'])->name('discount-ids.index');
+    Route::post('/discount-ids', [\App\Http\Controllers\CustomerDiscountIdController::class, 'store'])->name('discount-ids.store');
+    Route::put('/discount-ids/{discountId}', [\App\Http\Controllers\CustomerDiscountIdController::class, 'update'])->name('discount-ids.update');
+    Route::delete('/discount-ids/{discountId}', [\App\Http\Controllers\CustomerDiscountIdController::class, 'destroy'])->name('discount-ids.destroy');
+    Route::post('/discount-ids/{discountId}/default', [\App\Http\Controllers\CustomerDiscountIdController::class, 'setDefault'])->name('discount-ids.setDefault');
 });
 
 // PayMongo webhook — NO auth, NO CSRF (exempted in bootstrap/app.php)

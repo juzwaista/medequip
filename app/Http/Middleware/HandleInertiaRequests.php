@@ -76,6 +76,7 @@ class HandleInertiaRequests extends Middleware
                     'warning_reason' => $warningReason,
                     'warning_message' => $warningMessage,
                     'tin' => $user->tin,
+                    'has_discount_id' => \App\Models\CustomerDiscountId::where('user_id', $user->id)->exists(),
                 ] : null,
             ],
             'needsTermsAcceptance' => $user ? ! $user->hasAcceptedTerms() : false,

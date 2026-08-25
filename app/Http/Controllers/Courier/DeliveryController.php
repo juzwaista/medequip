@@ -460,25 +460,23 @@ class DeliveryController extends Controller
     }
 
     /**
-     * Internal: credit courier fee to wallet.
+     * Internal: Automatically transfer courier fee to their linked bank account.
      */
     private function releaseCourierPayout(Delivery $delivery): void
     {
         if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
-            $courierUser = auth()->user();
-            $wallet = $courierUser->wallet;
-            if ($wallet) {
-                $wallet->credit(
-                    (float) $delivery->courier_fee,
-                    'delivery_fee',
-                    (string) $delivery->id,
-                    "Courier fee for {$delivery->tracking_number}"
-                );
+            $payoutService = app(\App\Services\AutomatedPayoutService::class);
+            $delivery->loadMissing('courier');
+            
+            if ($delivery->courier) {
+                $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
+            } else {
+                // Fallback if no courier relation exists but we still want to mark it internally
+                $delivery->update([
+                    'courier_payout_status' => 'paid',
+                    'courier_paid_at' => now(),
+                ]);
             }
-            $delivery->update([
-                'courier_payout_status' => 'paid',
-                'courier_paid_at' => now(),
-            ]);
         }
     }
 }

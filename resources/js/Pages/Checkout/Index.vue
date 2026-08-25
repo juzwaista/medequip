@@ -450,149 +450,203 @@
                             <div
                                 v-if="form.apply_discount"
                                 class="mt-4 p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
-                            >
-                                <!-- Discount Type -->
-                                <div class="grid grid-cols-2 gap-3">
-                                    <label
-                                        :class="[
-                                            'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
-                                            form.discount_type === 'senior'
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 bg-white',
-                                        ]"
-                                    >
-                                        <input
-                                            type="radio"
-                                            v-model="form.discount_type"
-                                            value="senior"
-                                            class="sr-only"
-                                        />
-                                        <span class="text-sm font-bold"
-                                            >Senior Citizen</span
+                                                     <!-- Saved IDs Selector -->
+                                <div v-if="savedDiscountIds && savedDiscountIds.length > 0" class="mb-4">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Choose an ID</label>
+                                    <div class="space-y-2">
+                                        <label 
+                                            v-for="savedId in savedDiscountIds" 
+                                            :key="savedId.id"
+                                            :class="[
+                                                'flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                form.use_saved_discount && form.saved_discount_id === savedId.id
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ]"
                                         >
-                                    </label>
-                                    <label
-                                        :class="[
-                                            'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
-                                            form.discount_type === 'pwd'
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 bg-white',
-                                        ]"
-                                    >
-                                        <input
-                                            type="radio"
-                                            v-model="form.discount_type"
-                                            value="pwd"
-                                            class="sr-only"
-                                        />
-                                        <span class="text-sm font-bold"
-                                            >PWD</span
+                                            <input 
+                                                type="radio" 
+                                                name="saved_id" 
+                                                :value="savedId.id" 
+                                                v-model="form.saved_discount_id" 
+                                                @change="form.use_saved_discount = true"
+                                                class="mt-0.5 text-blue-600 focus:ring-blue-500" 
+                                            />
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-bold text-gray-900 text-sm">{{ savedId.label || 'Saved ID' }}</span>
+                                                    <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">{{ savedId.discount_type }}</span>
+                                                </div>
+                                                <p class="text-xs text-gray-600 mt-0.5">{{ savedId.id_name }} • {{ savedId.id_number }}</p>
+                                            </div>
+                                        </label>
+                                        
+                                        <label 
+                                            :class="[
+                                                'flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                !form.use_saved_discount
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ]"
                                         >
-                                    </label>
-                                </div>
-
-                                <div
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-4"
-                                >
-                                    <div>
-                                        <label
-                                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-                                            >Full Name (must match ID) *</label
-                                        >
-                                        <input
-                                            v-model="form.discount_id_name"
-                                            type="text"
-                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                            placeholder="e.g. JUAN DELA CRUZ"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-                                            >ID Number *</label
-                                        >
-                                        <input
-                                            v-model="form.discount_id_number"
-                                            type="text"
-                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                            placeholder="SC/PWD ID Number"
-                                        />
+                                            <input 
+                                                type="radio" 
+                                                name="saved_id" 
+                                                :value="null" 
+                                                v-model="form.saved_discount_id" 
+                                                @change="form.use_saved_discount = false"
+                                                class="mt-0.5 text-blue-600 focus:ring-blue-500" 
+                                            />
+                                            <div class="flex-1">
+                                                <span class="font-bold text-gray-900 text-sm">Enter a new ID</span>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label
-                                        class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-                                        >ID Photo (Front/Back) *</label
-                                    >
+                                <div v-if="!form.use_saved_discount" class="space-y-4">
+                                    <!-- Discount Type -->
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <label
+                                            :class="[
+                                                'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                form.discount_type === 'senior'
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 bg-white',
+                                            ]"
+                                        >
+                                            <input
+                                                type="radio"
+                                                v-model="form.discount_type"
+                                                value="senior"
+                                                class="sr-only"
+                                            />
+                                            <span class="text-sm font-bold"
+                                                >Senior Citizen</span
+                                            >
+                                        </label>
+                                        <label
+                                            :class="[
+                                                'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                form.discount_type === 'pwd'
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 bg-white',
+                                            ]"
+                                        >
+                                            <input
+                                                type="radio"
+                                                v-model="form.discount_type"
+                                                value="pwd"
+                                                class="sr-only"
+                                            />
+                                            <span class="text-sm font-bold"
+                                                >PWD</span
+                                            >
+                                        </label>
+                                    </div>
+
                                     <div
-                                        class="flex items-center justify-center w-full"
+                                        class="grid grid-cols-1 md:grid-cols-2 gap-4"
                                     >
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                                >Full Name (must match ID) *</label
+                                            >
+                                            <input
+                                                v-model="form.discount_id_name"
+                                                type="text"
+                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                                placeholder="e.g. JUAN DELA CRUZ"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                                >ID Number *</label
+                                            >
+                                            <input
+                                                v-model="form.discount_id_number"
+                                                type="text"
+                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                                placeholder="SC/PWD ID Number"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
                                         <label
-                                            class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                            >ID Photo (Front/Back) *</label
                                         >
-                                            <div
-                                                v-if="!form.discount_id_image"
-                                                class="flex flex-col items-center justify-center pt-5 pb-6"
+                                        <div
+                                            class="flex items-center justify-center w-full relative"
+                                        >
+                                            <label
+                                                class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
                                             >
-                                                <svg
-                                                    class="w-8 h-8 mb-4 text-gray-500"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
+                                                <div
+                                                    v-if="!form.discount_id_image"
+                                                    class="flex flex-col items-center justify-center pt-5 pb-6"
                                                 >
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                    ></path>
-                                                </svg>
-                                                <p
-                                                    class="mb-2 text-sm text-gray-500 font-semibold"
+                                                    <svg
+                                                        class="w-8 h-8 mb-4 text-gray-500"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                        ></path>
+                                                    </svg>
+                                                    <p
+                                                        class="mb-2 text-sm text-gray-500 font-semibold"
+                                                    >
+                                                        Click to upload ID photo
+                                                    </p>
+                                                    <p
+                                                        class="text-xs text-gray-400"
+                                                    >
+                                                        PNG, JPG or WEBP (MAX. 8MB)
+                                                    </p>
+                                                </div>
+                                                <div
+                                                    v-else
+                                                    class="flex flex-col items-center justify-center p-4"
                                                 >
-                                                    Click to upload ID photo
-                                                </p>
-                                                <p
-                                                    class="text-xs text-gray-400"
-                                                >
-                                                    PNG, JPG or WEBP (MAX. 8MB)
-                                                </p>
-                                            </div>
-                                            <div
-                                                v-else
-                                                class="flex flex-col items-center justify-center p-4"
-                                            >
-                                                <svg
-                                                    class="w-10 h-10 mb-2 text-emerald-500"
-                                                    fill="currentColor"
-                                                    viewBox="0 0 20 20"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                                <p
-                                                    class="text-xs font-bold text-emerald-600 truncate max-w-xs"
-                                                >
-                                                    {{
-                                                        form.discount_id_image
-                                                            .name
-                                                    }}
-                                                </p>
-                                                <button
-                                                    type="button"
-                                                    @click.prevent.stop="
-                                                        form.discount_id_image =
-                                                            null
-                                                    "
-                                                    class="mt-2 text-[10px] text-red-500 font-bold uppercase underline"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
+                                                    <svg
+                                                        class="w-10 h-10 mb-2 text-emerald-500"
+                                                        fill="currentColor"
+                                                        viewBox="0 0 20 20"
+                                                    >
+                                                        <path
+                                                            fill-rule="evenodd"
+                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                            clip-rule="evenodd"
+                                                        />
+                                                    </svg>
+                                                    <p
+                                                        class="text-xs font-bold text-emerald-600 truncate max-w-xs"
+                                                    >
+                                                        {{
+                                                            form.discount_id_image
+                                                                .name
+                                                        }}
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        @click.prevent.stop="
+                                                            form.discount_id_image =
+                                                                null
+                                                        "
+                                                        class="mt-2 text-[10px] text-red-500 font-bold uppercase underline"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
                                                 <input
                                                     type="file"
                                                     @change="e => onUploadFile('discount_id_image', e.target.files[0])"
@@ -607,6 +661,29 @@
                                                 </svg>
                                                 <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest italic animate-pulse">Scanning ID...</p>
                                             </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                                        <div class="flex items-center gap-2">
+                                            <input 
+                                                type="checkbox" 
+                                                id="save_discount_id" 
+                                                v-model="form.save_discount_id" 
+                                                class="h-4 w-4 text-blue-600 rounded border-gray-300"
+                                            />
+                                            <label for="save_discount_id" class="text-sm font-semibold text-gray-700 cursor-pointer">
+                                                Save this ID for future orders
+                                            </label>
+                                        </div>
+                                        <div v-if="form.save_discount_id" class="mt-3">
+                                            <input 
+                                                type="text" 
+                                                v-model="form.discount_id_label" 
+                                                placeholder="Label (e.g. My SC ID)" 
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1195,61 +1272,6 @@
                                     </svg>
                                 </label>
 
-                                <!-- Wallet -->
-                                <label
-                                    :class="[
-                                        'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 transition-all select-none',
-                                        form.payment_method === 'wallet'
-                                              ? 'border-emerald-500 bg-emerald-50 shadow-sm cursor-pointer'
-                                              : 'border-gray-200 hover:border-gray-300 bg-white cursor-pointer',
-                                    ]"
-                                >
-                                    <input
-                                        type="radio"
-                                        v-model="form.payment_method"
-                                        value="wallet"
-                                        class="sr-only"
-                                    />
-                                    <svg
-                                        width="22"
-                                        height="22"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <rect
-                                            width="24"
-                                            height="24"
-                                            rx="4"
-                                            fill="#059669"
-                                        />
-                                        <path
-                                            d="M4 8a2 2 0 012-2h12a2 2 0 012 2v2H4V8z"
-                                            fill="white"
-                                            fill-opacity="0.3"
-                                        />
-                                        <path
-                                            d="M4 10h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6z"
-                                            fill="white"
-                                            fill-opacity="0.6"
-                                        />
-                                        <circle
-                                            cx="16.5"
-                                            cy="13.5"
-                                            r="1.5"
-                                            fill="#059669"
-                                        />
-                                    </svg>
-                                    <span
-                                        class="text-sm font-semibold"
-                                        :class="
-                                            form.payment_method === 'wallet'
-                                                ? 'text-emerald-700'
-                                                : 'text-gray-700'
-                                        "
-                                        >Wallet</span
-                                    >
-                                </label>
 
                                 <!-- Cash on Delivery (Disabled for now)
                                 <label :class="[
@@ -1274,29 +1296,7 @@
                                 </label>
                                 -->
                             </div>
-                            <p
-                                v-if="form.payment_method === 'wallet'"
-                                class="mt-2 text-xs text-gray-600"
-                            >
-                                Wallet Balance:
-                                <span class="font-semibold"
-                                    >₱{{
-                                        Number(
-                                            wallet_balance || 0,
-                                        ).toLocaleString()
-                                    }}</span
-                                >
-                            </p>
-                            <p
-                                v-if="
-                                    form.payment_method === 'wallet' &&
-                                    Number(wallet_balance || 0) < grandTotal
-                                "
-                                class="mt-1 text-xs text-red-600"
-                            >
-                                Insufficient wallet balance for this checkout
-                                total.
-                            </p>
+
                             <p
                                 v-if="false && !cod_available"
                                 class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"
@@ -1417,13 +1417,13 @@ const props = defineProps({
         type: Number,
         default: 1,
     },
-    wallet_balance: {
-        type: Number,
-        default: 0,
-    },
     cities: Object,
     barangays: Object,
     savedAddresses: {
+        type: Array,
+        default: () => [],
+    },
+    savedDiscountIds: {
         type: Array,
         default: () => [],
     },
@@ -1592,11 +1592,15 @@ const form = useForm({
 
     // New fields
     apply_discount: false,
+    use_saved_discount: false,
+    saved_discount_id: null,
     discount_type: "senior",
     discount_id_number: "",
     discount_id_name: "",
     discount_id_image: null,
     discount_terms: false,
+    save_discount_id: false,
+    discount_id_label: "",
 
     prescription_patient_name: "",
     prescription_id_image: null,
@@ -1701,10 +1705,6 @@ const isFormValid = computed(() => {
         form.customer_name.length >= 2 &&
         form.delivery_address.length > 5);
     const hasPaymentMethod = !!form.payment_method;
-    const walletOk =
-        form.payment_method !== "wallet" ||
-        Number(props.wallet_balance || 0) >= grandTotal.value;
-
     const tinOk =
         !form.tin || /^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/.test(form.tin);
 
@@ -1725,7 +1725,6 @@ const isFormValid = computed(() => {
     return (
         hasAddress &&
         hasPaymentMethod &&
-        walletOk &&
         tinOk &&
         discountOk &&
         prescriptionOk

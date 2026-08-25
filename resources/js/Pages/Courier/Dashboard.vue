@@ -379,8 +379,8 @@
                 <div class="flex justify-between items-center mb-3">
                     <h1 class="text-lg font-bold text-white tracking-tight">Courier Dashboard</h1>
                     <div class="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1">
-                        <span class="text-xs font-bold text-white">₱{{ earnings.wallet_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span>
-                        <span class="text-blue-200 text-xs">Wallet</span>
+                        <span class="text-xs font-bold text-white">₱{{ earnings.pending_remittance.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span>
+                        <span class="text-blue-200 text-xs">Pending Remittance</span>
                     </div>
                 </div>
                 <div class="flex space-x-1 bg-blue-800/40 p-1 rounded-xl">
@@ -606,12 +606,16 @@
                 <div v-else-if="tab === 'history'">
                     <div class="grid grid-cols-3 gap-3 mb-5">
                         <div class="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Balance</p>
-                            <p class="text-lg font-black text-blue-600">₱{{ earnings.wallet_balance.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Pending</p>
+                            <p class="text-lg font-black text-blue-600">₱{{ earnings.pending_earnings.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Transferred</p>
+                            <p class="text-lg font-black text-green-600">₱{{ earnings.transferred_earnings.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
                         </div>
                         <div class="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">All Time</p>
-                            <p class="text-lg font-black text-green-600">₱{{ earnings.total_earned.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                            <p class="text-lg font-black text-emerald-600">₱{{ earnings.total_earned.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
                         </div>
                         <div class="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Deliveries</p>

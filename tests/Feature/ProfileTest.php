@@ -32,6 +32,8 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Test User',
                 'username' => 'updated_username',
+                'email' => $user->email,
+                'phone_number' => '09123456789',
             ]);
 
         $response
@@ -58,6 +60,7 @@ class ProfileTest extends TestCase
                 'name' => $user->name,
                 'username' => $user->username,
                 'email' => 'someone-else@example.com',
+                'phone_number' => '09123456789',
             ])
             ->assertSessionHasNoErrors();
 

@@ -25,7 +25,7 @@ class Payment extends Model
         'verified_at',
         'released_at',
         'refunded_at',
-        'seller_wallet_credited_at',
+        'seller_payout_cleared_at',
         'paymongo_session_id',
         'paymongo_status',      // active | paid | expired
     ];
@@ -38,7 +38,7 @@ class Payment extends Model
         'verified_at' => 'datetime',
         'released_at' => 'datetime',
         'refunded_at' => 'datetime',
-        'seller_wallet_credited_at' => 'datetime',
+        'seller_payout_cleared_at' => 'datetime',
     ];
 
     /**
@@ -69,93 +69,13 @@ class Payment extends Model
         ]));
     }
 
-    public function creditSellerWalletOnVerification(): void
-    {
-        $this->refresh();
-
-        if ($this->seller_wallet_credited_at !== null || $this->status !== 'verified') {
-            return;
-        }
-
-        if ((float) $this->net_seller_amount <= 0) {
-            return;
-        }
-
-        $superAdmin = \App\Models\User::whereIn('role', ['super_admin', 'superadmin', 'admin'])->first();
-        $superAdminWallet = $superAdmin?->wallet;
-
-        if (! $superAdminWallet) {
-            return;
-        }
-
-        $superAdminWallet->credit(
-            (float) $this->net_seller_amount,
-            'escrow_held',
-            (string) $this->id,
-            "Payment held by platform (Invoice #{$this->invoice_id})"
-        );
-
-        // Intentionally DO NOT update seller_wallet_credited_at
-        // This marks that the seller has not received it yet.
-    }
-
     public function releaseEscrow(): void
     {
-        if ($this->seller_wallet_credited_at !== null) {
-            return;
-        }
-
         DB::transaction(function () {
             $this->update([
                 'escrow_status' => 'released',
                 'released_at' => now(),
             ]);
-            $this->refresh();
-
-            $amount = (float) $this->net_seller_amount;
-            if ($amount <= 0) {
-                $this->update(['seller_wallet_credited_at' => now()]);
-
-                return;
-            }
-
-            $this->loadMissing('invoice.order.distributor.owner.wallet');
-            $invoice = $this->invoice;
-            $sellerWallet = $invoice?->order?->distributor?->owner?->wallet;
-            $superAdmin = \App\Models\User::whereIn('role', ['super_admin', 'superadmin', 'admin'])->first();
-            $superAdminWallet = $superAdmin?->wallet;
-
-            if (! $sellerWallet) {
-                Log::warning('[Payment] releaseEscrow: seller wallet missing', ['payment_id' => $this->id]);
-
-                throw new RuntimeException('Seller wallet not found for payout.');
-            }
-
-            if (! $superAdminWallet || $superAdminWallet->balance < $amount) {
-                Log::warning('[Payment] releaseEscrow: platform holding balance insufficient', [
-                    'payment_id' => $this->id,
-                    'required' => $amount,
-                    'available' => $superAdminWallet?->balance ?? 0,
-                ]);
-
-                throw new RuntimeException('Platform holding balance insufficient to complete payout.');
-            }
-
-            $superAdminWallet->debit(
-                $amount,
-                'escrow_release_payout',
-                (string) $this->id,
-                "Payout from platform hold to seller (Invoice #{$invoice->invoice_number})"
-            );
-
-            $sellerWallet->credit(
-                $amount,
-                'escrow_release',
-                (string) $this->id,
-                "Order payout released (Invoice #{$invoice->invoice_number})"
-            );
-
-            $this->update(['seller_wallet_credited_at' => now()]);
         });
     }
 
@@ -195,7 +115,7 @@ class Payment extends Model
      */
     public static function allowedMethods(): array
     {
-        return ['cash', 'cod', 'wallet', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
+        return ['cash', 'cod', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
     }
 
     /**

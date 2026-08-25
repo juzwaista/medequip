@@ -115,6 +115,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(CustomerAddress::class);
     }
 
+    /**
+     * Get the discount IDs associated with the user
+     */
+    public function discountIds()
+    {
+        return $this->hasMany(CustomerDiscountId::class);
+    }
+
     public function customerConversations()
     {
         return $this->hasMany(Conversation::class, 'customer_id');
@@ -149,13 +157,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return ! is_null($this->banned_at);
     }
 
-    /**
-     * Get the user's wallet
-     */
-    public function wallet()
-    {
-        return $this->hasOne(Wallet::class);
-    }
+
 
     /**
      * Get the user's courier profile
@@ -217,10 +219,6 @@ class User extends Authenticatable implements MustVerifyEmail
         });
 
         static::created(function (User $user) {
-            // Check if user already has a wallet (e.g. from social login or seeder)
-            if (!$user->wallet()->exists()) {
-                $user->wallet()->create();
-            }
             $user->notify(new WelcomeToMedequip);
         });
     }

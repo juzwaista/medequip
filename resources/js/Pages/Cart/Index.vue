@@ -373,6 +373,7 @@ const updateQuantity = (lineKey, quantity) => {
         quantity: normalized
     }, {
         preserveScroll: true,
+        preserveState: true,
     });
 };
 
@@ -386,6 +387,7 @@ const handleQuantityInput = (event) => {
 const removeItem = (lineKey) => {
     router.delete(`/cart/${encodeURIComponent(lineKey)}`, {
         preserveScroll: true,
+        preserveState: true,
     });
     delete selectedItems.value[lineKey];
 };
@@ -398,6 +400,7 @@ const removeSelected = () => {
     selectedKeys.forEach((lineKey) => {
         router.delete(`/cart/${encodeURIComponent(lineKey)}`, {
             preserveScroll: true,
+            preserveState: true,
         });
     });
 };

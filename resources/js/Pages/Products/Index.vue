@@ -271,8 +271,9 @@
     <select 
         v-model="filters.sort" 
         @change="applyFilters"
-        class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
-    >   <option disabled value="">Sort By</option>
+        class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm font-medium text-slate-700"
+    >
+        <option value="popularity">Popularity</option>
         <option value="newest">Newest First</option>
         <option value="price_low">Price: Low to High</option>
         <option value="price_high">Price: High to Low</option>
@@ -281,30 +282,43 @@
 </div>
     </div>
 
-    <!-- Product Grid -->
-    <div v-if="products.data.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6 auto-rows-fr">
-        <ProductCard 
-            v-for="product in products.data" 
-            :key="product.id" 
-            :product="product"
-            :showWholesale="true"
-            :showStock="true"
-            :showSeller="true"
-            :showCategory="false"
-            @add-to-cart="addToCart"
-        />
-    </div>
+    <!-- Product Grid Container with smooth SPA state feedback -->
+    <div class="relative min-h-[300px]">
+        <!-- Smooth loading overlay -->
+        <div v-if="isLoading" class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-xl transition-all duration-200">
+            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border border-slate-100 text-sm font-semibold text-blue-600">
+                <svg class="animate-spin h-4 w-4 text-blue-600" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Updating products...</span>
+            </div>
+        </div>
 
-    <!-- No products fallback -->
-    <div v-else class="w-full text-center bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center" style="min-height: 500px;">
-        <svg class="h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <h3 class="text-lg font-bold text-slate-900 mb-1">No products found</h3>
-        <p class="text-slate-500 mb-6 text-sm">We couldn't find any products matching your filters.</p>
-        <button @click="resetFilters" class="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
-            Clear Filters
-        </button>
+        <div v-if="products.data.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6 auto-rows-fr" :class="{ 'opacity-60': isLoading }">
+            <ProductCard 
+                v-for="product in products.data" 
+                :key="product.id" 
+                :product="product"
+                :showWholesale="true"
+                :showStock="true"
+                :showSeller="true"
+                :showCategory="false"
+                @add-to-cart="addToCart"
+            />
+        </div>
+
+        <!-- No products fallback -->
+        <div v-else-if="!isLoading" class="w-full text-center bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center" style="min-height: 500px;">
+            <svg class="h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">No products found</h3>
+            <p class="text-slate-500 mb-6 text-sm">We couldn't find any products matching your filters.</p>
+            <button @click="resetFilters" class="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
+                Clear Filters
+            </button>
+        </div>
     </div>
 
     <!-- Pagination -->
@@ -314,6 +328,10 @@
                 v-for="link in products.links"
                 :key="link.label"
                 :href="link.url || '#'"
+                preserve-scroll
+                preserve-state
+                replace
+                :only="['products', 'filters']"
                 :class="[
                     'px-4 py-2 rounded-lg transition-colors text-sm font-semibold border',
                     link.active 
@@ -341,7 +359,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import ProductCard from '@/Components/ProductCard.vue';
@@ -353,10 +371,11 @@ const props = defineProps({
     filters: Object,
 });
 
-const searchQuery = ref(props.filters.search || '');
+const searchQuery = ref(props.filters?.search || '');
 const showAutocomplete = ref(false);
 const autocompleteResults = ref({ products: [], distributors: [] });
 let debounceTimer = null;
+const isLoading = ref(false);
 
 const handleSearchInput = () => {
     clearTimeout(debounceTimer);
@@ -384,13 +403,28 @@ const closeAutocomplete = () => {
 };
 
 const filters = reactive({
-    category: props.filters.category || '',
-    distributor: props.filters.distributor || '',
-    type: props.filters.type || '',
-    min_price: props.filters.min_price || '',
-    max_price: props.filters.max_price || '',
-    sort: props.filters.sort || 'newest',
+    category: props.filters?.category || '',
+    distributor: props.filters?.distributor || '',
+    type: props.filters?.type || '',
+    min_price: props.filters?.min_price || '',
+    max_price: props.filters?.max_price || '',
+    sort: props.filters?.sort || 'popularity',
 });
+
+// Sync local filter state if props change from navigation
+watch(() => props.filters, (newFilters) => {
+    if (newFilters) {
+        filters.category = newFilters.category || '';
+        filters.distributor = newFilters.distributor || '';
+        filters.type = newFilters.type || '';
+        filters.min_price = newFilters.min_price || '';
+        filters.max_price = newFilters.max_price || '';
+        filters.sort = newFilters.sort || 'popularity';
+        if (newFilters.search !== undefined) {
+            searchQuery.value = newFilters.search || '';
+        }
+    }
+}, { deep: true });
 
 const isFilterOpen = ref(false);
 
@@ -408,12 +442,23 @@ const selectedCategoryHint = computed(() => {
 });
 
 const applyFilters = () => {
+    isLoading.value = true;
     router.get('/products', {
-        search: searchQuery.value,
-        ...filters
+        search: searchQuery.value || undefined,
+        category: filters.category || undefined,
+        distributor: filters.distributor || undefined,
+        type: filters.type || undefined,
+        min_price: filters.min_price || undefined,
+        max_price: filters.max_price || undefined,
+        sort: filters.sort || 'popularity',
     }, {
         preserveState: true,
         preserveScroll: true,
+        replace: true,
+        only: ['products', 'filters'],
+        onFinish: () => {
+            isLoading.value = false;
+        }
     });
 };
 
@@ -424,7 +469,7 @@ const resetFilters = () => {
     filters.type = '';
     filters.min_price = '';
     filters.max_price = '';
-    filters.sort = 'newest';
+    filters.sort = 'popularity';
     applyFilters();
 };
 </script>

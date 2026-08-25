@@ -46,6 +46,7 @@ class ReportHubClosedEnforcementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
+            ->withSession(['login.otp_verified' => true])
             ->get(route('admin.reports.show', ['bucket' => 'message', 'id' => $report->id]))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
@@ -83,6 +84,7 @@ class ReportHubClosedEnforcementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
+            ->withSession(['login.otp_verified' => true])
             ->post(route('admin.reports.enforce', ['bucket' => 'message', 'id' => $report->id]), [
                 'action' => 'dismiss',
                 'accountability_notes' => 'Trying again after triage closed the case.',

@@ -213,6 +213,29 @@
                                 </div>
                             </section>
 
+                            <!-- Payout Information -->
+                            <section class="border-b pb-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Automated Payout Information</h3>
+                                <p class="text-sm text-gray-500 mb-4">A one-time linking to receive your earnings automatically upon order completion.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Bank / E-Wallet Name</label>
+                                        <input v-model="form.payout_bank" type="text" placeholder="e.g. GCash, BDO, UnionBank" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <p v-if="form.errors.payout_bank" class="text-red-500 text-xs mt-1">{{ form.errors.payout_bank }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Account Name</label>
+                                        <input v-model="form.payout_account_name" type="text" placeholder="e.g. Juan Dela Cruz" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <p v-if="form.errors.payout_account_name" class="text-red-500 text-xs mt-1">{{ form.errors.payout_account_name }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Account Number</label>
+                                        <input v-model="form.payout_account_number" type="text" placeholder="e.g. 09123456789" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <p v-if="form.errors.payout_account_number" class="text-red-500 text-xs mt-1">{{ form.errors.payout_account_number }}</p>
+                                    </div>
+                                </div>
+                            </section>
+
                             <!-- Social Links -->
                             <section class="border-b pb-6">
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media</h3>
@@ -555,6 +578,9 @@ const form = useForm({
         instagram: props.distributor.social_links?.instagram || '',
         tiktok: props.distributor.social_links?.tiktok || '',
     },
+    payout_bank: props.distributor.payout_bank || '',
+    payout_account_name: props.distributor.payout_account_name || '',
+    payout_account_number: props.distributor.payout_account_number || '',
     latitude: props.distributor.latitude || null,
     longitude: props.distributor.longitude || null,
     business_hours: initBusinessHours(),

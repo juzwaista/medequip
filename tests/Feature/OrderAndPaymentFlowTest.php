@@ -120,32 +120,26 @@ class OrderAndPaymentFlowTest extends TestCase
 
     public function test_invoice_service_creates_invoice_and_payment(): void
     {
-        $order = $this->createOrderWithInvoice('wallet');
-
-        $adminUser = User::factory()->admin()->create(['email_verified_at' => now()]);
-        $adminUser->wallet->update(['balance' => 10000]);
+        $order = $this->createOrderWithInvoice('gcash');
 
         $service = app(OrderInvoiceService::class);
         $invoice = $service->createInvoiceAndPayment($order);
 
         $this->assertNotNull($invoice);
         $this->assertEquals($order->id, $invoice->order_id);
-        $this->assertEquals('paid', $invoice->status);
+        $this->assertEquals('unpaid', $invoice->status);
 
         $payment = $invoice->payments->first();
         $this->assertNotNull($payment);
-        $this->assertEquals('wallet', $payment->payment_method);
-        $this->assertEquals('verified', $payment->status);
+        $this->assertEquals('paymongo', $payment->payment_method);
+        $this->assertEquals('pending', $payment->status);
         $this->assertEquals('held', $payment->escrow_status);
         $this->assertGreaterThan(0, (float) $payment->platform_fee_amount);
     }
 
     public function test_invoice_service_is_idempotent(): void
     {
-        $order = $this->createOrderWithInvoice('wallet');
-
-        $adminUser = User::factory()->admin()->create(['email_verified_at' => now()]);
-        $adminUser->wallet->update(['balance' => 10000]);
+        $order = $this->createOrderWithInvoice('gcash');
 
         $service = app(OrderInvoiceService::class);
         $invoice1 = $service->createInvoiceAndPayment($order);
@@ -167,44 +161,7 @@ class OrderAndPaymentFlowTest extends TestCase
         $this->assertEquals(1000.00, $fees['platform_fee_amount'] + $fees['net_seller_amount']);
     }
 
-    // ─── Wallet ───────────────────────────────────────────
 
-    public function test_wallet_credit_increases_balance(): void
-    {
-        $walletUser = User::factory()->customer()->create(['email_verified_at' => now()]);
-        $wallet = $walletUser->wallet;
-        $wallet->update(['balance' => 100]);
-
-        $wallet->credit(50, 'test_credit', null, 'Test deposit');
-
-        $wallet->refresh();
-        $this->assertEquals('150.00', $wallet->balance);
-        $this->assertCount(1, $wallet->transactions);
-    }
-
-    public function test_wallet_debit_decreases_balance(): void
-    {
-        $walletUser = User::factory()->customer()->create(['email_verified_at' => now()]);
-        $wallet = $walletUser->wallet;
-        $wallet->update(['balance' => 200]);
-
-        $wallet->debit(75, 'test_debit', null, 'Test withdrawal');
-
-        $wallet->refresh();
-        $this->assertEquals('125.00', $wallet->balance);
-    }
-
-    public function test_wallet_debit_fails_on_insufficient_balance(): void
-    {
-        $walletUser = User::factory()->customer()->create(['email_verified_at' => now()]);
-        $wallet = $walletUser->wallet;
-        $wallet->update(['balance' => 50]);
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Insufficient wallet balance.');
-
-        $wallet->debit(100, 'test_debit');
-    }
 
     // ─── Admin moderation ─────────────────────────────────
 
@@ -213,7 +170,9 @@ class OrderAndPaymentFlowTest extends TestCase
         $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
         $target = User::factory()->customer()->create(['email_verified_at' => now()]);
 
-        $response = $this->actingAs($admin)->post("/admin/users/{$target->id}/ban", [
+        $response = $this->actingAs($admin)
+                         ->withSession(['login.otp_verified' => true])
+                         ->post("/admin/users/{$target->id}/ban", [
             'reason' => 'Repeated policy violations in test',
         ]);
 
@@ -225,11 +184,12 @@ class OrderAndPaymentFlowTest extends TestCase
 
     public function test_admin_can_unban_user(): void
     {
-        $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
-        $target = User::factory()->customer()->create(['email_verified_at' => now()]);
-        $target->forceFill(['banned_at' => now(), 'ban_reason' => 'test'])->save();
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->create(['banned_at' => now(), 'ban_reason' => 'test']);
 
-        $response = $this->actingAs($admin)->post("/admin/users/{$target->id}/unban");
+        $response = $this->actingAs($admin)
+                         ->withSession(['login.otp_verified' => true])
+                         ->post("/admin/users/{$target->id}/unban");
 
         $response->assertRedirect();
         $target->refresh();
@@ -326,7 +286,9 @@ class OrderAndPaymentFlowTest extends TestCase
     {
         $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
 
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response = $this->actingAs($admin)
+                         ->withSession(['login.otp_verified' => true])
+                         ->get('/admin/dashboard');
         $response->assertStatus(200);
     }
 
@@ -334,7 +296,9 @@ class OrderAndPaymentFlowTest extends TestCase
     {
         $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
 
-        $response = $this->actingAs($admin)->get('/admin/reports');
+        $response = $this->actingAs($admin)
+                         ->withSession(['login.otp_verified' => true])
+                         ->get('/admin/reports');
         $response->assertStatus(200);
 
         $response = $this->actingAs($this->customer)->get('/admin/reports');

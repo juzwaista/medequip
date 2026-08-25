@@ -149,7 +149,7 @@ class OrderController extends Controller
             'cities' => config('cavite.cities'),
             'barangays' => config('cavite.barangays'),
             'savedAddresses' => auth()->user()->addresses()->latest()->get(),
-            'wallet_balance' => (float) (auth()->user()->wallet?->balance ?? 0),
+            'savedDiscountIds' => auth()->user()->discountIds()->latest()->get(),
             'cod_available' => false, // Forced false to hide COD for now
             'cod_limit_exceeded' => $codLimitExceeded,
             'cod_limit_message' => $codLimitMessage,
@@ -185,11 +185,15 @@ class OrderController extends Controller
             
             // SC/PWD validation
             'apply_discount' => 'nullable', // Use manual boolean check to avoid standard boolean rule quirks with FormData
-            'discount_type' => 'required_if:apply_discount,1,true|nullable|in:senior,pwd',
-            'discount_id_number' => 'required_if:apply_discount,1,true|nullable|string|max:50',
-            'discount_id_name' => 'required_if:apply_discount,1,true|nullable|string|max:100',
-            'discount_id_image' => 'required_if:apply_discount,1,true|nullable|image|max:8192',
+            'use_saved_discount' => 'nullable|boolean',
+            'saved_discount_id' => 'required_if:use_saved_discount,1,true|nullable|exists:customer_discount_ids,id',
+            'discount_type' => 'exclude_if:use_saved_discount,1,true|required_if:apply_discount,1,true|nullable|in:senior,pwd',
+            'discount_id_number' => 'exclude_if:use_saved_discount,1,true|required_if:apply_discount,1,true|nullable|string|max:50',
+            'discount_id_name' => 'exclude_if:use_saved_discount,1,true|required_if:apply_discount,1,true|nullable|string|max:100',
+            'discount_id_image' => 'exclude_if:use_saved_discount,1,true|required_if:apply_discount,1,true|nullable|image|max:8192',
             'discount_terms' => 'exclude_unless:apply_discount,1,true|accepted',
+            'save_discount_id' => 'nullable|boolean',
+            'discount_id_label' => 'nullable|string|max:50',
             
             // Rx identity validation (if items require Rx)
             'prescription_patient_name' => 'nullable|string|max:100',
@@ -255,7 +259,6 @@ class OrderController extends Controller
         }
 
         $isPaymongo = in_array($validated['payment_method'], Payment::paymongoMethods());
-        $isWallet = $validated['payment_method'] === 'wallet';
         $isCod = $validated['payment_method'] === 'cod';
 
         /* COD logic disabled for now
@@ -278,6 +281,11 @@ class OrderController extends Controller
 
             // Group cart items by distributor
             $ordersByDistributor = [];
+
+            // Sort cart by product_id to prevent deadlocks when locking rows
+            uasort($cart, function ($a, $b) {
+                return $a['product_id'] <=> $b['product_id'];
+            });
 
             foreach ($cart as $lineKey => $cartItem) {
                 [$productId, $variationId] = CartService::parseLineKey($lineKey);
@@ -310,8 +318,6 @@ class OrderController extends Controller
                 ];
             }
 
-            $walletToDebitTotal = 0;
-            $customerWallet = auth()->user()->wallet;
 
             $createdOrders = [];
 
@@ -350,17 +356,50 @@ class OrderController extends Controller
                     'pickup_instructions' => $isPickup ? $distributor->pickup_instructions : null,
                     'required_vehicle_type' => $shippingReq['vehicle'],
                     'tin' => $tin,
-                    'discount_type' => $applyDiscount ? ($request->discount_type ?? 'senior') : 'none',
-                    'discount_id_number' => $applyDiscount ? $request->discount_id_number : null,
-                    'discount_id_name' => $applyDiscount ? $request->discount_id_name : null,
-                    'discount_status' => $applyDiscount ? Order::DISCOUNT_PENDING : Order::DISCOUNT_NONE,
+                    'discount_type' => 'none',
+                    'discount_status' => Order::DISCOUNT_NONE,
                     'prescription_patient_name' => $request->prescription_patient_name,
                     'ocr_results' => $ocrResults,
                 ]);
 
-                if ($request->hasFile('discount_id_image')) {
-                    $order->update(['discount_id_image_path' => $request->file('discount_id_image')->store('discounts', 'public')]);
+                if ($applyDiscount) {
+                    if ($request->input('use_saved_discount') && $request->input('saved_discount_id')) {
+                        $savedDiscount = \App\Models\CustomerDiscountId::find($request->input('saved_discount_id'));
+                        if ($savedDiscount && $savedDiscount->user_id === $user->id) {
+                            $order->update([
+                                'discount_type' => $savedDiscount->discount_type,
+                                'discount_id_number' => $savedDiscount->id_number,
+                                'discount_id_name' => $savedDiscount->id_name,
+                                'discount_id_image_path' => $savedDiscount->id_image_path,
+                                'discount_status' => Order::DISCOUNT_PENDING,
+                            ]);
+                        }
+                    } else {
+                        $discountImagePath = null;
+                        if ($request->hasFile('discount_id_image')) {
+                            $discountImagePath = $request->file('discount_id_image')->store('discounts', 'public');
+                        }
+                        
+                        $order->update([
+                            'discount_type' => $request->discount_type ?? 'senior',
+                            'discount_id_number' => $request->discount_id_number,
+                            'discount_id_name' => $request->discount_id_name,
+                            'discount_id_image_path' => $discountImagePath,
+                            'discount_status' => Order::DISCOUNT_PENDING,
+                        ]);
+                        
+                        if ($request->input('save_discount_id') && $discountImagePath) {
+                            $user->discountIds()->create([
+                                'label' => $request->input('discount_id_label'),
+                                'discount_type' => $request->discount_type ?? 'senior',
+                                'id_name' => $request->discount_id_name,
+                                'id_number' => $request->discount_id_number,
+                                'id_image_path' => $discountImagePath,
+                            ]);
+                        }
+                    }
                 }
+
                 if ($request->hasFile('prescription_id_image')) {
                     $order->update(['prescription_id_image_path' => $request->file('prescription_id_image')->store('prescriptions', 'public')]);
                 }
@@ -491,25 +530,10 @@ class OrderController extends Controller
                 // Always create invoice for record-keeping (including COD).
                 // OrderInvoiceService handles COD-specific payment method / status.
                 $this->orderInvoiceService->createInvoiceAndPayment($order->fresh());
-                if ($isWallet) {
-                    $walletToDebitTotal += $totalAmount;
-                }
 
                 $createdOrders[] = $order->fresh();
             }
 
-            if ($isWallet) {
-                if (! $customerWallet || $customerWallet->balance < $walletToDebitTotal) {
-                    throw new \Exception('Insufficient wallet balance for this checkout.');
-                }
-
-                $customerWallet->debit(
-                    $walletToDebitTotal,
-                    'order_payment',
-                    (string) ($createdOrders[0]->id ?? uniqid('order_', true)),
-                    'Wallet payment for order checkout'
-                );
-            }
 
             // Clear cart if NOT buy now (don't clear if they just bought one thing specifically)
             if (!$request->boolean('buy_now')) {
@@ -625,11 +649,6 @@ class OrderController extends Controller
                 }
             }
 
-            if ($isWallet) {
-                return redirect()->route('orders.confirmation', $createdOrders[0])
-                    ->with('confirmation_order_ids', collect($createdOrders)->pluck('id')->values()->all())
-                    ->with('success', 'Order placed! Your payment is held by the platform until you confirm delivery.');
-            }
 
             if ($isCod) {
                 return redirect()->route('orders.confirmation', $createdOrders[0])
@@ -715,11 +734,21 @@ class OrderController extends Controller
                 ]);
 
                 if ($order->invoice) {
+                    $payoutService = app(\App\Services\AutomatedPayoutService::class);
+                    $distributor = $order->distributor;
+
                     $order->invoice->payments()
                         ->where('status', 'verified')
                         ->where('escrow_status', 'held')
-                        ->each(function ($payment) {
+                        ->each(function ($payment) use ($payoutService, $distributor) {
                             $payment->releaseEscrow();
+                            if ($distributor) {
+                                // The seller gets the (amount - fees) which is already computed into the payment escrow logically, 
+                                // wait, we just transfer the net amount they are owed. Let's pass the net amount.
+                                // $payment->amount is the gross. But $payment->platform_fee is the fee. So net is amount - platform_fee.
+                                $netAmount = (float) $payment->amount - (float) $payment->platform_fee - (float) $payment->payment_gateway_fee;
+                                $payoutService->disburse($netAmount, $distributor, $payment);
+                            }
                         });
 
                     // Reconcile invoice status — mark as paid once all escrow is released.

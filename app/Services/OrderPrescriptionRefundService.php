@@ -22,46 +22,37 @@ class OrderPrescriptionRefundService
      */
     public function refundAfterOrderCancellation(Order $order, string $reason = 'order_cancelled'): void
     {
-        $order->loadMissing(['invoice.payments', 'customer.wallet']);
+        $order->loadMissing(['invoice.payments']);
 
         if (! $order->invoice) {
             return;
         }
 
         DB::transaction(function () use ($order, $reason) {
+            $payMongo = app(\App\Services\PayMongoService::class);
+
             foreach ($order->invoice->payments as $payment) {
                 if ($payment->status !== 'verified' || $payment->escrow_status !== 'held') {
                     continue;
                 }
 
-                if ($order->customer?->wallet) {
-                    // Per requirement: regardless of payment method, refund into the customer's wallet.
-                    $order->customer->wallet->credit(
-                        (float) $payment->amount,
-                        'order_refund',
-                        (string) $order->id,
-                        'Wallet refund — '.($reason === 'prescription_rejected' ? 'prescription not accepted' : 'order cancelled/rejected').' (Order '.$order->order_number.')'
-                    );
-                } else {
-                    Log::warning('[OrderPrescriptionRefundService] Customer wallet missing; skipping wallet credit', [
-                        'order_id' => $order->id,
-                        'payment_id' => $payment->id,
-                    ]);
-                }
-
-                // Claw back seller wallet proceeds if we already credited them on verification.
-                $payment->loadMissing('invoice.order.distributor.owner.wallet');
-                $sellerWallet = $payment->invoice?->order?->distributor?->owner?->wallet;
-                if ($sellerWallet && $payment->seller_wallet_credited_at && (float) $payment->net_seller_amount > 0) {
+                if ($payment->payment_method !== 'cash' && $payment->payment_method !== 'cod' && $payment->paymongo_session_id) {
                     try {
-                        $sellerWallet->debit(
-                            (float) $payment->net_seller_amount,
-                            'escrow_refund_clawback',
-                            (string) $payment->id,
-                            'Clawback — cancellation refund (Order '.$order->order_number.')'
-                        );
+                        $paymongoPaymentId = $payMongo->getPaymentIdFromSession($payment->paymongo_session_id);
+                        if ($paymongoPaymentId) {
+                            $payMongo->refundPayment(
+                                $paymongoPaymentId,
+                                (float) $payment->amount,
+                                $reason === 'prescription_rejected' ? 'others' : 'requested_by_customer'
+                            );
+                        } else {
+                            Log::warning('[OrderPrescriptionRefundService] Could not resolve payment ID for refund', [
+                                'payment_id' => $payment->id,
+                                'session_id' => $payment->paymongo_session_id
+                            ]);
+                        }
                     } catch (\Throwable $e) {
-                        Log::error('[OrderPrescriptionRefundService] Seller wallet clawback failed', [
+                        Log::error('[OrderPrescriptionRefundService] PayMongo API refund failed', [
                             'payment_id' => $payment->id,
                             'error' => $e->getMessage(),
                         ]);

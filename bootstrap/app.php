@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\EnsureNotBanned::class,
         ]);
 
         // Only exempt the PayMongo webhook — it POSTs without a session token.

@@ -17,10 +17,10 @@
                         <img :src="'/images/logo.png'" alt="MedEquip" class="h-28 w-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-sm">
                     </a> -->
 
-                    <a href="/products" class="flex items-center flex-shrink-0">
+                    <Link href="/products" class="flex items-center flex-shrink-0">
                         <img :src="'/images/logo.png'" 
                             class="h-20 sm:h-16 md:h-24 lg:h-28 w-auto object-contain transition-transform duration-500 drop-shadow-sm">
-                    </a>
+                    </Link>
 
                     <!-- Nav Links Removed -->
 
@@ -103,21 +103,20 @@
                         </div> -->
                         <div v-else class="flex items-center gap-2">
                             <!-- Login Button -->
-                           
-                            <a href="/login" 
+                            <Link href="/login" 
                             class="text-base sm:text-base text-gray-600 font-medium px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-md 
                                     bg-white hover:bg-gradient-to-r hover:from-blue-400 hover:to-blue-600 
                                     hover:text-white shadow-md transition-all duration-300">
                                 Login
-                            </a>
+                            </Link>
 
                             <!-- Sign Up Button -->
-                            <a href="/register" 
+                            <Link href="/register" 
                             class="text-base sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg 
                                     bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 
                                     text-white font-semibold shadow-lg transition-transform transform hover:scale-105 duration-300">
                                 Sign Up
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>

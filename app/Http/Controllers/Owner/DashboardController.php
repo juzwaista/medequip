@@ -233,10 +233,27 @@ class DashboardController extends Controller
         $amount = $this->analytics->sumVerifiedNetSellerForDistributor($distributorId, $from, $to);
         $previousAmount = $this->analytics->sumVerifiedNetSellerForDistributor($distributorId, $prevFrom, $prevTo);
 
+        // Compute Pending Earnings and Transferred Earnings
+        $pendingEarnings = \App\Models\Payment::whereHas('invoice.order', function ($q) use ($distributorId) {
+            $q->where('distributor_id', $distributorId);
+        })
+        ->where('status', 'verified')
+        ->where('escrow_status', 'held')
+        ->sum(\Illuminate\Support\Facades\DB::raw('amount - platform_fee - payment_gateway_fee'));
+
+        $transferredEarnings = \App\Models\Payment::whereHas('invoice.order', function ($q) use ($distributorId) {
+            $q->where('distributor_id', $distributorId);
+        })
+        ->where('status', 'verified')
+        ->whereNotNull('seller_payout_cleared_at')
+        ->sum(\Illuminate\Support\Facades\DB::raw('amount - platform_fee - payment_gateway_fee'));
+
         return [
             'preset' => $preset,
             'amount' => $amount,
             'previous_amount' => $previousAmount,
+            'pending_earnings' => (float) $pendingEarnings,
+            'transferred_earnings' => (float) $transferredEarnings,
             'label' => $label,
             'comparison_label' => $compLabel,
             'from' => $from->toDateString(),

@@ -95,9 +95,12 @@ class ProductController extends Controller
 
         return Inertia::render('Products/Index', [
             'products' => $products,
-            'categories' => $categories,
-            'distributors' => $distributors,
-            'filters' => $request->only(['search', 'category', 'distributor', 'min_price', 'max_price', 'type', 'sort']),
+            'categories' => fn () => Category::whereNull('parent_id')->with('children')->get(),
+            'distributors' => fn () => \App\Models\Distributor::where('is_verified', true)
+                ->select('id', 'company_name')
+                ->orderBy('company_name')
+                ->get(),
+            'filters' => array_merge(['sort' => 'popularity'], $request->only(['search', 'category', 'distributor', 'min_price', 'max_price', 'type', 'sort'])),
         ]);
     }
 

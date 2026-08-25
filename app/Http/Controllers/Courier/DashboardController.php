@@ -37,17 +37,24 @@ class DashboardController extends Controller
             ->latest()
             ->paginate(20);
 
-        // Earnings summary from wallet transactions
-        $totalEarned = WalletTransaction::whereHas('wallet', fn ($q) => $q->where('user_id', $user->id))
-            ->where('type', 'delivery_fee')
-            ->where('amount', '>', 0)
-            ->sum('amount');
+        // Earnings summary from deliveries
+        $totalEarned = Delivery::where('courier_id', $courier->id)
+            ->where('status', 'delivered')
+            ->sum('courier_fee');
+
+        $pendingEarnings = Delivery::where('courier_id', $courier->id)
+            ->where('status', 'delivered')
+            ->where('courier_payout_status', 'pending')
+            ->sum('courier_fee');
+
+        $transferredEarnings = Delivery::where('courier_id', $courier->id)
+            ->where('status', 'delivered')
+            ->where('courier_payout_status', 'paid')
+            ->sum('courier_fee');
 
         $totalDeliveries = Delivery::where('courier_id', $courier->id)
             ->where('status', 'delivered')
             ->count();
-
-        $walletBalance = $user->wallet?->balance ?? 0;
 
         return Inertia::render('Courier/Dashboard', [
             'availableDeliveries' => $availableDeliveries,
@@ -57,7 +64,8 @@ class DashboardController extends Controller
             'earnings'            => [
                 'total_earned'     => (float) $totalEarned,
                 'total_deliveries' => $totalDeliveries,
-                'wallet_balance'   => (float) $walletBalance,
+                'pending_earnings' => (float) $pendingEarnings,
+                'transferred_earnings' => (float) $transferredEarnings,
             ],
         ]);
     }

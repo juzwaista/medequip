@@ -253,4 +253,57 @@ class PayMongoService
             'checkout_url' => $data['attributes']['checkout_url'],
         ];
     }
+
+    /**
+     * Get Payment ID from a Checkout Session ID.
+     */
+    public function getPaymentIdFromSession(string $sessionId): ?string
+    {
+        $session = $this->getCheckoutSession($sessionId);
+        
+        $payments = $session['attributes']['payments'] ?? [];
+        if (!empty($payments) && isset($payments[0]['id'])) {
+            return $payments[0]['id'];
+        }
+
+        $paymentIntent = $session['attributes']['payment_intent'] ?? null;
+        if ($paymentIntent) {
+            $piPayments = $paymentIntent['attributes']['payments'] ?? [];
+            if (!empty($piPayments) && isset($piPayments[0]['id'])) {
+                return $piPayments[0]['id'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Create a refund for a payment.
+     */
+    public function refundPayment(string $paymentId, float $amount, string $reason = 'requested_by_customer'): array
+    {
+        $payload = [
+            'data' => [
+                'attributes' => [
+                    'amount'     => (int) round($amount * 100),
+                    'payment_id' => $paymentId,
+                    'reason'     => $reason,
+                ],
+            ],
+        ];
+
+        $response = Http::withBasicAuth($this->secretKey, '')
+            ->post(self::BASE_URL . '/refunds', $payload);
+
+        if ($response->failed()) {
+            Log::error('[PayMongoService] Refund failed', [
+                'payment_id' => $paymentId,
+                'status'     => $response->status(),
+                'body'       => $response->json(),
+            ]);
+            throw new \RuntimeException('PayMongo refund failed: ' . $response->body());
+        }
+
+        return $response->json('data');
+    }
 }

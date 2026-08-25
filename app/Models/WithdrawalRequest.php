@@ -11,7 +11,7 @@ class WithdrawalRequest extends Model
     use HasFactory;
 
     protected $fillable = [
-        'wallet_id',
+        'distributor_id',
         'amount',
         'bank_name',
         'account_name',
@@ -27,9 +27,9 @@ class WithdrawalRequest extends Model
         'processed_at' => 'datetime',
     ];
 
-    public function wallet(): BelongsTo
+    public function distributor(): BelongsTo
     {
-        return $this->belongsTo(Wallet::class);
+        return $this->belongsTo(Distributor::class);
     }
 
     public function processor(): BelongsTo

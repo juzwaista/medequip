@@ -24,6 +24,7 @@ class RegistrationTest extends TestCase
             'password' => 'RegTestP4ss!',
             'password_confirmation' => 'RegTestP4ss!',
             'role' => 'distributor',
+            'contact_number' => '09123456789',
             'terms_accepted' => true,
         ]);
 

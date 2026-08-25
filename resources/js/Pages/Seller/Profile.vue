@@ -254,6 +254,7 @@
                                 ]"
                                 v-html="link.label"
                                 preserve-state
+                                preserve-scroll
                             />
                         </template>
                     </div>
@@ -309,6 +310,7 @@
                                 ]"
                                 v-html="link.label"
                                 preserve-state
+                                preserve-scroll
                             />
                         </template>
                     </div>
@@ -435,14 +437,14 @@ function switchTab(tab) {
         localCategory.value = '';
         localSort.value = 'newest';
     }
-    router.get(shopUrl.value, params, { preserveState: false });
+    router.get(shopUrl.value, params, { preserveState: true, preserveScroll: true });
 }
 
 function clearProductFilters() {
     localSearch.value = '';
     localCategory.value = '';
     localSort.value = 'newest';
-    router.get(shopUrl.value, { tab: 'products' }, { preserveState: false });
+    router.get(shopUrl.value, { tab: 'products' }, { preserveState: true, preserveScroll: true });
 }
 
 function applyProductFilters() {
@@ -455,7 +457,7 @@ function applyProductFilters() {
 
 function goToCategory(categoryId) {
     localCategory.value = String(categoryId);
-    router.get(shopUrl.value, { tab: 'products', category: categoryId }, { preserveState: false });
+    router.get(shopUrl.value, { tab: 'products', category: categoryId }, { preserveState: true, preserveScroll: true });
 }
 
 </script>

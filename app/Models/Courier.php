@@ -16,6 +16,9 @@ class Courier extends Model
         'vehicle_type',
         'plate_number',
         'status',
+        'payout_bank',
+        'payout_account_name',
+        'payout_account_number',
     ];
 
     public function user(): BelongsTo
@@ -26,5 +29,12 @@ class Courier extends Model
     public function deliveries(): HasMany
     {
         return $this->hasMany(Delivery::class);
+    }
+
+    public function getTotalEarningsAttribute(): float
+    {
+        return (float) $this->deliveries()
+            ->where('status', 'delivered')
+            ->sum('delivery_fee');
     }
 }

@@ -490,19 +490,15 @@ class OrderController extends Controller
 
         // Release courier payout — held until now for COD orders
         if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
-            $courierUser = $delivery->courier?->user;
-            if ($courierUser && $courierUser->wallet) {
-                $courierUser->wallet->credit(
-                    (float) $delivery->courier_fee,
-                    'delivery_fee',
-                    (string) $delivery->id,
-                    "Courier fee for {$delivery->tracking_number}"
-                );
+            $payoutService = app(\App\Services\AutomatedPayoutService::class);
+            if ($delivery->courier) {
+                $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
+            } else {
+                $delivery->update([
+                    'courier_payout_status' => 'paid',
+                    'courier_paid_at' => now(),
+                ]);
             }
-            $delivery->update([
-                'courier_payout_status' => 'paid',
-                'courier_paid_at' => now(),
-            ]);
         }
 
         // Mark order completed
