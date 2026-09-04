@@ -62,66 +62,6 @@
                     </tbody>
                 </table>
             </div>
-
-
-
-            <!-- Roles Grid -->
-            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div 
-                    v-for="role in roles" 
-                    :key="role.id" 
-                    class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group flex flex-col"
-                >
-                    <!-- Role Header -->
-                    <div class="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition">{{ role.name }}</h3>
-                            <p class="text-xs text-gray-500 mt-1">
-                                <span class="font-semibold text-gray-700">{{ role.permissions?.length || 0 }}</span> permissions granted
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition" v-if="!['Super Admin', 'Admin'].includes(role.name)">
-                            <button @click="openModal(role)" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit Role">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button @click="deleteRole(role)" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete Role">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Role Permissions Preview -->
-                    <div class="p-5 flex-1">
-                        <div v-if="role.permissions?.length > 0" class="flex flex-wrap gap-1.5">
-                            <span 
-                                v-for="p in role.permissions.slice(0, 8)" 
-                                :key="p.id"
-                                class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-gray-100 text-gray-600"
-                            >
-                                {{ formatPermLabel(p.name) }}
-                            </span>
-                            <span v-if="role.permissions.length > 8" class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-gray-50 border border-gray-200 text-gray-500">
-                                +{{ role.permissions.length - 8 }} more
-                            </span>
-                        </div>
-                        <div v-else class="text-sm text-gray-400 italic text-center py-4">
-                            No permissions assigned.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div v-if="roles.length === 0" class="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
-                <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <h3 class="mt-2 text-sm font-semibold text-gray-900">No Custom Roles</h3>
-                <p class="mt-1 text-sm text-gray-500">Get started by creating a new platform role.</p>
-                <div class="mt-6">
-                    <button @click="openModal()" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        Create Platform Role
-                    </button>
-                </div>
-            </div>
         </div>
 
         <!-- Role Modal -->
@@ -160,9 +100,15 @@
                         <!-- Permissions — Grouped by Category -->
                         <div>
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Assign Permissions</label>
-                            <div class="space-y-4">
+
+                            <!-- No permissions fallback -->
+                            <div v-if="!permissionGroups.length" class="rounded-xl border border-dashed border-gray-300 py-8 text-center text-gray-400 text-sm">
+                                No permissions available. Make sure permissions are seeded in the database.
+                            </div>
+
+                            <div v-else class="space-y-4">
                                 <div
-                                    v-for="item in permissions"
+                                    v-for="item in permissionGroups"
                                     :key="item.group"
                                     class="border border-gray-200 rounded-xl overflow-hidden"
                                 >
@@ -240,14 +186,17 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { reactive, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
-    roles: Array,
-    permissions: Array, // [ { group: 'applications', perms: [...] }, ... ]
+    roles: { type: Array, default: () => [] },
+    permissions: { type: Array, default: () => [] },
 });
+
+// Use computed so it's always reactive and never undefined
+const permissionGroups = computed(() => props.permissions ?? []);
 
 const modal = reactive({
     open: false,
