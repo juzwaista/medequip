@@ -30,11 +30,12 @@ class RoleController extends Controller
             ->map(function ($perms, $group) {
                 return [
                     'group' => $group,
-                    'perms' => $perms,
+                    // Explicitly convert to plain arrays so Inertia serializes correctly
+                    'perms' => $perms->values()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->values()->all(),
                 ];
             })
             ->values()
-            ->toArray();
+            ->all(); // ->all() returns a plain PHP array, not a Collection
 
         return Inertia::render('Admin/Roles/Index', [
             'roles' => $roles,

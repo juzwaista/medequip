@@ -38,7 +38,10 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Role (Optional)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Assign Role
+                                <span class="text-xs text-gray-400 font-normal ml-1">(can be changed later)</span>
+                            </label>
                                 <select 
                                     v-model="form.role_id"
                                     class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm"

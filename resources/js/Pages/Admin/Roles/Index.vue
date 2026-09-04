@@ -63,28 +63,7 @@
                 </table>
             </div>
 
-            <!-- Permission Legend -->
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Available Permission Groups</p>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div v-for="item in permissions" :key="item.group" class="bg-white rounded-lg border border-gray-200 p-3">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span :class="groupColor(item.group)" class="w-2.5 h-2.5 rounded-full"></span>
-                            <h4 class="text-sm font-bold text-gray-700 capitalize">{{ item.group }}</h4>
-                        </div>
-                        <ul class="space-y-1">
-                            <li v-for="p in item.perms" :key="p.id" class="text-[11px] text-gray-500 flex items-center gap-2">
-                                <svg class="h-3 w-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                {{ formatPermAction(p.name) }}
-                            </li>
-                        </ul>
-                    </div>
-                </div>
 
-                <div v-if="permissions.length === 0" class="text-center py-4 text-gray-500 text-sm">
-                    No permissions found.
-                </div>
-            </div>
 
             <!-- Roles Grid -->
             <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
