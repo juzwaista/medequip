@@ -23,12 +23,14 @@ class SettingsController extends Controller
         }
 
         $platformFeeRate = SystemSetting::getSetting('platform_fee_rate', config('services.platform.fee_rate', 0.05));
+        $termsSetting = SystemSetting::where('key', 'terms_and_conditions')->first();
 
         // Let's display it as a percentage on the frontend safely (e.g. 5)
         $platformFeePercent = $platformFeeRate * 100;
 
         return Inertia::render('Admin/Settings/Index', [
             'platformFeePercent' => $platformFeePercent,
+            'termsContent' => $termsSetting ? $termsSetting->value : '',
         ]);
     }
 
@@ -46,6 +48,7 @@ class SettingsController extends Controller
 
         $request->validate([
             'platform_fee_percent' => 'required|numeric|min:0|max:100',
+            'terms_and_conditions' => 'required|string',
         ]);
 
         $decimalRate = $request->platform_fee_percent / 100;
@@ -58,6 +61,17 @@ class SettingsController extends Controller
                 'description' => 'Global platform commission rate for completed sales.',
             ]
         );
+
+        SystemSetting::updateOrCreate(
+            ['key' => 'terms_and_conditions'],
+            [
+                'value' => $request->terms_and_conditions,
+                'type' => 'html',
+                'description' => 'Platform Terms & Conditions displayed to users.',
+            ]
+        );
+
+        \Illuminate\Support\Facades\Cache::forget('setting.terms_and_conditions');
 
         return redirect()->back()->with('success', 'Global Settings updated successfully.');
     }

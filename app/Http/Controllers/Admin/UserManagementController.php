@@ -23,12 +23,6 @@ class UserManagementController extends Controller
         $search = $request->query('search', '');
         $shopStatus = $request->query('shop_status', 'all');
 
-        $admins = User::whereIn('role', ['admin', 'super_admin'])
-            ->with('roles')
-            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
-            ->orderByDesc('created_at')
-            ->get();
-
         $distributorsQuery = \App\Models\Distributor::with('owner')
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('company_name', 'like', "%{$search}%")->orWhereHas('owner', fn ($q3) => $q3->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"))))
             ->when($shopStatus !== 'all', fn ($q) => $q->where('status', $shopStatus))
@@ -55,7 +49,7 @@ class UserManagementController extends Controller
             'authorization_letter_path' => $d->authorization_letter_path,
         ]);
 
-        $platformUsers = User::whereIn('role', ['customer', 'courier'])
+        $platformUsers = User::whereNotIn('role', ['admin', 'super_admin'])
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->orderByDesc('created_at')
             ->get(['id', 'name', 'email', 'role', 'created_at', 'banned_at', 'ban_reason']);
@@ -68,61 +62,13 @@ class UserManagementController extends Controller
             'banned' => \App\Models\Distributor::where('status', 'banned')->count(),
         ];
 
-        $platformRoles = class_exists(\Spatie\Permission\Models\Role::class) 
-            ? \Spatie\Permission\Models\Role::whereNull('distributor_id')->where('name', '!=', 'Super Admin')->get(['id', 'name']) 
-            : [];
-
         return Inertia::render('Admin/UserManagement/Index', [
-            'admins' => $admins,
             'distributors' => $distributors,
             'platformUsers' => $platformUsers,
             'isSuperAdmin' => $user->role === 'super_admin',
             'filters' => ['search' => $search, 'shop_status' => $shopStatus],
             'shopCounts' => $shopCounts,
-            'platformRoles' => $platformRoles,
         ]);
-    }
-
-    /**
-     * Store a newly created admin invitation.
-     */
-    public function store(Request $request)
-    {
-        /** @var \App\Models\User $currentUser */
-        $currentUser = auth()->user();
-
-        if ($currentUser->role !== 'super_admin') {
-            abort(403, 'Only Super Admins can issue new admin invitations.');
-        }
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-        ]);
-
-        // Generate high-entropy token
-        $rawToken = Str::random(64);
-        $tokenHash = hash('sha256', $rawToken);
-
-        // Store invitation (Hashed)
-        $invitation = AdminInvitation::create([
-            'email' => $request->email,
-            'token_hash' => $tokenHash,
-            'expires_at' => now()->addHours(24),
-            'invited_by_id' => $currentUser->id,
-        ]);
-
-        // Dispatch Notification (with raw token)
-        Notification::route('mail', $request->email)
-            ->notify(new AdminInvitationNotification($rawToken, $request->email));
-
-        // Audit Log
-        AuditLog::log('admin_invitation_issued', $invitation, [
-            'invited_email' => $request->email,
-            'expires_at' => $invitation->expires_at->toIso8601String(),
-        ]);
-
-        return redirect()->back()->with('success', 'Admin invitation sent successfully to ' . $request->email);
     }
 
     /**

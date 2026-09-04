@@ -430,8 +430,6 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
         Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])->name('users.ban');
         Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])->name('users.unban');
-        Route::post('/users/{user}/assign-role', [\App\Http\Controllers\Admin\UserManagementController::class, 'assignRole'])->name('users.assignRole');
-        Route::delete('/users/{user}/remove-role', [\App\Http\Controllers\Admin\UserManagementController::class, 'removeRole'])->name('users.removeRole');
 
         // Roles Management
         Route::resource('/roles', \App\Http\Controllers\Admin\RoleController::class)->except(['create', 'edit', 'show']);
@@ -512,6 +510,8 @@ Route::middleware(['auth', 'verified', 'role:super_admin', 'otp'])
     ->group(function () {
         Route::get('/staff', [\App\Http\Controllers\SuperAdmin\AdminManagementController::class, 'index'])->name('staff.index');
         Route::post('/staff', [\App\Http\Controllers\SuperAdmin\AdminManagementController::class, 'store'])->name('staff.store');
+        Route::post('/staff/{user}/assign-role', [\App\Http\Controllers\SuperAdmin\AdminManagementController::class, 'assignRole'])->name('staff.assignRole');
+        Route::delete('/staff/{user}/remove-role', [\App\Http\Controllers\SuperAdmin\AdminManagementController::class, 'removeRole'])->name('staff.removeRole');
 
         // Courier Governance
         Route::get('/couriers', [\App\Http\Controllers\Admin\CourierManagementController::class, 'index'])->name('couriers.index');

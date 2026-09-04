@@ -26,7 +26,15 @@ class RoleController extends Controller
             ->groupBy(function ($permission) {
                 $parts = explode('.', $permission->name); // ['admin', 'applications', 'review']
                 return $parts[1] ?? 'other'; // Group key: 'applications'
-            });
+            })
+            ->map(function ($perms, $group) {
+                return [
+                    'group' => $group,
+                    'perms' => $perms,
+                ];
+            })
+            ->values()
+            ->toArray();
 
         return Inertia::render('Admin/Roles/Index', [
             'roles' => $roles,

@@ -37,6 +37,18 @@
                                 <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
                             </div>
 
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Role (Optional)</label>
+                                <select 
+                                    v-model="form.role_id"
+                                    class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm"
+                                >
+                                    <option value="" disabled>Select Role...</option>
+                                    <option v-for="role in platformRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+                                </select>
+                                <p v-if="form.errors.role_id" class="mt-1 text-sm text-red-600">{{ form.errors.role_id }}</p>
+                            </div>
+
                             <button 
                                 type="submit" 
                                 :disabled="form.processing"
@@ -67,9 +79,19 @@
                                             <p class="text-sm text-gray-500">{{ admin.email }}</p>
                                         </div>
                                     </div>
-                                    <div>
-                                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-                                            Administrator
+                                    <div class="flex items-center gap-4">
+                                        <div v-if="admin.role !== 'super_admin'" class="flex items-center gap-2">
+                                            <select
+                                                :value="admin.roles?.[0]?.id ?? ''"
+                                                @change="assignRole(admin.id, $event.target.value)"
+                                                class="border border-gray-200 rounded-lg px-3 py-1 text-xs font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                                            >
+                                                <option value="">No custom role</option>
+                                                <option v-for="r in platformRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
+                                            </select>
+                                        </div>
+                                        <span :class="admin.role === 'super_admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'" class="px-3 py-1.5 rounded-full text-[10px] uppercase font-bold tracking-wider">
+                                            {{ admin.role.replace('_', ' ') }}
                                         </span>
                                     </div>
                                 </div>
@@ -89,24 +111,34 @@
 </template>
 
 <script setup>
-import { useForm } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
-    admins: Array
+    admins: Array,
+    platformRoles: { type: Array, default: () => [] }
 });
 
 const form = useForm({
     name: '',
     email: '',
+    role_id: '',
 });
 
 const submit = () => {
     form.post(route('superadmin.staff.store'), {
         preserveScroll: true,
         onSuccess: () => {
-            form.reset('name', 'email');
+            form.reset('name', 'email', 'role_id');
         },
     });
+};
+
+const assignRole = (userId, roleId) => {
+    if (!roleId) {
+        router.delete(route('superadmin.staff.removeRole', userId), { preserveScroll: true });
+    } else {
+        router.post(route('superadmin.staff.assignRole', userId), { role_id: roleId }, { preserveScroll: true });
+    }
 };
 </script>

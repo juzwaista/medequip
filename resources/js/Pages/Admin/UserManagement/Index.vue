@@ -40,72 +40,6 @@
                 </nav>
             </div>
 
-            <!-- ADMINS TAB -->
-            <template v-if="activeTab === 'admins'">
-                <div v-if="isSuperAdmin" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                    <h2 class="text-lg font-bold text-gray-900 mb-1">Create Admin Account</h2>
-                    <p class="text-sm text-gray-500 mb-5">Add a new administrator with limited permissions.</p>
-                    <form @submit.prevent="submitAdmin" class="max-w-xl space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                                <input type="text" v-model="adminForm.name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
-                                <p v-if="adminForm.errors.name" class="text-red-500 text-xs mt-1">{{ adminForm.errors.name }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" v-model="adminForm.email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
-                                <p v-if="adminForm.errors.email" class="text-red-500 text-xs mt-1">{{ adminForm.errors.email }}</p>
-                            </div>
-                        </div>
-                        <button type="submit" :disabled="adminForm.processing" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 font-bold uppercase tracking-wider">
-                            Create Account
-                        </button>
-                    </form>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                            <tr>
-                                <th class="px-6 py-3">Name</th>
-                                <th class="px-6 py-3">Email</th>
-                                <th class="px-6 py-3">System Role</th>
-                                <th class="px-6 py-3">Permission Role</th>
-                                <th class="px-6 py-3">Joined</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <tr v-for="a in admins" :key="a.id" class="hover:bg-gray-50/50">
-                                <td class="px-6 py-3 font-semibold text-gray-900">{{ a.name }}</td>
-                                <td class="px-6 py-3 text-gray-600">{{ a.email }}</td>
-                                <td class="px-6 py-3">
-                                    <span :class="a.role === 'super_admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-blue-100 text-blue-800'" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">{{ a.role.replace('_', ' ') }}</span>
-                                </td>
-                                <td class="px-6 py-3">
-                                    <template v-if="isSuperAdmin && a.role !== 'super_admin'">
-                                        <div class="flex items-center gap-2">
-                                            <select
-                                                :value="a.roles?.[0]?.id ?? ''"
-                                                @change="assignRole(a.id, $event.target.value)"
-                                                class="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                            >
-                                                <option value="">No role</option>
-                                                <option v-for="r in platformRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
-                                            </select>
-                                        </div>
-                                    </template>
-                                    <template v-else>
-                                        <span class="text-xs text-gray-400 italic">{{ a.role === 'super_admin' ? 'All access' : 'N/A' }}</span>
-                                    </template>
-                                </td>
-                                <td class="px-6 py-3 text-gray-400 text-xs">{{ formatDate(a.created_at) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </template>
-
             <!-- SHOPS TAB -->
             <template v-if="activeTab === 'shops'">
                 <!-- Status Filter Tabs -->
@@ -304,20 +238,17 @@ import { router, Link, useForm, usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
-    admins: Array,
     distributors: Array,
     platformUsers: Array,
     isSuperAdmin: Boolean,
     filters: Object,
     shopCounts: Object,
-    platformRoles: { type: Array, default: () => [] },
 });
 
-const activeTab = ref('shops');
 const searchInput = ref(props.filters?.search || '');
+const activeTab = ref('shops');
 
 const tabs = computed(() => [
-    { key: 'admins', label: 'Admins', count: props.admins?.length || 0 },
     { key: 'shops', label: 'Shops', count: props.shopCounts?.all || 0 },
     { key: 'users', label: 'Users', count: props.platformUsers?.length || 0 },
 ]);
@@ -335,13 +266,6 @@ const applySearch = () => {
         search: searchInput.value,
         shop_status: props.filters?.shop_status || 'all',
     }, { preserveState: true, replace: true });
-};
-
-const adminForm = useForm({
-    name: '', email: '',
-});
-const submitAdmin = () => {
-    adminForm.post('/admin/users', { onSuccess: () => adminForm.reset() });
 };
 
 const modal = reactive({
@@ -439,14 +363,6 @@ const submitAction = () => {
 };
 
 const unbanUser = (id) => router.post(`/admin/users/${id}/unban`);
-
-const assignRole = (userId, roleId) => {
-    if (!roleId) {
-        router.delete(`/admin/users/${userId}/remove-role`);
-    } else {
-        router.post(`/admin/users/${userId}/assign-role`, { role_id: roleId });
-    }
-};
 
 const shopStatusClasses = (status) => ({
     'bg-yellow-100 text-yellow-800': status === 'pending',

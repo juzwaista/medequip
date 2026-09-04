@@ -13,6 +13,7 @@ class AdminInvitation extends Model
         'expires_at',
         'invited_by_id',
         'accepted_at',
+        'role_id',
     ];
 
     protected $casts = [

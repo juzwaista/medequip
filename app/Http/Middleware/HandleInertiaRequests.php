@@ -115,6 +115,11 @@ class HandleInertiaRequests extends Middleware
             'admin_permissions' => fn () => $user && in_array($user->role, ['admin', 'super_admin'], true)
                 ? $user->getAllPermissions()->pluck('name')->toArray()
                 : [],
+            
+            // Global Settings
+            'terms_and_conditions' => fn () => \Illuminate\Support\Facades\Cache::rememberForever('setting.terms_and_conditions', function () {
+                return \App\Models\SystemSetting::where('key', 'terms_and_conditions')->value('value');
+            }),
         ]);
     }
 }

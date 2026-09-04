@@ -71,6 +71,15 @@ class AdminSetupController extends Controller
 
         $user->forceFill(['role' => 'admin'])->save();
 
+        if ($invitation->role_id) {
+            $role = \Spatie\Permission\Models\Role::find($invitation->role_id);
+            if ($role) {
+                // Ensure team scoping is disabled for platform roles
+                setPermissionsTeamId(null);
+                $user->assignRole($role);
+            }
+        }
+
         // Invalidate the invitation
         $invitation->update([
             'accepted_at' => now(),

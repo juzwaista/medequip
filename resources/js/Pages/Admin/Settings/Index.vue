@@ -62,6 +62,42 @@
                     </div>
                 </div>
 
+                <!-- Terms and Conditions Setting -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900 border-b border-gray-200">
+                        <h3 class="text-lg font-bold mb-4">Terms & Conditions</h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            This content is displayed in the Terms & Conditions modal for all users. You can use standard HTML formatting (like <code>&lt;strong&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;h3&gt;</code>, etc.) to style the document.
+                        </p>
+                        
+                        <form @submit.prevent="submit" class="space-y-4">
+                            <div>
+                                <textarea
+                                    id="terms_and_conditions"
+                                    rows="20"
+                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm font-mono text-xs"
+                                    v-model="form.terms_and_conditions"
+                                    required
+                                ></textarea>
+                                <p v-if="form.errors.terms_and_conditions" class="text-sm text-red-600 mt-2">
+                                    {{ form.errors.terms_and_conditions }}
+                                </p>
+                            </div>
+
+                            <div class="flex items-center justify-end mt-4">
+                                <button
+                                    type="submit"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    :class="{ 'opacity-25': form.processing }"
+                                    :disabled="form.processing"
+                                >
+                                    Save Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     </AdminLayout>
@@ -73,14 +109,16 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     platformFeePercent: Number,
+    termsContent: String,
 });
 
 const form = useForm({
     platform_fee_percent: props.platformFeePercent || 5,
+    terms_and_conditions: props.termsContent || '',
 });
 
 const submit = () => {
-    form.post(route('admin.settings.update'), {
+    form.post(route('superadmin.settings.update'), {
         preserveScroll: true,
     });
 };

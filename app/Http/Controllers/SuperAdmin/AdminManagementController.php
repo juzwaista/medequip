@@ -16,10 +16,14 @@ class AdminManagementController extends Controller
 {
     public function index()
     {
-        $admins = User::whereIn('role', ['admin', 'super_admin'])->latest()->get();
+        $admins = User::whereIn('role', ['admin', 'super_admin'])->with('roles')->latest()->get();
+        $platformRoles = class_exists(\Spatie\Permission\Models\Role::class) 
+            ? \Spatie\Permission\Models\Role::whereNull('distributor_id')->where('name', '!=', 'Super Admin')->get(['id', 'name']) 
+            : [];
 
         return Inertia::render('Admin/PlatformStaff/Index', [
             'admins' => $admins,
+            'platformRoles' => $platformRoles,
         ]);
     }
 
@@ -36,6 +40,7 @@ class AdminManagementController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
+            'role_id' => 'nullable|exists:roles,id',
         ]);
 
         // Generate high-entropy token
@@ -48,6 +53,7 @@ class AdminManagementController extends Controller
             'token_hash' => $tokenHash,
             'expires_at' => now()->addHours(24),
             'invited_by_id' => $currentUser->id,
+            'role_id' => $request->role_id,
         ]);
 
         // Dispatch Notification (with raw token)
@@ -62,5 +68,36 @@ class AdminManagementController extends Controller
         ]);
 
         return back()->with('success', 'Platform staff invitation sent successfully to ' . $request->email);
+    }
+
+    public function assignRole(Request $request, User $user)
+    {
+        $request->validate([
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        if ($user->role === 'super_admin') {
+            return back()->with('error', 'Super Admin role cannot be modified.');
+        }
+
+        $role = \Spatie\Permission\Models\Role::find($request->role_id);
+        
+        // Ensure team scoping is disabled for platform roles
+        setPermissionsTeamId(null);
+        $user->syncRoles([$role]);
+
+        return back()->with('success', 'Role assigned successfully.');
+    }
+
+    public function removeRole(User $user)
+    {
+        if ($user->role === 'super_admin') {
+            return back()->with('error', 'Super Admin role cannot be modified.');
+        }
+
+        setPermissionsTeamId(null);
+        $user->syncRoles([]);
+
+        return back()->with('success', 'Role removed successfully.');
     }
 }
