@@ -177,12 +177,17 @@
 
             <!-- Page Content -->
             <main class="flex-1 overflow-y-auto">
-                <div v-if="$slots.header" class="bg-white shadow-sm px-4 py-6 sm:px-6 lg:px-8 shrink-0">
-                    <slot name="header" />
+                <div v-if="globalError" class="p-6 bg-red-600 text-white font-mono text-sm whitespace-pre-wrap">
+                    VUE ERROR: {{ globalError }}
                 </div>
-                <!-- Main page body -->
-                <div class="p-3 sm:p-6 lg:p-8 min-w-0 overflow-x-auto">
-                    <slot />
+                <div v-else>
+                    <div v-if="$slots.header" class="bg-white shadow-sm px-4 py-6 sm:px-6 lg:px-8 shrink-0">
+                        <slot name="header" />
+                    </div>
+                    <!-- Main page body -->
+                    <div class="p-3 sm:p-6 lg:p-8 min-w-0 overflow-x-auto">
+                        <slot />
+                    </div>
                 </div>
             </main>
         </div>
@@ -190,10 +195,16 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onErrorCaptured } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AccountMenu from '@/Components/AccountMenu.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
+
+const globalError = ref(null);
+onErrorCaptured((err, instance, info) => {
+    globalError.value = String(err) + '\n\nInfo: ' + info;
+    return false; // Stop propagation
+});
 
 const page = usePage();
 const mobileSidebarOpen = ref(false);

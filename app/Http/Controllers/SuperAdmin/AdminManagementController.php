@@ -16,7 +16,7 @@ class AdminManagementController extends Controller
 {
     public function index()
     {
-        $admins = User::where('role', 'admin')->latest()->get();
+        $admins = User::whereIn('role', ['admin', 'super_admin'])->latest()->get();
 
         return Inertia::render('Admin/PlatformStaff/Index', [
             'admins' => $admins,
