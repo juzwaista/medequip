@@ -100,13 +100,19 @@ class Inventory extends Model
      */
     public function reserve(int $quantity): bool
     {
-        if ($this->availableStock < $quantity) {
-            return false;
+        $updated = \Illuminate\Support\Facades\DB::table($this->getTable())
+            ->where('id', $this->id)
+            ->whereRaw('(quantity - reserved_quantity) >= ?', [$quantity])
+            ->update([
+                'reserved_quantity' => \Illuminate\Support\Facades\DB::raw('reserved_quantity + ' . $quantity)
+            ]);
+
+        if ($updated) {
+            $this->reserved_quantity += $quantity;
+            return true;
         }
 
-        $this->increment('reserved_quantity', $quantity);
-
-        return true;
+        return false;
     }
 
     /**

@@ -88,8 +88,7 @@
                             :userName="$page.props.auth.user.name"
                             :userEmail="$page.props.auth.user.email"
                             :userRole="$page.props.auth.user.role || 'customer'"
-                            :csrfToken="csrfToken"
-                            :show-wallet="Boolean($page.props.auth.user.email_verified_at && $page.props.auth.user.role !== 'staff')"
+                            :csrf-token="$page.props.csrf_token"
                         />
                         <!-- <div v-else class="flex items-center gap-2">
                             <a href="/login" 

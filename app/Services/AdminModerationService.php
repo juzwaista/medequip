@@ -63,10 +63,9 @@ class AdminModerationService
             'rejection_reason' => $reason,
         ];
 
-        // If rejected 3 times, auto-suspend
-        if ($distributor->rejection_count >= 3) {
-            $updates['suspended_until'] = now()->addYears(10); // Effectively permanent
-            $updates['suspension_reason'] = 'Maximum identification/application retries exceeded (3 failed attempts). Account suspended for security review.';
+        // Apply a 3-day cooldown on every 3rd rejection
+        if ($distributor->rejection_count > 0 && $distributor->rejection_count % 3 === 0) {
+            $updates['application_cooldown_until'] = now()->addDays(3);
         }
 
         $distributor->update($updates);

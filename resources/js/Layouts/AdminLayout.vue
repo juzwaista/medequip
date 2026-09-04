@@ -171,7 +171,6 @@
                         :userEmail="$page.props.auth.user.email"
                         :userRole="$page.props.auth.user.role"
                         :csrfToken="csrfToken"
-                        :show-wallet="Boolean($page.props.auth.user.email_verified_at && $page.props.auth.user.role !== 'staff')"
                     />
                 </div>
             </header>

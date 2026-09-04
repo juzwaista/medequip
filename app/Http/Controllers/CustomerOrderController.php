@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\ProductReview;
 use App\Notifications\OrderNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -356,26 +357,28 @@ class CustomerOrderController extends Controller
         }
 
         try {
-            // Bug 12 fix: differentiate stock handling based on prior status
-            foreach ($order->items as $item) {
-                if ($order->status === 'pending') {
-                    // Stock was reserved but NOT physically deducted — release reservation
-                    $item->inventory->releaseReservation($item->quantity);
-                } elseif ($order->status === 'approved') {
-                    // Stock was physically deducted at approval — restore it
-                    $item->inventory->increment('quantity', $item->quantity);
-                    $item->inventory->update([
-                        'reserved_quantity' => max(0, $item->inventory->reserved_quantity - $item->quantity),
-                    ]);
+            DB::transaction(function () use ($order, $refundService) {
+                // Bug 12 fix: differentiate stock handling based on prior status
+                foreach ($order->items as $item) {
+                    if ($order->status === 'pending') {
+                        // Stock was reserved but NOT physically deducted — release reservation
+                        $item->inventory->releaseReservation($item->quantity);
+                    } elseif ($order->status === 'approved') {
+                        // Stock was physically deducted at approval — restore it
+                        $item->inventory->increment('quantity', $item->quantity);
+                        $item->inventory->update([
+                            'reserved_quantity' => max(0, $item->inventory->reserved_quantity - $item->quantity),
+                        ]);
+                    }
                 }
-            }
 
-            $order->update([
-                'status' => 'cancelled',
-                'cancelled_at' => now(),
-            ]);
+                $order->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                ]);
 
-            $refundService->refundAfterOrderCancellation($order->fresh(), 'cancelled');
+                $refundService->refundAfterOrderCancellation($order->fresh(), 'cancelled');
+            });
 
             $order->loadMissing('distributor.user');
             if ($order->distributor?->user) {

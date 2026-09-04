@@ -115,7 +115,7 @@ class Payment extends Model
      */
     public static function allowedMethods(): array
     {
-        return ['cash', 'cod', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay'];
+        return ['cash', 'cod', 'bank_transfer', 'gcash', 'paymaya', 'paymongo', 'card', 'grab_pay', 'purchase_order'];
     }
 
     /**

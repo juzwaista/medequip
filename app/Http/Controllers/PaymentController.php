@@ -82,8 +82,6 @@ class PaymentController extends Controller
                             $payment->applyEscrowFees();
                         }
 
-                        $payment->refresh()->creditSellerWalletOnVerification();
-
                         $invoice = $payment->invoice;
                         if ($invoice) {
                             $totalPaid = $invoice->payments()->where('status', 'verified')->sum('amount');
@@ -151,8 +149,6 @@ class PaymentController extends Controller
                 if ($payment->platform_fee_amount == 0) {
                     $payment->applyEscrowFees();
                 }
-
-                $payment->refresh()->creditSellerWalletOnVerification();
 
                 // Update invoice status
                 $invoice = $payment->invoice;

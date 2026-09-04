@@ -1273,7 +1273,7 @@
                                 </label>
 
 
-                                <!-- Cash on Delivery (Disabled for now)
+                            <!-- Cash on Delivery (Disabled for now)
                                 <label :class="[
                                     'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 transition-all select-none',
                                     cod_available
@@ -1295,6 +1295,47 @@
                                     </svg>
                                 </label>
                                 -->
+
+                                <!-- Purchase Order (B2B Only) -->
+                                <label
+                                    v-if="isApprovedBusiness"
+                                    :class="[
+                                        'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
+                                        form.payment_method === 'purchase_order'
+                                            ? 'border-indigo-500 bg-indigo-50 shadow-sm'
+                                            : 'border-gray-200 hover:border-gray-300 bg-white',
+                                    ]"
+                                >
+                                    <input
+                                        type="radio"
+                                        v-model="form.payment_method"
+                                        value="purchase_order"
+                                        class="sr-only"
+                                    />
+                                    <!-- PO icon -->
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span
+                                        class="text-sm font-semibold"
+                                        :class="
+                                            form.payment_method === 'purchase_order'
+                                                ? 'text-indigo-700'
+                                                : 'text-gray-700'
+                                        "
+                                        >Purchase Order (Net-30)</span
+                                    >
+                                    <svg
+                                        v-if="form.payment_method === 'purchase_order'"
+                                        class="h-4 w-4 text-indigo-500"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </label>
                             </div>
 
                             <p
@@ -1314,6 +1355,35 @@
                                 >
                                 — use card, e-wallet, or Maya instead.
                             </p>
+                        </div>
+
+                        <!-- Purchase Order File Upload / Selection -->
+                        <div
+                            v-if="form.payment_method === 'purchase_order'"
+                            class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6"
+                        >
+                            <h3 class="font-bold text-indigo-900 mb-2">Purchase Order Details</h3>
+                            <p class="text-xs text-indigo-800 mb-4">Please upload a valid Purchase Order document or select a previously saved one. Payment is expected within 30 days of invoice.</p>
+                            
+                            <div v-if="savedPurchaseOrders.length > 0" class="mb-4">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Use a saved Purchase Order</label>
+                                <select v-model="form.saved_purchase_order_id" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" @change="form.saved_purchase_order_id ? form.po_document = null : null">
+                                    <option :value="null">-- Upload a new document instead --</option>
+                                    <option v-for="po in savedPurchaseOrders" :key="po.id" :value="po.id">
+                                        {{ po.po_number }} ({{ po.company_name }})
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div v-if="!form.saved_purchase_order_id">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Upload New PO Document *</label>
+                                <input type="file" @change="e => form.po_document = e.target.files[0]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200" accept=".pdf,.png,.jpg,.jpeg" />
+                                
+                                <label class="mt-3 flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" v-model="form.save_purchase_order" class="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" />
+                                    <span class="text-xs text-gray-700 font-medium">Save this Purchase Order document for future checkouts</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div
@@ -1426,6 +1496,14 @@ const props = defineProps({
     savedDiscountIds: {
         type: Array,
         default: () => [],
+    },
+    savedPurchaseOrders: {
+        type: Array,
+        default: () => [],
+    },
+    businessProfile: {
+        type: Object,
+        default: null,
     },
     cart_has_prescription_items: {
         type: Boolean,
@@ -1607,6 +1685,15 @@ const form = useForm({
     prescription_image: null,
     ocr_results: {},
     selected_items: props.queryParams?.selected_items || null,
+
+    // B2B Purchase Order fields
+    po_document: null,
+    saved_purchase_order_id: null,
+    save_purchase_order: false,
+});
+
+const isApprovedBusiness = computed(() => {
+    return props.businessProfile?.status === 'approved';
 });
 
 const localDiscountAmount = computed(() => {
@@ -1638,12 +1725,18 @@ const sanitizeContactNumber = () => {
 };
 
 // Payment method options — compact pill style, no external icon URLs
-const paymentMethods = [
-    { value: "gcash", label: "GCash" },
-    { value: "paymaya", label: "Maya" },
-    { value: "card", label: "Card" },
-    { value: "wallet", label: "Wallet" },
-];
+const paymentMethods = computed(() => {
+    const base = [
+        { value: "gcash", label: "GCash" },
+        { value: "paymaya", label: "Maya" },
+        { value: "card", label: "Card" },
+        { value: "wallet", label: "Wallet" },
+    ];
+    if (isApprovedBusiness.value) {
+        base.push({ value: "purchase_order", label: "Purchase Order (Net-30)" });
+    }
+    return base;
+});
 
 const grandTotal = computed(() => {
     const shipping = form.fulfillment_method === 'pickup' ? 0 : Number(props.shipping_fee_total || 0);
@@ -1722,12 +1815,18 @@ const isFormValid = computed(() => {
             form.prescription_id_image &&
             form.prescription_image);
 
+    const poOk =
+        form.payment_method !== 'purchase_order' ||
+        form.saved_purchase_order_id ||
+        form.po_document;
+
     return (
         hasAddress &&
         hasPaymentMethod &&
         tinOk &&
         discountOk &&
-        prescriptionOk
+        prescriptionOk &&
+        poOk
     );
 });
 

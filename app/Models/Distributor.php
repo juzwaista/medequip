@@ -103,7 +103,9 @@ class Distributor extends Model
      */
     public function getRatingAttribute()
     {
-        return (float) $this->products()->withAvg('reviews', 'stars')->get()->avg('reviews_avg_stars') ?: 0.0;
+        return \Illuminate\Support\Facades\Cache::remember("distributor.{$this->id}.rating", 3600, function () {
+            return (float) \App\Models\ProductReview::whereHas('product', fn($q) => $q->where('distributor_id', $this->id))->avg('stars') ?: 0.0;
+        });
     }
 
     /**

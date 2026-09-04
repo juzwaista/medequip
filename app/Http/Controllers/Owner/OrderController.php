@@ -315,7 +315,6 @@ class OrderController extends Controller
 
                 $order->packed_at = now();
                 $order->status = 'packed';
-                $order->save();
 
                 // Load required relations for delivery and chat automation
                 $order->loadMissing(['distributor', 'items.product']);
@@ -363,7 +362,7 @@ class OrderController extends Controller
         // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).
         // However, if the owner manually transitions it, we just let the state update.
         if ($newStatus === 'delivered') {
-            $order->update(['delivered_at' => now()]);
+            $order->delivered_at = now();
             if ($order->delivery) {
                 $order->delivery->update([
                     'status' => 'delivered',
@@ -375,7 +374,7 @@ class OrderController extends Controller
         }
 
         if ($newStatus === 'ready_for_pickup') {
-            $order->update(['ready_for_pickup_at' => now()]);
+            $order->ready_for_pickup_at = now();
             // Optional: Auto-notify via chat for pickup
             try {
                 app(OrderChatAutomationService::class)->sendReadyForPickupMessage($order);
@@ -384,8 +383,9 @@ class OrderController extends Controller
             }
         }
 
-        // Update order status
-        $order->update(['status' => $newStatus]);
+        // Update order status and persist any other changes made in blocks above
+        $order->status = $newStatus;
+        $order->save();
 
         if ($newStatus === 'approved' && $oldStatus === 'pending') {
             try {

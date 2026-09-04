@@ -183,10 +183,6 @@ const props = defineProps({
         default: 'customer'
     },
     csrfToken: String,
-    showWallet: {
-        type: Boolean,
-        default: false,
-    },
 });
 
 const isOpen = ref(false);

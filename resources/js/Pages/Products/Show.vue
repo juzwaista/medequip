@@ -132,11 +132,22 @@
                             <span class="text-sm text-gray-500">Retail</span>
                         </div>
                         <div v-if="product.wholesale_price" class="mt-3 pt-3 border-t border-gray-100">
-                            <div class="flex flex-wrap items-center gap-2 text-sm">
-                                <span class="font-semibold text-emerald-700">₱{{ Number(effectiveWholesale).toLocaleString() }}</span>
-                                <span class="text-gray-600">wholesale</span>
-                                <span class="text-xs text-gray-500">· min {{ product.wholesale_min_qty }} pcs</span>
-                            </div>
+                            <template v-if="isApprovedBusiness">
+                                <div class="flex flex-wrap items-center gap-2 text-sm">
+                                    <span class="font-semibold text-emerald-700">₱{{ Number(effectiveWholesale).toLocaleString() }}</span>
+                                    <span class="text-gray-600">wholesale</span>
+                                    <span class="text-xs text-gray-500">· min {{ product.wholesale_min_qty }} pcs</span>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+                                    <span class="text-gray-500 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                        Wholesale pricing available
+                                    </span>
+                                    <Link href="/profile" class="text-blue-600 font-semibold hover:underline">Upgrade to Business</Link>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -261,12 +272,25 @@
                                 <span class="hidden sm:inline text-sm">{{ adding ? 'Adding…' : 'Cart' }}</span>
                             </button>
 
+                            <!-- RFQ Request Button (B2B only) -->
+                            <button
+                                v-if="isApprovedBusiness"
+                                type="button"
+                                @click="openRfqModal"
+                                :disabled="product.distributor.is_suspended"
+                                class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-indigo-600 text-indigo-600 font-bold hover:bg-indigo-50 transition-all h-10 px-3 sm:px-4 shrink-0 disabled:opacity-50"
+                                title="Request Quote"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span class="hidden sm:inline text-sm">Quote</span>
+                            </button>
+
                             <!-- Buy Now: always shows text -->
                             <button
                                 type="button"
                                 @click="buyNow"
                                 :disabled="buyingNow || lineAvailable <= 0 || cartDisabled || product.distributor.is_suspended"
-                                class="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 h-10 px-3 sm:px-5"
+                                class="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 h-10 px-3 sm:px-5 min-w-[5rem]"
                             >
                                 Buy Now
                             </button>
@@ -432,7 +456,86 @@
                         </div>
                     </form>
                 </div>
+            <!-- RFQ Modal -->
+            <div
+                v-if="rfqModalOpen"
+                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
+                role="dialog"
+                aria-modal="true"
+                @click.self="rfqModalOpen = false"
+            >
+                <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Request Quotation</h2>
+                            <p class="text-sm text-gray-500">Negotiate bulk pricing with the distributor.</p>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="submitRfq" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Target Quantity</label>
+                                <input
+                                    type="number"
+                                    v-model="rfqForm.requested_quantity"
+                                    min="1"
+                                    class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    required
+                                />
+                                <p v-if="rfqForm.errors.requested_quantity" class="text-xs text-red-600 mt-1">{{ rfqForm.errors.requested_quantity }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Target Unit Price (₱)</label>
+                                <input
+                                    type="number"
+                                    v-model="rfqForm.target_price"
+                                    step="0.01"
+                                    min="0"
+                                    class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    required
+                                    placeholder="0.00"
+                                />
+                                <p v-if="rfqForm.errors.target_price" class="text-xs text-red-600 mt-1">{{ rfqForm.errors.target_price }}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Message to Seller</label>
+                            <textarea
+                                v-model="rfqForm.note"
+                                rows="3"
+                                class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                                placeholder="Explain your procurement needs, required delivery timeline, etc."
+                            ></textarea>
+                            <p v-if="rfqForm.errors.note" class="text-xs text-red-600 mt-1">{{ rfqForm.errors.note }}</p>
+                        </div>
+
+                        <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                            <button
+                                type="button"
+                                @click="rfqModalOpen = false"
+                                class="px-5 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="rfqForm.processing"
+                                class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
+                            >
+                                <svg v-if="rfqForm.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                {{ rfqForm.processing ? 'Sending Request...' : 'Send RFQ' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
+            <!-- End RFQ Modal -->
+        </div>
         </div>
     </MainLayout>
 </template>
@@ -493,10 +596,20 @@ const buyingNow = ref(false);
 const activeImageIndex = ref(0);
 const selectedVariationId = ref(null);
 const reportModalOpen = ref(false);
+const rfqModalOpen = ref(false);
 
 const reportForm = useForm({
     reason: 'misleading',
     details: '',
+});
+
+
+const rfqForm = useForm({
+    product_id: props.product.id,
+    distributor_id: props.product.distributor_id,
+    requested_quantity: quantity.value,
+    target_price: '',
+    note: '',
 });
 
 const canReportProduct = computed(
@@ -641,7 +754,18 @@ const lineAvailable = computed(() => {
     return props.availableStock;
 });
 
+const isApprovedBusiness = computed(() => {
+    const user = page.props.auth?.user;
+    return user && user.business_profile?.status === 'approved';
+});
+
+const hasBusinessProfile = computed(() => {
+    const user = page.props.auth?.user;
+    return user && user.business_profile;
+});
+
 const wholesaleSavings = computed(() => {
+    if (!hasBusinessProfile.value) return null;
     if (!props.product.wholesale_price || !props.product.wholesale_min_qty) return null;
     if (Number(quantity.value) < Number(props.product.wholesale_min_qty)) return null;
 
@@ -723,6 +847,26 @@ const addToCart = () => {
         onFinish: () => {
             adding.value = false;
         },
+    });
+};
+
+const openRfqModal = () => {
+    if (!isApprovedBusiness.value) {
+        alert("Please complete your Business Profile setup in Settings and wait for approval to request quotes.");
+        return;
+    }
+    rfqForm.requested_quantity = quantity.value;
+    rfqForm.target_price = props.product.wholesale_price || props.product.base_price;
+    rfqForm.note = `Hello! I would like to request a quotation for ${quantity.value} pcs of ${props.product.name}.`;
+    rfqModalOpen.value = true;
+};
+
+const submitRfq = () => {
+    rfqForm.post(route('rfq.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            rfqModalOpen.value = false;
+        }
     });
 };
 

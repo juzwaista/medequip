@@ -96,7 +96,8 @@ class OrderController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
-        $cartItems = CartService::enrichCartItems($cart);
+        $cartItems = CartService::enrichCartItems($cart, $request->user());
+
         $subtotal = CartService::calculateSubtotal($cartItems);
 
         $distributorCount = collect($cartItems)
@@ -148,8 +149,10 @@ class OrderController extends Controller
             'distributor_count' => $distributorCount,
             'cities' => config('cavite.cities'),
             'barangays' => config('cavite.barangays'),
-            'savedAddresses' => auth()->user()->addresses()->latest()->get(),
-            'savedDiscountIds' => auth()->user()->discountIds()->latest()->get(),
+            'savedAddresses'       => auth()->user()->addresses()->latest()->get(),
+            'savedDiscountIds'     => auth()->user()->discountIds()->latest()->get(),
+            'savedPurchaseOrders'  => auth()->user()->savedPurchaseOrders()->get(),
+            'businessProfile'      => auth()->user()->businessProfile,
             'cod_available' => false, // Forced false to hide COD for now
             'cod_limit_exceeded' => $codLimitExceeded,
             'cod_limit_message' => $codLimitMessage,
@@ -174,14 +177,18 @@ class OrderController extends Controller
             'delivery_latitude' => 'required|numeric|between:14.00,14.60',
             'delivery_longitude' => 'required|numeric|between:120.50,121.20',
             'notes' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:card,gcash,paymaya,wallet', // 'cod' removed from allowed list
+            'payment_method' => 'required|in:card,gcash,paymaya,wallet,purchase_order', // 'cod' removed from allowed list
             'fulfillment_method' => 'required|in:delivery,pickup',
-            'buy_now' => 'nullable', // Handle as truthy check later
+            'buy_now' => 'nullable',
             'product_id' => 'required_if:buy_now,1,true|nullable|exists:products,id',
             'product_variation_id' => 'nullable|exists:product_variations,id',
             'quantity' => 'required_if:buy_now,1,true|nullable|integer|min:1',
             'tin' => ['nullable', 'string', 'regex:/^[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}$/'],
-            'selected_items' => 'nullable|string', // Comma-separated list of line keys
+            'selected_items' => 'nullable|string',
+
+            // Purchase Order (B2B)
+            'po_document' => 'required_if:payment_method,purchase_order|nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'saved_purchase_order_id' => 'nullable|exists:saved_purchase_orders,id',
             
             // SC/PWD validation
             'apply_discount' => 'nullable', // Use manual boolean check to avoid standard boolean rule quirks with FormData
@@ -311,11 +318,14 @@ class OrderController extends Controller
                 }
 
                 $ordersByDistributor[$distributorId]['items'][] = [
-                    'product' => $product,
-                    'quantity' => $cartItem['quantity'],
-                    'variation_id' => $variationId,
-                    'variation' => $variation,
+                    'product'        => $product,
+                    'quantity'       => $cartItem['quantity'],
+                    'variation_id'   => $variationId,
+                    'variation'      => $variation,
+                    'rfq_price'      => $cartItem['rfq_price'] ?? null,
+                    'rfq_message_id' => $cartItem['rfq_message_id'] ?? null,
                 ];
+
             }
 
 
@@ -331,16 +341,24 @@ class OrderController extends Controller
                     $product = $item['product'];
                     $quantity = $item['quantity'];
                     $variation = $item['variation'] ?? null;
-                    $isWholesale = $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
-                    $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
-                    $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
-                    $itemSubtotal += round($base + $adjustment, 2) * $quantity;
+
+                    // Respect RFQ negotiated price if present
+                    if (!empty($item['rfq_price'])) {
+                        $itemSubtotal += round((float) $item['rfq_price'], 2) * $quantity;
+                    } else {
+                        $isApprovedBusiness = $user?->businessProfile?->status === 'approved';
+                        $isWholesale = $isApprovedBusiness && $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
+                        $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
+                        $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
+                        $itemSubtotal += round($base + $adjustment, 2) * $quantity;
+                    }
                 }
                 
                 $orderTotal = $itemSubtotal + $shippingReq['fee'];
 
                 $order = Order::create([
                     'customer_id' => auth()->id(),
+                    'customer_name' => $validated['customer_name'],
                     'distributor_id' => $distributorData['distributor_id'],
                     'order_number' => Order::generateOrderNumber(),
                     'status' => 'pending',
@@ -356,10 +374,11 @@ class OrderController extends Controller
                     'pickup_instructions' => $isPickup ? $distributor->pickup_instructions : null,
                     'required_vehicle_type' => $shippingReq['vehicle'],
                     'tin' => $tin,
-                    'discount_type' => 'none',
-                    'discount_status' => Order::DISCOUNT_NONE,
-                    'prescription_patient_name' => $request->prescription_patient_name,
-                    'ocr_results' => $ocrResults,
+                    'discount_type'              => 'none',
+                    'discount_status'             => Order::DISCOUNT_NONE,
+                    'prescription_patient_name'  => $request->prescription_patient_name,
+                    'ocr_results'                => $ocrResults,
+                    'saved_purchase_order_id'    => $validated['saved_purchase_order_id'] ?? null,
                 ]);
 
                 if ($applyDiscount) {
@@ -410,6 +429,22 @@ class OrderController extends Controller
                     ]);
                 }
 
+                // Handle Purchase Order document upload
+                if ($validated['payment_method'] === 'purchase_order' && $request->hasFile('po_document')) {
+                    $poPath = $request->file('po_document')->store('purchase_orders', 'public');
+                    $order->update([
+                        'po_document_path' => $poPath,
+                    ]);
+
+                    if (filter_var($request->input('save_purchase_order'), FILTER_VALIDATE_BOOLEAN)) {
+                        $user->savedPurchaseOrders()->create([
+                            'po_number' => 'PO-' . strtoupper(uniqid()),
+                            'company_name' => $user->businessProfile->company_name ?? 'My Company',
+                            'document_path' => $poPath,
+                        ]);
+                    }
+                }
+
                 $itemSubtotal = 0;
                 $vatableItemsTotal = 0;
                 $exemptItemsTotal = 0;
@@ -419,11 +454,17 @@ class OrderController extends Controller
                     $quantity = $item['quantity'];
                     $variationId = $item['variation_id'] ?? null;
                     $variation = $item['variation'] ?? null;
-
-                    $isWholesale = $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
-                    $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
-                    $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
-                    $unitPrice = round($base + $adjustment, 2);
+                    // Respect RFQ negotiated price if present
+                    $isWholesale = false;
+                    if (!empty($item['rfq_price'])) {
+                        $unitPrice = round((float) $item['rfq_price'], 2);
+                    } else {
+                        $isApprovedBusiness = $user?->businessProfile?->status === 'approved';
+                        $isWholesale = $isApprovedBusiness && $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
+                        $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
+                        $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
+                        $unitPrice = round($base + $adjustment, 2);
+                    }
 
                     // Reserve inventory
                     $inventoryQuery = $product->inventory()
@@ -521,11 +562,14 @@ class OrderController extends Controller
 
                 $order->load('items.product');
                 $needsRx = $order->items->contains(fn ($line) => $line->product->requires_prescription);
-                $order->update([
-                    'prescription_status' => $needsRx
-                        ? Order::PRESCRIPTION_AWAITING_UPLOAD
-                        : Order::PRESCRIPTION_NOT_REQUIRED,
-                ]);
+                
+                if ($needsRx) {
+                    if ($order->prescription_status !== Order::PRESCRIPTION_PENDING_REVIEW) {
+                        $order->update(['prescription_status' => Order::PRESCRIPTION_AWAITING_UPLOAD]);
+                    }
+                } else {
+                    $order->update(['prescription_status' => Order::PRESCRIPTION_NOT_REQUIRED]);
+                }
 
                 // Always create invoice for record-keeping (including COD).
                 // OrderInvoiceService handles COD-specific payment method / status.
@@ -537,7 +581,13 @@ class OrderController extends Controller
 
             // Clear cart if NOT buy now (don't clear if they just bought one thing specifically)
             if (!$request->boolean('buy_now')) {
-                session()->forget('cart');
+                $sessionCart = session()->get('cart', []);
+                if (isset($cart) && is_array($cart)) {
+                    foreach (array_keys($cart) as $purchasedKey) {
+                        unset($sessionCart[$purchasedKey]);
+                    }
+                }
+                session()->put('cart', $sessionCart);
             }
 
             DB::commit();
@@ -746,7 +796,8 @@ class OrderController extends Controller
                                 // The seller gets the (amount - fees) which is already computed into the payment escrow logically, 
                                 // wait, we just transfer the net amount they are owed. Let's pass the net amount.
                                 // $payment->amount is the gross. But $payment->platform_fee is the fee. So net is amount - platform_fee.
-                                $netAmount = (float) $payment->amount - (float) $payment->platform_fee - (float) $payment->payment_gateway_fee;
+                                // net_seller_amount is pre-computed by applyEscrowFees() at verification time.
+                                $netAmount = (float) $payment->net_seller_amount;
                                 $payoutService->disburse($netAmount, $distributor, $payment);
                             }
                         });

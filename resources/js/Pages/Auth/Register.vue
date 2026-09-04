@@ -190,6 +190,73 @@
                             <p v-if="form.errors.role" class="text-red-600 text-xs">{{ form.errors.role }}</p>
                         </div>
 
+                        <!-- Customer Profile Type -->
+                        <div v-if="form.role === 'customer'" class="space-y-3">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">Customer Profile</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label :class="!form.is_business ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300 bg-gray-50'"
+                                    class="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition-all">
+                                    <input type="radio" v-model="form.is_business" :value="false" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                                    <div>
+                                        <span class="font-bold text-gray-900 text-sm">Personal</span>
+                                        <p class="text-xs text-gray-500 mt-0.5">Buying for myself</p>
+                                    </div>
+                                </label>
+                                <label :class="form.is_business ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300 bg-gray-50'"
+                                    class="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition-all">
+                                    <input type="radio" v-model="form.is_business" :value="true" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                                    <div>
+                                        <span class="font-bold text-gray-900 text-sm">Business</span>
+                                        <p class="text-xs text-gray-500 mt-0.5">Buying for a clinic, hospital, etc.</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Business Details (customers only) -->
+                        <div v-if="form.role === 'customer' && form.is_business" class="space-y-4">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">Business Details</h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Name <span class="text-red-500">*</span></label>
+                                <input type="text" v-model="form.company_name" required placeholder="Your Company Name"
+                                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
+                                <p v-if="form.errors.company_name" class="text-red-600 text-xs mt-1.5">{{ form.errors.company_name }}</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Type <span class="text-red-500">*</span></label>
+                                    <select v-model="form.business_type" required
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white text-sm">
+                                        <option value="">Select type</option>
+                                        <option value="Hospital">Hospital</option>
+                                        <option value="Clinic">Clinic</option>
+                                        <option value="Pharmacy">Pharmacy</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <p v-if="form.errors.business_type" class="text-red-600 text-xs mt-1.5">{{ form.errors.business_type }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">TIN Number <span class="text-gray-400 font-normal">(Optional)</span></label>
+                                    <input type="text" v-model="form.tin_number" placeholder="123-456-789-000"
+                                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
+                                    <p v-if="form.errors.tin_number" class="text-red-600 text-xs mt-1.5">{{ form.errors.tin_number }}</p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2">
+                                    SEC / DTI Registration <span class="text-gray-400 font-normal">(Optional)</span>
+                                </label>
+                                <input type="file" @change="e => form.sec_dti_document = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png"
+                                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <p class="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                                    Upload a clear photo or PDF (max 5MB). You can skip this now and verify your business profile later from your account settings to unlock formal Purchase Orders and Net-30 payment terms.
+                                </p>
+                                <p v-if="form.errors.sec_dti_document" class="text-red-600 text-xs mt-1.5">{{ form.errors.sec_dti_document }}</p>
+                            </div>
+                        </div>
+
                         <!-- Delivery Address (customers only) -->
                          <div v-if="form.role === 'customer'" class="space-y-4">
                             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">Delivery Address</h3>
@@ -362,6 +429,11 @@ const form = useForm({
     latitude: null,
     longitude: null,
     terms_accepted: false,
+    is_business: false,
+    company_name: '',
+    business_type: '',
+    tin_number: '',
+    sec_dti_document: null,
 });
 
 // Persistence state
@@ -413,6 +485,10 @@ watch(() => ({
     barangay: form.barangay,
     latitude: form.latitude,
     longitude: form.longitude,
+    is_business: form.is_business,
+    company_name: form.company_name,
+    business_type: form.business_type,
+    tin_number: form.tin_number,
 }), (newVal) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
     lastSaved.value = new Date().toLocaleTimeString();

@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\EnsureNotBanned::class,
+            \App\Http\Middleware\SetTeamIdMiddleware::class,
         ]);
 
         // Only exempt the PayMongo webhook — it POSTs without a session token.
@@ -29,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'otp' => \App\Http\Middleware\EnsureOTPVerified::class,
+            'spatie_role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'spatie_permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'spatie_role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {

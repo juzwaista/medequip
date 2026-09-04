@@ -21,14 +21,15 @@ class EnsureOTPVerified
             // Check if OTP was verified for this session
             if (! $request->session()->get('login.otp_verified', false)) {
                 
-                // If they are logged in but shouldn't be (stale session? manually typed URL?)
-                // Force a re-login flow to generate a new OTP
-                Auth::guard('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $user->update([
+                    'login_otp' => $otp,
+                    'login_otp_expires_at' => now()->addMinutes(15),
+                ]);
+                $user->notify(new \App\Notifications\LoginOTP($otp));
 
-                return redirect()->route('login')
-                    ->with('error', 'Please log in to verify your identity with a security code.');
+                return redirect()->route('admin.otp.verify')
+                    ->with('info', 'Your security session expired. Please verify your identity again with a new security code.');
             }
         }
 

@@ -36,28 +36,22 @@
 
                         <h1 class="text-3xl font-bold text-gray-900 mb-2">Application Rejected</h1>
                         
-                        <div class="mb-6 flex flex-col items-center">
-                            <span class="text-xs font-bold uppercase tracking-widest text-red-600 mb-1">Attempt {{ distributor.rejection_count }} of 3</span>
-                            <div class="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-red-500 transition-all duration-500" :style="{ width: (distributor.rejection_count / 3 * 100) + '%' }"></div>
-                            </div>
+                        <div v-if="inCooldown" class="mb-8 p-5 bg-orange-50 border-2 border-orange-200 rounded-xl">
+                            <svg class="w-8 h-8 text-orange-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <h2 class="text-lg font-bold text-orange-800 mb-1">Cooldown Active</h2>
+                            <p class="text-sm text-orange-700">You must wait before re-applying. Your portal will unlock on:</p>
+                            <p class="text-md font-bold text-orange-900 mt-2">{{ cooldownEndsAt }}</p>
                         </div>
-
-                        <p v-if="!distributor.is_suspended" class="text-lg text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
-                            Unfortunately, your distributor application was not approved. You have <span class="font-bold">{{ 3 - distributor.rejection_count }}</span> attempts remaining.
-                        </p>
-                        <p v-else class="text-lg text-red-600 font-bold mb-6 max-w-lg mx-auto leading-relaxed">
-                            Your account has been suspended due to 3 failed application attempts.
+                        <p v-else class="text-lg text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
+                            Unfortunately, your distributor application was not approved. Please review the feedback below and update your documents.
                         </p>
 
-                        <div v-if="distributor?.rejection_reason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-left">
-                            <p class="text-xs font-bold text-red-800 uppercase tracking-widest mb-1">Reason for REJECTION</p>
-                            <p class="text-sm font-medium text-red-700">{{ distributor.rejection_reason }}</p>
-                        </div>
-
-                        <div v-if="distributor.is_suspended" class="bg-gray-900 border border-gray-700 rounded-xl p-4 mb-6 text-left shadow-2xl">
-                            <p class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-1">Suspension Notice</p>
-                            <p class="text-sm font-medium text-gray-300">{{ distributor.suspension_reason || 'Account suspended after maximum rejection attempts reached.' }}</p>
+                        <div v-if="distributor?.rejection_reason" class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6 text-left shadow-sm">
+                            <p class="text-xs font-bold text-red-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                Reason for Rejection
+                            </p>
+                            <p class="text-sm font-medium text-red-800 whitespace-pre-wrap leading-relaxed">{{ distributor.rejection_reason }}</p>
                         </div>
                     </template>
 
@@ -84,14 +78,14 @@
 
                     <!-- Actions -->
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button v-if="status === 'rejected' && !distributor.is_suspended"
+                        <button v-if="status === 'rejected' && !inCooldown"
                             @click="goResubmit"
                             class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition">
-                            Re-submit Application
+                            Update Documents & Re-apply
                         </button>
 
-                        <div v-else-if="distributor.is_suspended" class="text-center">
-                             <a href="mailto:support@medequip.ph" class="text-blue-600 hover:underline font-bold text-sm">Contact Support for Verification</a>
+                        <div v-else-if="inCooldown" class="text-center w-full">
+                             <p class="text-sm text-gray-500 font-medium">Re-application portal will unlock automatically once the cooldown period ends.</p>
                         </div>
 
                         <Link v-if="status === 'pending'" href="/products"
@@ -110,12 +104,25 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Head, usePage, router, Link } from '@inertiajs/vue3';
 import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
 
 const props = defineProps({
     distributor: Object,
     status: { type: String, default: 'pending' },
+});
+
+const inCooldown = computed(() => {
+    if (!props.distributor?.application_cooldown_until) return false;
+    return new Date(props.distributor.application_cooldown_until) > new Date();
+});
+
+const cooldownEndsAt = computed(() => {
+    if (!props.distributor?.application_cooldown_until) return '';
+    return new Date(props.distributor.application_cooldown_until).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
 });
 
 const page   = usePage();

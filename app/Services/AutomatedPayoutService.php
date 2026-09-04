@@ -26,6 +26,11 @@ class AutomatedPayoutService
             return false;
         }
 
+        if (!config('app.simulate_payouts', env('SIMULATE_PAYOUTS', false))) {
+            Log::error('Automated payout failed: Real payout API is not yet integrated and SIMULATE_PAYOUTS is false.');
+            return false;
+        }
+
         try {
             $simulatedReferenceId = 'PAYOUT_' . strtoupper(uniqid());
 

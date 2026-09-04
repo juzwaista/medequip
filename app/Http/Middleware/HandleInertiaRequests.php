@@ -77,6 +77,9 @@ class HandleInertiaRequests extends Middleware
                     'warning_message' => $warningMessage,
                     'tin' => $user->tin,
                     'has_discount_id' => \App\Models\CustomerDiscountId::where('user_id', $user->id)->exists(),
+                    'business_profile' => $user->businessProfile ? [
+                        'status' => $user->businessProfile->status,
+                    ] : null,
                 ] : null,
             ],
             'needsTermsAcceptance' => $user ? ! $user->hasAcceptedTerms() : false,
@@ -87,17 +90,19 @@ class HandleInertiaRequests extends Middleware
                 ? \App\Services\UnreadConversationMessageService::countFor($user)
                 : 0,
             'open_message_reports_count' => fn () => $user && in_array($user->role, ['admin', 'super_admin'], true)
-                ? ConversationMessageReport::query()->where('status', 'open')->count()
+                ? \Illuminate\Support\Facades\Cache::remember('admin.open_message_reports_count', 60, fn () => ConversationMessageReport::query()->where('status', 'open')->count())
                 : 0,
             'pending_verifications_count' => fn () => $user && in_array($user->role, ['admin', 'super_admin'], true)
-                ? \App\Models\Distributor::where('status', 'pending')->count()
+                ? \Illuminate\Support\Facades\Cache::remember('admin.pending_verifications_count', 60, fn () => \App\Models\Distributor::where('status', 'pending')->count())
                 : 0,
             'open_reports_hub_count' => fn () => $user && in_array($user->role, ['admin', 'super_admin'], true)
-                ? ConversationMessageReport::query()->where('status', 'open')->count()
+                ? \Illuminate\Support\Facades\Cache::remember('admin.open_reports_hub_count', 60, fn () => 
+                    ConversationMessageReport::query()->where('status', 'open')->count()
                     + UserReport::query()->where('status', 'open')->count()
                     + CourierReport::query()->where('status', 'open')->count()
                     + DeliveryReview::query()->where('stars', '<=', 2)->whereNull('admin_cleared_at')->count()
                     + \App\Models\ProductReport::query()->where('status', 'open')->count()
+                )
                 : 0,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

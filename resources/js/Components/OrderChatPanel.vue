@@ -99,8 +99,53 @@
                                     Report
                                 </button>
                             </div>
+                            <!-- RFQ Request Bubble -->
+                            <div v-if="seg.message.kind === 'rfq_request'" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 my-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span class="text-xs font-bold text-indigo-900 uppercase tracking-wide">Request for Quote</span>
+                                </div>
+                                <div class="text-sm font-semibold text-gray-900">{{ seg.message.meta?.product_name }}</div>
+                                <div class="text-xs text-gray-700 mt-1">Requested Qty: <span class="font-bold">{{ seg.message.meta?.requested_quantity }}</span> pcs</div>
+                                <div v-if="seg.message.meta?.target_price" class="text-xs text-gray-700">Target Price: <span class="font-bold">₱{{ Number(seg.message.meta?.target_price).toLocaleString() }}</span></div>
+                                <p v-if="seg.message.body" class="text-sm italic text-gray-600 mt-2 border-t border-indigo-100 pt-2">"{{ seg.message.body }}"</p>
+
+                                <div v-if="isShopViewer && seg.message.meta?.rfq_status === 'pending'" class="mt-3">
+                                    <button @click="openQuoteModal(seg.message)" type="button" class="w-full rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 shadow-sm transition-colors">
+                                        Send Formal Quote
+                                    </button>
+                                </div>
+                                <div v-else-if="seg.message.meta?.rfq_status === 'quoted'" class="mt-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                                    Quote sent
+                                </div>
+                            </div>
+
+                            <!-- RFQ Quote Bubble -->
+                            <div v-else-if="seg.message.kind === 'rfq_quote'" class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 my-1 shadow-sm">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-xs font-bold text-emerald-900 uppercase tracking-wide">Formal Quote</span>
+                                </div>
+                                <div class="text-sm font-semibold text-gray-900">{{ seg.message.meta?.product_name }}</div>
+                                <div class="text-xs text-gray-700 mt-1">Offered Qty: <span class="font-bold">{{ seg.message.meta?.quoted_quantity }}</span> pcs</div>
+                                <div class="text-sm font-bold text-emerald-700 mt-1">Price per unit: ₱{{ Number(seg.message.meta?.quoted_price).toLocaleString() }}</div>
+                                <p v-if="seg.message.body" class="text-sm text-gray-700 mt-2 border-t border-emerald-100 pt-2">{{ seg.message.body }}</p>
+
+                                <div v-if="!isShopViewer && seg.message.meta?.rfq_status === 'pending_buyer'" class="mt-3 flex gap-2">
+                                    <button @click="acceptQuote(seg.message)" :disabled="rxActionLoading" type="button" class="flex-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 shadow-sm transition-colors disabled:opacity-50">
+                                        Accept Quote
+                                    </button>
+                                    <button @click="openCounterOfferModal(seg.message)" type="button" class="flex-1 rounded-md bg-white border border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-bold py-2 shadow-sm transition-colors">
+                                        Counter Offer
+                                    </button>
+                                </div>
+                                <div v-else-if="seg.message.meta?.rfq_status === 'accepted'" class="mt-2 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-1 rounded text-center">
+                                    Quote Accepted
+                                </div>
+                            </div>
+
                             <p
-                                v-if="isPrescriptionUploadedBubble(seg.message)"
+                                v-else-if="isPrescriptionUploadedBubble(seg.message)"
                                 class="whitespace-pre-wrap break-words font-medium text-amber-950"
                             >
                                 {{ prescriptionUploadedPrimaryLine(seg.message) }}
@@ -278,6 +323,50 @@
         </Teleport>
 
         <Teleport to="body">
+            <div
+                v-if="quoteTarget"
+                class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+                @click.self="quoteTarget = null"
+            >
+                <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5" @click.stop>
+                    <h3 class="font-bold text-gray-900">Send Formal Quote</h3>
+                    <p class="text-xs text-gray-600 mt-1">Provide your final price for {{ quoteTarget.meta?.product_name }}.</p>
+                    <div class="mt-4 space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Quoted Price (₱)</label>
+                            <input type="number" step="0.01" v-model="quotePrice" class="w-full rounded-lg border-gray-300 text-sm" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Quoted Quantity</label>
+                            <input type="number" v-model="quoteQuantity" class="w-full rounded-lg border-gray-300 text-sm" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Message to Buyer</label>
+                            <textarea
+                                v-model="quoteNote"
+                                rows="3"
+                                class="w-full rounded-lg border-gray-300 text-sm"
+                            ></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button type="button" class="flex-1 py-2 rounded-lg border border-gray-300 text-sm font-semibold" @click="quoteTarget = null">
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-50"
+                            :disabled="rxActionLoading"
+                            @click="submitQuote"
+                        >
+                            Send Quote
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <Teleport to="body">
             <!-- Fullscreen Image Viewer Modal -->
             <transition
                 enter-active-class="transition-opacity ease-out duration-200"
@@ -409,6 +498,10 @@ const rxActionLoading = ref(false);
 const rxRejectTarget = ref(null);
 const rxRejectReason = ref('');
 const imageModalUrl = ref(null);
+const quoteTarget = ref(null);
+const quotePrice = ref('');
+const quoteQuantity = ref('');
+const quoteNote = ref('');
 
 let pollTimer = null;
 let lastId = 0;
@@ -456,6 +549,12 @@ function avatarToneClass(m) {
     if (m.is_automated) {
         return 'bg-violet-100 text-violet-800 border-violet-200';
     }
+    if (m.kind === 'rfq_request' && !m.is_mine) {
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    }
+    if (m.kind === 'rfq_quote' && !m.is_mine) {
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    }
     return 'bg-white text-gray-700 border-gray-200';
 }
 
@@ -482,6 +581,9 @@ function headerLabel(m) {
     if (m.is_automated) {
         return m.shop_label || 'Shop';
     }
+    if (m.kind === 'rfq_quote') {
+        return m.shop_label || 'Shop';
+    }
     if (m.user?.role === 'customer') {
         return m.user.name || 'Customer';
     }
@@ -492,6 +594,9 @@ function headerLabel(m) {
 }
 
 function bubbleClass(m) {
+    if (m.kind === 'rfq_request' || m.kind === 'rfq_quote') {
+        return 'bg-transparent text-gray-900'; // Special bubbles handle their own backgrounds
+    }
     if (m.is_mine) {
         return 'bg-blue-600 text-white rounded-br-md';
     }
@@ -543,6 +648,69 @@ function prescriptionUploadedPrimaryLine(m) {
 
 function canReport(m) {
     return props.enableReport && !m.is_mine && !m.is_automated && !m.is_prescription && m.kind === 'user';
+}
+
+function openQuoteModal(m) {
+    quoteTarget.value = m;
+    quoteQuantity.value = m.meta?.requested_quantity || 1;
+    quotePrice.value = m.meta?.target_price || '';
+    quoteNote.value = `Here is our formal quote for your request.`;
+}
+
+function openCounterOfferModal(m) {
+    quoteTarget.value = m; // Repurpose quoteTarget for the counter offer
+    quoteQuantity.value = m.meta?.quoted_quantity || 1;
+    quotePrice.value = m.meta?.quoted_price || '';
+    quoteNote.value = `I would like to propose a counter offer.`;
+}
+
+async function submitQuote() {
+    if (!quoteTarget.value) return;
+    rxActionLoading.value = true;
+    try {
+        if (isShopViewer.value) {
+            // Seller is quoting
+            await window.axios.post(`/messages/${quoteTarget.value.id}/quote`, {
+                quoted_price: quotePrice.value,
+                quoted_quantity: quoteQuantity.value,
+                seller_note: quoteNote.value
+            });
+        } else {
+            // Buyer is counter-offering
+            await window.axios.post(`/rfq`, {
+                product_id: quoteTarget.value.meta.product_id,
+                distributor_id: quoteTarget.value.conversation.distributor_id,
+                requested_quantity: quoteQuantity.value,
+                target_price: quotePrice.value,
+                note: quoteNote.value
+            });
+            
+            // Note: Since this creates a new RFQ request, the old quote remains in the chat.
+            // Ideally we could mark the old quote as 'countered', but for now this works.
+        }
+        
+        quoteTarget.value = null;
+        await loadInitial();
+    } catch (e) {
+        alert(e.response?.data?.message || 'Failed to send.');
+    } finally {
+        rxActionLoading.value = false;
+    }
+}
+
+import { router } from '@inertiajs/vue3';
+
+async function acceptQuote(m) {
+    rxActionLoading.value = true;
+    router.post(`/rfq/${m.id}/accept`, {}, {
+        preserveScroll: true,
+        onError: (errors) => {
+            rxActionLoading.value = false;
+        },
+        onFinish: () => {
+            rxActionLoading.value = false;
+        }
+    });
 }
 
 async function approvePrescriptionChat(m) {

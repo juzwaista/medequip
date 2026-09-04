@@ -67,6 +67,10 @@ class UserManagementController extends Controller
             'banned' => \App\Models\Distributor::where('status', 'banned')->count(),
         ];
 
+        $platformRoles = class_exists(\Spatie\Permission\Models\Role::class) 
+            ? \Spatie\Permission\Models\Role::whereNull('distributor_id')->get(['id', 'name']) 
+            : [];
+
         return Inertia::render('Admin/UserManagement/Index', [
             'admins' => $admins,
             'distributors' => $distributors,
@@ -74,6 +78,7 @@ class UserManagementController extends Controller
             'isSuperAdmin' => $user->role === 'super_admin',
             'filters' => ['search' => $search, 'shop_status' => $shopStatus],
             'shopCounts' => $shopCounts,
+            'platformRoles' => $platformRoles,
         ]);
     }
 

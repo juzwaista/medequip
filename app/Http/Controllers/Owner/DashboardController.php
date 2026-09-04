@@ -239,14 +239,14 @@ class DashboardController extends Controller
         })
         ->where('status', 'verified')
         ->where('escrow_status', 'held')
-        ->sum(\Illuminate\Support\Facades\DB::raw('amount - platform_fee - payment_gateway_fee'));
+        ->sum('net_seller_amount');
 
         $transferredEarnings = \App\Models\Payment::whereHas('invoice.order', function ($q) use ($distributorId) {
             $q->where('distributor_id', $distributorId);
         })
         ->where('status', 'verified')
         ->whereNotNull('seller_payout_cleared_at')
-        ->sum(\Illuminate\Support\Facades\DB::raw('amount - platform_fee - payment_gateway_fee'));
+        ->sum('net_seller_amount');
 
         return [
             'preset' => $preset,

@@ -59,6 +59,8 @@ class Order extends Model
         'fulfillment_method', // delivery | pickup
         'pickup_instructions',
         'ocr_results',
+        'po_document_path',
+        'saved_purchase_order_id',
     ];
 
     protected $casts = [
@@ -250,7 +252,17 @@ class Order extends Model
      */
     public function hasOnlinePayment(): bool
     {
-        return ! $this->isCod() && $this->payment_method !== 'cash';
+        return ! $this->isCod() && $this->payment_method !== 'cash' && $this->payment_method !== 'purchase_order';
+    }
+
+    public function isPurchaseOrder(): bool
+    {
+        return $this->payment_method === 'purchase_order';
+    }
+
+    public function savedPurchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(SavedPurchaseOrder::class);
     }
 
     /**
@@ -259,7 +271,7 @@ class Order extends Model
     public static function generateOrderNumber(): string
     {
         do {
-            $number = 'ORD-'.date('Ymd').'-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            $number = 'ORD-'.date('Ymd').'-'.strtoupper(\Illuminate\Support\Str::random(6));
         } while (self::where('order_number', $number)->exists());
 
         return $number;

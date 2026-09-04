@@ -148,6 +148,18 @@ class DashboardController extends Controller
     }
 
     /**
+     * Show a specific distributor application for review
+     */
+    public function showDistributor($id)
+    {
+        $distributor = Distributor::with('owner')->findOrFail($id);
+
+        return Inertia::render('Admin/Distributors/Show', [
+            'distributor' => $distributor,
+        ]);
+    }
+
+    /**
      * Approve a distributor
      */
     public function approveDistributor($id, AdminModerationService $moderation)
@@ -167,10 +179,22 @@ class DashboardController extends Controller
         $distributor = Distributor::findOrFail($id);
 
         $validated = $request->validate([
+            'rejected_documents' => 'nullable|array',
+            'rejected_documents.*' => 'string',
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $moderation->rejectDistributor($request->user(), $distributor, $validated['reason'] ?? null);
+        $reasonParts = [];
+        if (!empty($validated['rejected_documents'])) {
+            $reasonParts[] = "Rejected Documents: " . implode(', ', $validated['rejected_documents']) . ".";
+        }
+        if (!empty($validated['reason'])) {
+            $reasonParts[] = "Notes: " . $validated['reason'];
+        }
+        
+        $finalReason = !empty($reasonParts) ? implode(' ', $reasonParts) : null;
+
+        $moderation->rejectDistributor($request->user(), $distributor, $finalReason);
 
         return redirect()->back()
             ->with('success', 'Distributor rejected.');

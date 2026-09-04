@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\ProductVariation;
+use App\Models\User;
 use InvalidArgumentException;
 
 class CartService
@@ -70,6 +71,13 @@ class CartService
                 'product_variation_id' => $variationId,
                 'quantity' => max(1, (int) $item['quantity']),
             ];
+
+            if (isset($item['rfq_price'])) {
+                $out[$lineKey]['rfq_price'] = $item['rfq_price'];
+            }
+            if (isset($item['rfq_message_id'])) {
+                $out[$lineKey]['rfq_message_id'] = $item['rfq_message_id'];
+            }
         }
 
         return $out;
@@ -78,7 +86,7 @@ class CartService
     /**
      * @return array<int, array{product: Product, quantity: int, unit_price: float, is_wholesale: bool, subtotal: float, line_key: string, product_variation_id: int|null, variation: ProductVariation|null}>
      */
-    public static function enrichCartItems(array $cart): array
+    public static function enrichCartItems(array $cart, ?User $user = null): array
     {
         $cart = self::normalizeCart($cart);
         $items = [];
@@ -117,20 +125,38 @@ class CartService
             $quantity = min($quantity, $availableStock);
 
             $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
-            $isWholesale = $product->hasWholesalePricing() && $quantity >= (int) $product->wholesale_min_qty;
-            $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
-            $unitPrice = round($base + $adjustment, 2);
+
+            // Wholesale pricing is ONLY available to approved B2B business buyers
+            $isApprovedBusiness = $user
+                && $user->businessProfile
+                && $user->businessProfile->status === 'approved';
+
+            $isWholesale = $isApprovedBusiness
+                && $product->hasWholesalePricing()
+                && $quantity >= (int) $product->wholesale_min_qty;
+
+            // RFQ negotiated price overrides everything else (no variation adjustment applies to custom quotes)
+            $rfqPrice = isset($cartItem['rfq_price']) ? (float) $cartItem['rfq_price'] : null;
+            if ($rfqPrice !== null) {
+                $unitPrice = round($rfqPrice, 2);
+                $isWholesale = false; // RFQ has its own price negotiation
+            } else {
+                $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
+                $unitPrice = round($base + $adjustment, 2);
+            }
 
             $items[] = [
-                'line_key' => $lineKey,
-                'product' => $product,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'is_wholesale' => $isWholesale,
-                'subtotal' => $unitPrice * $quantity,
+                'line_key'             => $lineKey,
+                'product'              => $product,
+                'quantity'             => $quantity,
+                'unit_price'           => $unitPrice,
+                'is_wholesale'         => $isWholesale,
+                'is_rfq'               => $rfqPrice !== null,
+                'rfq_message_id'       => $cartItem['rfq_message_id'] ?? null,
+                'subtotal'             => $unitPrice * $quantity,
                 'product_variation_id' => $variationId,
-                'variation' => $variation,
-                'variation_label' => $variation ? $variation->display_label : null,
+                'variation'            => $variation,
+                'variation_label'      => $variation ? $variation->display_label : null,
             ];
         }
 
@@ -207,6 +233,13 @@ class CartService
                 'product_variation_id' => $vid,
                 'quantity' => $qty,
             ];
+
+            if (isset($item['rfq_price'])) {
+                $out[$lineKey]['rfq_price'] = $item['rfq_price'];
+            }
+            if (isset($item['rfq_message_id'])) {
+                $out[$lineKey]['rfq_message_id'] = $item['rfq_message_id'];
+            }
         }
 
         return $out;

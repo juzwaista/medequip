@@ -75,7 +75,7 @@ class Invoice extends Model
     public static function generateInvoiceNumber(): string
     {
         do {
-            $number = 'INV-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            $number = 'INV-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6));
         } while (self::where('invoice_number', $number)->exists());
 
         return $number;

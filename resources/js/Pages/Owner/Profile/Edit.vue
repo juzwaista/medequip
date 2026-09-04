@@ -498,6 +498,8 @@ const fuzzyMatch = (input, list) => {
     return null;
 };
 
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 function initBusinessHours() {
     const saved = props.distributor.business_hours;
     if (Array.isArray(saved) && saved.length === 7) {

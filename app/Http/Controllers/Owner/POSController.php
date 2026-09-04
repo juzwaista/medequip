@@ -152,7 +152,6 @@ class POSController extends Controller
                     'verified_at'         => now(),
                     'released_at'         => now(),
                 ]);
-                $posPayment->creditSellerWalletOnVerification();
 
                 $change = number_format($validated['amount_paid'] - $totalAmount, 2);
                 return back()->with([

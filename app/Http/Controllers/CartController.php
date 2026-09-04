@@ -29,7 +29,7 @@ class CartController extends Controller
         $cart = CartService::pruneCart($this->getCart());
         $this->saveCart($cart);
 
-        $cartItems = CartService::enrichCartItems($cart);
+        $cartItems = CartService::enrichCartItems($cart, auth()->user());
         $subtotal = CartService::calculateSubtotal($cartItems);
         $shippingFeePerOrder = (float) config('services.shipping.flat_fee', 50);
         $distributorCount = collect($cartItems)
@@ -186,7 +186,7 @@ class CartController extends Controller
 
         $previewItems = [];
         if ($uniqueItems > 0) {
-            $cartItems = CartService::enrichCartItems($cart);
+            $cartItems = CartService::enrichCartItems($cart, auth()->user());
             $previewItems = collect($cartItems)->take(4)->values()->map(function ($item) {
                 $p = $item['product'];
                 $v = $item['variation'];

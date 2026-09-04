@@ -82,7 +82,9 @@ Route::middleware('auth')->get('/terms/accept', function () {
 // Checkout and Orders (Auth + verified email)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\OrderController::class, 'checkout'])->name('checkout');
-    Route::post('/orders', [\App\Http\Controllers\OrderController::class, 'placeOrder'])->name('orders.place');
+    Route::post('/orders', [\App\Http\Controllers\OrderController::class, 'placeOrder'])
+        ->middleware('throttle:5,1')
+        ->name('orders.place');
     Route::get('/orders/confirmation/{order}', [\App\Http\Controllers\OrderController::class, 'confirmation'])->name('orders.confirmation');
     Route::get('/orders/{order}/prescription', [\App\Http\Controllers\OrderController::class, 'prescriptionUploadForm'])->name('orders.prescription.show');
     Route::post('/orders/{order}/prescription', [\App\Http\Controllers\OrderController::class, 'prescriptionUpload'])->name('orders.prescription.store');
@@ -137,7 +139,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/discount-ids/{discountId}', [\App\Http\Controllers\CustomerDiscountIdController::class, 'update'])->name('discount-ids.update');
     Route::delete('/discount-ids/{discountId}', [\App\Http\Controllers\CustomerDiscountIdController::class, 'destroy'])->name('discount-ids.destroy');
     Route::post('/discount-ids/{discountId}/default', [\App\Http\Controllers\CustomerDiscountIdController::class, 'setDefault'])->name('discount-ids.setDefault');
+
+    // Saved Purchase Orders (B2B)
+    Route::get('/purchase-orders', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+    Route::post('/purchase-orders', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+    Route::put('/purchase-orders/{savedPurchaseOrder}', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+    Route::delete('/purchase-orders/{savedPurchaseOrder}', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
+
+    // RFQ (Request for Quotation) — uses the existing Conversation/Message infrastructure
+    Route::post('/rfq', [\App\Http\Controllers\RfqController::class, 'store'])->name('rfq.store');
+    Route::post('/rfq/{message}/respond', [\App\Http\Controllers\RfqController::class, 'respond'])->name('rfq.respond');
+    Route::post('/rfq/{message}/accept', [\App\Http\Controllers\RfqController::class, 'accept'])->name('rfq.accept');
 });
+
 
 // PayMongo webhook — NO auth, NO CSRF (exempted in bootstrap/app.php)
 Route::post('/payments/webhook', [\App\Http\Controllers\PaymentController::class, 'webhook'])->name('payment.webhook');
@@ -237,6 +251,17 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
         // Point of Sale (POS)
         Route::get('/pos', [\App\Http\Controllers\Owner\POSController::class, 'index'])
             ->name('pos.index');
+        
+        // Suppliers (Internal Procurement)
+        Route::resource('suppliers', \App\Http\Controllers\Owner\SupplierController::class)
+            ->except(['show', 'edit']);
+            
+        // Purchase Orders (Internal Procurement)
+        Route::get('/purchase-orders', [\App\Http\Controllers\Owner\ProcurementController::class, 'index'])->name('procurement.index');
+        Route::get('/purchase-orders/create', [\App\Http\Controllers\Owner\ProcurementController::class, 'create'])->name('procurement.create');
+        Route::post('/purchase-orders', [\App\Http\Controllers\Owner\ProcurementController::class, 'store'])->name('procurement.store');
+        Route::get('/purchase-orders/{purchase_order}', [\App\Http\Controllers\Owner\ProcurementController::class, 'show'])->name('procurement.show');
+        Route::post('/purchase-orders/{purchase_order}/status', [\App\Http\Controllers\Owner\ProcurementController::class, 'updateStatus'])->name('procurement.status');
         Route::post('/pos/checkout', [\App\Http\Controllers\Owner\POSController::class, 'checkout'])
             ->name('pos.checkout');
         Route::get('/pos/invoices/{invoice}/success', [\App\Http\Controllers\Owner\POSController::class, 'paymentSuccess'])
@@ -300,6 +325,9 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
             Route::get('/distributors', [\App\Http\Controllers\Owner\DistributorController::class, 'index'])
                 ->name('distributors.index');
 
+            // Owner Role Management
+            Route::resource('/roles', \App\Http\Controllers\Owner\RoleController::class)->except(['create', 'edit', 'show']);
+
             Route::get('/distributor/{distributor}/license/create', [\App\Http\Controllers\Owner\LicenseController::class, 'create'])
                 ->name('licenses.create');
 
@@ -354,6 +382,10 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
                 ->name('staff.store');
             Route::delete('/staff/{id}', [\App\Http\Controllers\Owner\StaffController::class, 'destroy'])
                 ->name('staff.destroy');
+
+            // Audit Logs
+            Route::get('/audit-logs', [\App\Http\Controllers\Owner\AuditLogController::class, 'index'])
+                ->name('audit-logs.index');
         });
 
     });
@@ -372,6 +404,7 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
         // Distributors Management
+        Route::get('/distributors/{id}', [\App\Http\Controllers\Admin\DashboardController::class, 'showDistributor'])->name('distributors.show');
         Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])->name('distributors.approve');
         Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])->name('distributors.reject');
 
@@ -391,6 +424,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
         Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])->name('users.ban');
         Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])->name('users.unban');
+
+        // Roles Management
+        Route::resource('/roles', \App\Http\Controllers\Admin\RoleController::class)->except(['create', 'edit', 'show']);
 
         // Courier Management
         Route::get('/couriers', [CourierController::class, 'index'])->name('couriers.index');
@@ -500,3 +536,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';
+Route::get('/corporate', [\App\Http\Controllers\CorporateController::class, 'index'])->name('corporate');
+Route::post('/corporate/register', [\App\Http\Controllers\CorporateController::class, 'register'])->name('corporate.register');
