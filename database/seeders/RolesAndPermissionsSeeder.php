@@ -46,12 +46,39 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // 3. Create Core Roles (Platform)
-        // Super Admin gets everything
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'distributor_id' => null]);
-        $superAdmin->givePermissionTo(Permission::all());
+        // 3. Create Granular Admin Permissions (admin.*)
+        // Grouped by functional area for clean UI display
+        $adminPermissions = [
+            // Distributor application lifecycle
+            'admin.applications.review',  // View pending applications
+            'admin.applications.approve', // Approve an application
+            'admin.applications.reject',  // Reject an application
 
-        // 4. Create Core Roles (Distributor)
+            // Platform-wide order visibility
+            'admin.orders.view',
+
+            // Product catalog moderation
+            'admin.products.view',
+            'admin.products.hide',        // Deactivate / hide from catalog
+            'admin.products.remove',      // Soft-delete from catalog
+
+            // Courier management
+            'admin.couriers.create',      // Create a new courier account
+
+            // Review & dispute resolution
+            'admin.disputes.review',
+        ];
+
+        foreach ($adminPermissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        // 4. Create Core Roles (Platform)
+        // Super Admin gets everything (always re-synced to pick up new permissions)
+        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'distributor_id' => null]);
+        $superAdmin->syncPermissions(Permission::all());
+
+        // 5. Create Core Roles (Distributor)
         // Note: Distributor roles are created dynamically by the distributor,
         // but we can create a generic 'Owner' role that is automatically assigned to the shop creator.
         // Wait, since 'Owner' is scoped to each distributor, we won't seed it here globally.

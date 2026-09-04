@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'otp' => \App\Http\Middleware\EnsureOTPVerified::class,
+            'admin.permission' => \App\Http\Middleware\AdminPermission::class,
             'spatie_role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'spatie_permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'spatie_role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

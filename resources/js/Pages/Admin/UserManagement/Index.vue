@@ -78,7 +78,8 @@
                             <tr>
                                 <th class="px-6 py-3">Name</th>
                                 <th class="px-6 py-3">Email</th>
-                                <th class="px-6 py-3">Role</th>
+                                <th class="px-6 py-3">System Role</th>
+                                <th class="px-6 py-3">Permission Role</th>
                                 <th class="px-6 py-3">Joined</th>
                             </tr>
                         </thead>
@@ -88,6 +89,23 @@
                                 <td class="px-6 py-3 text-gray-600">{{ a.email }}</td>
                                 <td class="px-6 py-3">
                                     <span :class="a.role === 'super_admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-blue-100 text-blue-800'" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">{{ a.role.replace('_', ' ') }}</span>
+                                </td>
+                                <td class="px-6 py-3">
+                                    <template v-if="isSuperAdmin && a.role !== 'super_admin'">
+                                        <div class="flex items-center gap-2">
+                                            <select
+                                                :value="a.roles?.[0]?.id ?? ''"
+                                                @change="assignRole(a.id, $event.target.value)"
+                                                class="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">No role</option>
+                                                <option v-for="r in platformRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
+                                            </select>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <span class="text-xs text-gray-400 italic">{{ a.role === 'super_admin' ? 'All access' : 'N/A' }}</span>
+                                    </template>
                                 </td>
                                 <td class="px-6 py-3 text-gray-400 text-xs">{{ formatDate(a.created_at) }}</td>
                             </tr>
@@ -429,6 +447,14 @@ const submitAction = () => {
 };
 
 const unbanUser = (id) => router.post(`/admin/users/${id}/unban`);
+
+const assignRole = (userId, roleId) => {
+    if (!roleId) {
+        router.delete(`/admin/users/${userId}/remove-role`);
+    } else {
+        router.post(`/admin/users/${userId}/assign-role`, { role_id: roleId });
+    }
+};
 
 const shopStatusClasses = (status) => ({
     'bg-yellow-100 text-yellow-800': status === 'pending',

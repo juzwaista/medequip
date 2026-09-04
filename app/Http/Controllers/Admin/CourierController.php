@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Courier;
 use App\Models\User;
 use App\Notifications\CourierAccountCreated;
@@ -73,6 +74,13 @@ class CourierController extends Controller
 
         $token = Password::getRepository()->create($user);
         $user->notify(new CourierAccountCreated($token));
+
+        AuditLog::log('courier_account_created', $user, [
+            'courier_name' => $user->name,
+            'courier_email' => $user->email,
+            'vehicle_type' => $request->vehicle_type,
+            'plate_number' => $request->plate_number,
+        ]);
 
         return back()->with(
             'success',

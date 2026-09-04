@@ -24,6 +24,7 @@ class UserManagementController extends Controller
         $shopStatus = $request->query('shop_status', 'all');
 
         $admins = User::whereIn('role', ['admin', 'super_admin'])
+            ->with('roles')
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->orderByDesc('created_at')
             ->get();
@@ -210,5 +211,63 @@ class UserManagementController extends Controller
         ]);
 
         return redirect()->back()->with('success', "User \"{$user->name}\" has been unbanned.");
+    }
+
+    /**
+     * Assign a Spatie platform role to an admin user (super admin only).
+     */
+    public function assignRole(Request $request, User $user)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+        if (! $currentUser || $currentUser->role !== 'super_admin') {
+            abort(403, 'Only Super Admins can assign admin roles.');
+        }
+
+        if (! in_array($user->role, ['admin', 'super_admin'])) {
+            return redirect()->back()->with('error', 'Roles can only be assigned to admin accounts.');
+        }
+
+        $validated = $request->validate([
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        $role = \Spatie\Permission\Models\Role::whereNull('distributor_id')->findOrFail($validated['role_id']);
+
+        // Sync: replace any existing platform role with the new one
+        $oldRoles = $user->getRoleNames()->implode(', ') ?: 'none';
+        $user->syncRoles([$role->name]);
+
+        AuditLog::log('admin_role_assigned', $user, [
+            'target_name' => $user->name,
+            'target_email' => $user->email,
+            'old_roles' => $oldRoles,
+            'new_role' => $role->name,
+        ]);
+
+        return redirect()->back()->with('success', "Role \"{$role->name}\" assigned to {$user->name}.");
+    }
+
+    /**
+     * Remove a Spatie platform role from an admin user (super admin only).
+     */
+    public function removeRole(User $user)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+        if (! $currentUser || $currentUser->role !== 'super_admin') {
+            abort(403, 'Only Super Admins can remove admin roles.');
+        }
+
+        $oldRoles = $user->getRoleNames()->implode(', ') ?: 'none';
+        $user->syncRoles([]);
+
+        AuditLog::log('admin_role_removed', $user, [
+            'target_name' => $user->name,
+            'target_email' => $user->email,
+            'removed_roles' => $oldRoles,
+        ]);
+
+        return redirect()->back()->with('success', "All roles removed from {$user->name}.");
     }
 }

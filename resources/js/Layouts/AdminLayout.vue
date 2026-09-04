@@ -80,6 +80,7 @@
 
                 <Link 
                     href="/admin/orders" 
+                    v-if="canDo('admin.orders.view')"
                     :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/orders') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
                 >
                     <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -88,6 +89,7 @@
 
                 <Link
                     href="/admin/products"
+                    v-if="canDo('admin.products.view')"
                     :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/products') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
                 >
                     <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -96,6 +98,7 @@
 
                 <Link 
                     href="/admin/couriers" 
+                    v-if="canDo('admin.couriers.create') || isSuperAdmin"
                     :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/couriers') && !isActive('/admin/couriers/deliveries') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
                 >
                     <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
@@ -108,6 +111,7 @@
 
                 <Link
                     href="/admin/reviews/disputes"
+                    v-if="canDo('admin.disputes.review')"
                     :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors', isActive('/admin/reviews/disputes') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800']"
                 >
                     <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -208,6 +212,21 @@ onErrorCaptured((err, instance, info) => {
 
 const page = usePage();
 const mobileSidebarOpen = ref(false);
+
+const isSuperAdmin = computed(() => {
+    return page.props.auth?.user?.role === 'super_admin';
+});
+
+/**
+ * Check if the current admin user has a specific permission.
+ * Super admins always return true (they bypass all restrictions).
+ * Regular admins check against the shared admin_permissions array.
+ */
+const canDo = (permission) => {
+    if (isSuperAdmin.value) return true;
+    const perms = page.props.admin_permissions ?? [];
+    return perms.includes(permission);
+};
 
 const openReportCount = computed(() => {
     const n = page.props.open_reports_hub_count ?? page.props.open_message_reports_count;

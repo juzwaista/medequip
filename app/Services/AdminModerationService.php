@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AuditLog;
 use App\Models\Courier;
 use App\Models\Distributor;
 use App\Models\User;
@@ -49,6 +50,12 @@ class AdminModerationService
         ]);
         $distributor->refresh();
 
+        AuditLog::log('distributor_approved', $distributor, [
+            'company_name' => $distributor->company_name,
+            'admin_id' => $actor->id,
+            'admin_name' => $actor->name,
+        ]);
+
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_approved', $distributor));
     }
 
@@ -71,6 +78,15 @@ class AdminModerationService
         $distributor->update($updates);
         $distributor->refresh();
 
+        AuditLog::log('distributor_rejected', $distributor, [
+            'company_name' => $distributor->company_name,
+            'reason' => $reason,
+            'rejection_count' => $distributor->rejection_count,
+            'cooldown_applied' => isset($updates['application_cooldown_until']),
+            'admin_id' => $actor->id,
+            'admin_name' => $actor->name,
+        ]);
+
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_rejected', $distributor, [
             'reason' => $reason,
             'rejection_count' => $distributor->rejection_count,
@@ -90,6 +106,15 @@ class AdminModerationService
             'warning_message' => $customMessage,
         ]);
         $distributor->refresh();
+
+        AuditLog::log('distributor_warned', $distributor, [
+            'company_name' => $distributor->company_name,
+            'preset' => $preset,
+            'custom_message' => $customMessage ?? '',
+            'admin_id' => $actor->id,
+            'admin_name' => $actor->name,
+        ]);
+
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_warned', $distributor, [
             'preset' => $preset,
             'custom_message' => $customMessage ?? '',
@@ -104,6 +129,16 @@ class AdminModerationService
             'suspension_reason' => $reason,
         ]);
         $distributor->refresh();
+
+        AuditLog::log('distributor_suspended', $distributor, [
+            'company_name' => $distributor->company_name,
+            'days' => $days,
+            'reason' => $reason,
+            'suspended_until' => $distributor->suspended_until?->toIso8601String(),
+            'admin_id' => $actor->id,
+            'admin_name' => $actor->name,
+        ]);
+
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_suspended', $distributor, [
             'days' => $days,
             'reason' => $reason,
@@ -118,6 +153,13 @@ class AdminModerationService
             'suspension_reason' => null,
         ]);
         $distributor->refresh();
+
+        AuditLog::log('distributor_suspension_lifted', $distributor, [
+            'company_name' => $distributor->company_name,
+            'admin_id' => $actor->id,
+            'admin_name' => $actor->name,
+        ]);
+
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_suspension_lifted', $distributor));
     }
 
@@ -129,6 +171,14 @@ class AdminModerationService
             'rejection_reason' => $reason,
         ]);
         $distributor->refresh();
+
+        AuditLog::log('distributor_banned', $distributor, [
+            'company_name' => $distributor->company_name,
+            'reason' => $reason,
+            'admin_id' => $actor->id,
+            'admin_name' => $actor->name,
+        ]);
+
         $this->notifyDistributorTeam($distributor, new DistributorModerationNotification('distributor_banned', $distributor, [
             'reason' => $reason,
         ]));

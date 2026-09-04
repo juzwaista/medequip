@@ -404,9 +404,15 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
         // Distributors Management
-        Route::get('/distributors/{id}', [\App\Http\Controllers\Admin\DashboardController::class, 'showDistributor'])->name('distributors.show');
-        Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])->name('distributors.approve');
-        Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])->name('distributors.reject');
+        Route::get('/distributors/{id}', [\App\Http\Controllers\Admin\DashboardController::class, 'showDistributor'])
+            ->middleware('admin.permission:admin.applications.review')
+            ->name('distributors.show');
+        Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])
+            ->middleware('admin.permission:admin.applications.approve')
+            ->name('distributors.approve');
+        Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])
+            ->middleware('admin.permission:admin.applications.reject')
+            ->name('distributors.reject');
 
         // DSS Risk Actions
         Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');
@@ -424,18 +430,28 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
         Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])->name('users.ban');
         Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])->name('users.unban');
+        Route::post('/users/{user}/assign-role', [\App\Http\Controllers\Admin\UserManagementController::class, 'assignRole'])->name('users.assignRole');
+        Route::delete('/users/{user}/remove-role', [\App\Http\Controllers\Admin\UserManagementController::class, 'removeRole'])->name('users.removeRole');
 
         // Roles Management
         Route::resource('/roles', \App\Http\Controllers\Admin\RoleController::class)->except(['create', 'edit', 'show']);
 
         // Courier Management
         Route::get('/couriers', [CourierController::class, 'index'])->name('couriers.index');
-        Route::post('/couriers', [CourierController::class, 'store'])->name('couriers.store');
+        Route::post('/couriers', [CourierController::class, 'store'])
+            ->middleware('admin.permission:admin.couriers.create')
+            ->name('couriers.store');
 
         // Product moderation (catalog)
-        Route::get('/products', [ProductModerationController::class, 'index'])->name('products.index');
-        Route::post('/products/{product}/deactivate', [ProductModerationController::class, 'deactivate'])->name('products.deactivate');
-        Route::post('/products/{product}/soft-delete', [ProductModerationController::class, 'softDelete'])->name('products.soft-delete');
+        Route::get('/products', [ProductModerationController::class, 'index'])
+            ->middleware('admin.permission:admin.products.view')
+            ->name('products.index');
+        Route::post('/products/{product}/deactivate', [ProductModerationController::class, 'deactivate'])
+            ->middleware('admin.permission:admin.products.hide')
+            ->name('products.deactivate');
+        Route::post('/products/{product}/soft-delete', [ProductModerationController::class, 'softDelete'])
+            ->middleware('admin.permission:admin.products.remove')
+            ->name('products.soft-delete');
 
         // Moderation reports hub (chat, user, courier, low delivery ratings)
         Route::get('/reports', [ReportHubController::class, 'index'])->name('reports.index');
@@ -458,12 +474,20 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::patch('/message-reports/{report}', [AdminMessageReportController::class, 'update'])->name('message-reports.update');
 
         // Orders overview
-        Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'show'])->name('orders.show');
+        Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])
+            ->middleware('admin.permission:admin.orders.view')
+            ->name('orders.index');
+        Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'show'])
+            ->middleware('admin.permission:admin.orders.view')
+            ->name('orders.show');
 
         // Review Disputes
-        Route::get('/reviews/disputes', [\App\Http\Controllers\Admin\ReviewDisputeController::class, 'index'])->name('reviews.disputes.index');
-        Route::patch('/reviews/disputes/{productReview}/resolve', [\App\Http\Controllers\Admin\ReviewDisputeController::class, 'resolve'])->name('reviews.disputes.resolve');
+        Route::get('/reviews/disputes', [\App\Http\Controllers\Admin\ReviewDisputeController::class, 'index'])
+            ->middleware('admin.permission:admin.disputes.review')
+            ->name('reviews.disputes.index');
+        Route::patch('/reviews/disputes/{productReview}/resolve', [\App\Http\Controllers\Admin\ReviewDisputeController::class, 'resolve'])
+            ->middleware('admin.permission:admin.disputes.review')
+            ->name('reviews.disputes.resolve');
 
         // Audit Logs
         Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-logs.index');

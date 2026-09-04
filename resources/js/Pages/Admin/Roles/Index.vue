@@ -1,91 +1,199 @@
 <template>
     <Head title="Platform Roles" />
     <AdminLayout title="Role Management">
-        <div class="max-w-7xl mx-auto py-6">
-            
-            <div class="flex justify-between items-center mb-6">
+        <div class="max-w-5xl mx-auto py-6 space-y-6">
+
+            <!-- Header -->
+            <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900">Platform Roles</h2>
-                    <p class="text-sm text-gray-500">Manage internal MedEquip staff roles and access levels.</p>
+                    <p class="text-sm text-gray-500 mt-0.5">Manage internal MedEquip staff roles and their granular access permissions.</p>
                 </div>
-                <button @click="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition">
-                    + Create Role
+                <button @click="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Create Role
                 </button>
             </div>
 
+            <!-- Roles Table -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="w-full text-left text-sm whitespace-nowrap">
+                <table class="w-full text-left text-sm">
                     <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 uppercase tracking-wider text-xs font-bold">
                         <tr>
                             <th class="px-6 py-4">Role Name</th>
-                            <th class="px-6 py-4">Permissions Count</th>
+                            <th class="px-6 py-4">Permissions</th>
                             <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <tr v-for="role in roles" :key="role.id" class="hover:bg-gray-50/50 transition">
-                            <td class="px-6 py-4 font-bold text-gray-900">
-                                {{ role.name }}
-                                <span v-if="role.name === 'Super Admin'" class="ml-2 px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-800 uppercase">Core</span>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-gray-900">{{ role.name }}</span>
+                                    <span v-if="role.name === 'Super Admin'" class="px-2 py-0.5 rounded text-[10px] bg-purple-100 text-purple-800 uppercase font-bold">Core</span>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-gray-600">
-                                {{ role.permissions?.length || 0 }} permissions
+                            <td class="px-6 py-4">
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span
+                                        v-for="perm in (role.permissions ?? []).slice(0, 5)"
+                                        :key="perm.id"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100"
+                                    >
+                                        {{ formatPermLabel(perm.name) }}
+                                    </span>
+                                    <span
+                                        v-if="(role.permissions ?? []).length > 5"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600"
+                                    >
+                                        +{{ (role.permissions ?? []).length - 5 }} more
+                                    </span>
+                                    <span v-if="!(role.permissions ?? []).length" class="text-gray-400 text-xs italic">No permissions</span>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-right">
-                                <button v-if="role.name !== 'Super Admin'" @click="openModal(role)" class="text-blue-600 hover:text-blue-800 font-semibold mr-3">Edit</button>
-                                <button v-if="role.name !== 'Super Admin'" @click="deleteRole(role)" class="text-red-600 hover:text-red-800 font-semibold">Delete</button>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button v-if="role.name !== 'Super Admin'" @click="openModal(role)" class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Edit</button>
+                                <button v-if="role.name !== 'Super Admin'" @click="deleteRole(role)" class="text-red-500 hover:text-red-700 font-semibold text-sm">Delete</button>
                             </td>
                         </tr>
                         <tr v-if="!roles.length">
-                            <td colspan="3" class="px-6 py-8 text-center text-gray-400">No custom roles found.</td>
+                            <td colspan="3" class="px-6 py-10 text-center text-gray-400">No custom roles found. Create one to get started.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Role Modal -->
-            <Teleport to="body">
-                <div v-if="modal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h3 class="text-lg font-bold text-gray-900">{{ modal.role ? 'Edit Role' : 'Create Role' }}</h3>
-                            <button @click="modal.open = false" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                        </div>
-                        
-                        <div class="p-6 overflow-y-auto">
-                            <div class="mb-6">
-                                <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Role Name</label>
-                                <input v-model="form.name" type="text" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="e.g. Compliance Officer" required>
-                                <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p>
-                            </div>
+            <!-- Permission Legend -->
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Available Permission Groups</p>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div v-for="(perms, group) in permissions" :key="group" class="bg-white rounded-lg border border-gray-200 p-3">
+                        <p class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 capitalize flex items-center gap-1.5">
+                            <span :class="groupColor(group)" class="w-2 h-2 rounded-full inline-block"></span>
+                            {{ group }}
+                        </p>
+                        <ul class="space-y-1">
+                            <li v-for="p in perms" :key="p.id" class="text-xs text-gray-500 flex items-center gap-1.5">
+                                <svg class="w-3 h-3 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                {{ formatPermLabel(p.name) }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase mb-3">Assign Permissions</label>
-                                <div class="space-y-6">
-                                    <div v-for="(perms, group) in permissions" :key="group" class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 border-b border-gray-200 pb-2">{{ group }}</h4>
-                                        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                            <label v-for="p in perms" :key="p.id" class="flex items-start gap-2 cursor-pointer">
-                                                <input type="checkbox" :value="p.name" v-model="form.permissions" class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                                <span class="text-sm text-gray-700 select-none">{{ p.name }}</span>
-                                            </label>
+        <!-- Role Modal -->
+        <Teleport to="body">
+            <div v-if="modal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">{{ modal.role ? 'Edit Role' : 'Create Role' }}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Permissions define what actions this role can perform.</p>
+                        </div>
+                        <button @click="modal.open = false" class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 overflow-y-auto space-y-6">
+
+                        <!-- Role Name -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Role Name</label>
+                            <input
+                                v-model="form.name"
+                                type="text"
+                                class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                placeholder="e.g. Applications Reviewer, Dispute Handler"
+                                required
+                            >
+                            <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p>
+                        </div>
+
+                        <!-- Permissions — Grouped by Category -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Assign Permissions</label>
+                            <div class="space-y-4">
+                                <div
+                                    v-for="(perms, group) in permissions"
+                                    :key="group"
+                                    class="border border-gray-200 rounded-xl overflow-hidden"
+                                >
+                                    <!-- Group Header -->
+                                    <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                                        <div class="flex items-center gap-2">
+                                            <span :class="groupColor(group)" class="w-2.5 h-2.5 rounded-full"></span>
+                                            <h4 class="text-sm font-bold text-gray-700 capitalize">{{ group }}</h4>
+                                            <span class="text-xs text-gray-400">({{ perms.length }} permission{{ perms.length > 1 ? 's' : '' }})</span>
                                         </div>
+                                        <!-- Select all for group -->
+                                        <button
+                                            type="button"
+                                            @click="toggleGroup(perms)"
+                                            class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                                        >
+                                            {{ isGroupAllSelected(perms) ? 'Deselect all' : 'Select all' }}
+                                        </button>
+                                    </div>
+
+                                    <!-- Permissions in Group -->
+                                    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-0 divide-x divide-y divide-gray-100">
+                                        <label
+                                            v-for="p in perms"
+                                            :key="p.id"
+                                            class="flex items-start gap-3 p-4 cursor-pointer hover:bg-blue-50/50 transition"
+                                            :class="{ 'bg-blue-50': form.permissions.includes(p.name) }"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                :value="p.name"
+                                                v-model="form.permissions"
+                                                class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+                                            >
+                                            <div>
+                                                <span class="text-sm font-semibold text-gray-800 block capitalize">{{ formatPermAction(p.name) }}</span>
+                                                <span class="text-[11px] text-gray-400">{{ p.name }}</span>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                            <!-- Selection Count -->
+                            <p class="mt-3 text-xs text-gray-500">
+                                <span class="font-bold text-blue-600">{{ form.permissions.length }}</span> permission{{ form.permissions.length !== 1 ? 's' : '' }} selected
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
+                        <button
+                            v-if="form.permissions.length > 0"
+                            type="button"
+                            @click="form.permissions = []"
+                            class="text-xs text-gray-500 hover:text-gray-700 font-semibold transition"
+                        >
+                            Clear all
+                        </button>
+                        <div v-else></div>
+                        <div class="flex gap-2">
                             <button @click="modal.open = false" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
-                            <button @click="submitRole" :disabled="form.processing" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50">
-                                Save Role
+                            <button @click="submitRole" :disabled="form.processing" class="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50 flex items-center gap-2">
+                                <svg v-if="form.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                {{ modal.role ? 'Save Changes' : 'Create Role' }}
                             </button>
                         </div>
                     </div>
                 </div>
-            </Teleport>
+            </div>
+        </Teleport>
 
-        </div>
     </AdminLayout>
 </template>
 
@@ -96,7 +204,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     roles: Array,
-    permissions: Object,
+    permissions: Object, // { applications: [...], orders: [...], products: [...], ... }
 });
 
 const modal = reactive({
@@ -134,8 +242,52 @@ const submitRole = () => {
 };
 
 const deleteRole = (role) => {
-    if (confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
+    if (confirm(`Are you sure you want to delete the role "${role.name}"? Admins assigned this role will lose its permissions.`)) {
         router.delete(`/admin/roles/${role.id}`);
     }
+};
+
+// Toggle all permissions in a group
+const toggleGroup = (perms) => {
+    const names = perms.map(p => p.name);
+    const allSelected = names.every(n => form.permissions.includes(n));
+    if (allSelected) {
+        form.permissions = form.permissions.filter(p => !names.includes(p));
+    } else {
+        const toAdd = names.filter(n => !form.permissions.includes(n));
+        form.permissions.push(...toAdd);
+    }
+};
+
+const isGroupAllSelected = (perms) => {
+    return perms.every(p => form.permissions.includes(p.name));
+};
+
+// e.g. 'admin.applications.review' → 'Review'
+const formatPermAction = (name) => {
+    const parts = name.split('.');
+    const action = parts[parts.length - 1] ?? name;
+    return action.charAt(0).toUpperCase() + action.slice(1);
+};
+
+// e.g. 'admin.applications.review' → 'Applications: Review'
+const formatPermLabel = (name) => {
+    const parts = name.split('.');
+    if (parts.length === 3) {
+        return `${parts[1].charAt(0).toUpperCase() + parts[1].slice(1)}: ${parts[2]}`;
+    }
+    return name;
+};
+
+// Color dot per group
+const groupColor = (group) => {
+    const colors = {
+        applications: 'bg-amber-400',
+        orders: 'bg-blue-400',
+        products: 'bg-emerald-400',
+        couriers: 'bg-indigo-400',
+        disputes: 'bg-rose-400',
+    };
+    return colors[group] ?? 'bg-gray-400';
 };
 </script>

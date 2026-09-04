@@ -18,9 +18,15 @@ class RoleController extends Controller
     {
         // For platform admins, we only want roles where distributor_id is null
         $roles = Role::whereNull('distributor_id')->with('permissions')->get();
-        $permissions = Permission::all()->groupBy(function($permission) {
-            return explode('-', $permission->name)[0]; // e.g. 'manage' from 'manage-users'
-        });
+
+        // Only expose admin.* permissions to the UI — group by functional area
+        // e.g. 'admin.applications.review' → group 'applications', label 'review'
+        $permissions = Permission::where('name', 'like', 'admin.%')
+            ->get()
+            ->groupBy(function ($permission) {
+                $parts = explode('.', $permission->name); // ['admin', 'applications', 'review']
+                return $parts[1] ?? 'other'; // Group key: 'applications'
+            });
 
         return Inertia::render('Admin/Roles/Index', [
             'roles' => $roles,

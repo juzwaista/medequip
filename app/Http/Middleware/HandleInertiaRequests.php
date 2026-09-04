@@ -111,6 +111,10 @@ class HandleInertiaRequests extends Middleware
                 'warning' => fn () => $request->session()->get('warning'),
                 'status' => fn () => $request->session()->get('status'),
             ],
+            // Granular permission list for the admin frontend (sidebar visibility, button gating)
+            'admin_permissions' => fn () => $user && in_array($user->role, ['admin', 'super_admin'], true)
+                ? $user->getAllPermissions()->pluck('name')->toArray()
+                : [],
         ]);
     }
 }
