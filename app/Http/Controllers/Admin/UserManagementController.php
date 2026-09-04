@@ -69,7 +69,7 @@ class UserManagementController extends Controller
         ];
 
         $platformRoles = class_exists(\Spatie\Permission\Models\Role::class) 
-            ? \Spatie\Permission\Models\Role::whereNull('distributor_id')->get(['id', 'name']) 
+            ? \Spatie\Permission\Models\Role::whereNull('distributor_id')->where('name', '!=', 'Super Admin')->get(['id', 'name']) 
             : [];
 
         return Inertia::render('Admin/UserManagement/Index', [
