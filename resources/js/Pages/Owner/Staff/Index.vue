@@ -251,13 +251,12 @@
                             <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
                                 <form @submit.prevent="submitStaff" id="staff-form" class="space-y-8">
                                     
-                                    <!-- Basic Info -->
                                     <div class="space-y-4">
                                         <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">Basic Info</h3>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                            <input type="text" v-model="staffForm.name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
-                                            <p v-if="staffForm.errors.name" class="mt-1 text-xs text-red-600">{{ staffForm.errors.name }}</p>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                            <input type="text" v-model="staffForm.username" required placeholder="Choose a unique username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
+                                            <p v-if="staffForm.errors.username" class="mt-1 text-xs text-red-600">{{ staffForm.errors.username }}</p>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
@@ -503,7 +502,7 @@ const staffDrawer = reactive({
 });
 
 const staffForm = useForm({
-    name: '',
+    username: '',
     email: '',
     invite_method: 'email', // 'email' or 'password'
     password: '',

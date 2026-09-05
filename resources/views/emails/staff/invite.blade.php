@@ -6,6 +6,7 @@ Hello {{ $user->name }},
 You have been invited to join the shop team as a staff member.
 
 **Your login details:**
+- **Username:** {{ $user->username }}
 - **Email:** {{ $user->email }}
 - **Temporary Password:** `{{ $password }}`
 

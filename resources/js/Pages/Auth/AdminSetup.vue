@@ -26,18 +26,7 @@
                         />
                     </div>
 
-                    <div>
-                        <label for="name" class="block text-[10px] font-black uppercase text-gray-500 mb-2 tracking-widest">Full Name</label>
-                        <input
-                            v-model="form.name"
-                            id="name"
-                            type="text"
-                            required
-                            placeholder="e.g. John Doe"
-                            class="block w-full px-5 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-blue-500 focus:bg-white focus:ring-0 transition-all font-bold placeholder:text-gray-300"
-                        />
-                        <span v-if="form.errors.name" class="text-xs text-red-600 mt-2 block">{{ form.errors.name }}</span>
-                    </div>
+
 
                     <div>
                         <label for="username" class="block text-[10px] font-black uppercase text-gray-500 mb-2 tracking-widest">Username</label>
@@ -105,7 +94,6 @@ const props = defineProps({
 });
 
 const form = useForm({
-    name: '',
     username: '',
     password: '',
     password_confirmation: '',

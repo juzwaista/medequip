@@ -48,7 +48,6 @@ class AdminSetupController extends Controller
         $request->validate([
             'token' => 'required|string',
             'email' => 'required|email|unique:users,email',
-            'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
@@ -62,9 +61,11 @@ class AdminSetupController extends Controller
             abort(403, 'Invalid invitation.');
         }
 
+        $displayName = \Illuminate\Support\Str::title(str_replace('_', ' ', $request->username));
+
         // Create the Admin User
         $user = User::create([
-            'name' => $request->name,
+            'name' => $displayName,
             'username' => $request->username,
             'email' => $request->email,
             'password' => $request->password, // Password is hashed automatically in User model or here

@@ -75,7 +75,7 @@ class StaffController extends Controller
         $distributor = $user->distributor;
 
         $request->validate([
-            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'permissions' => 'nullable|array',
             'permissions.*' => 'string',
@@ -84,9 +84,11 @@ class StaffController extends Controller
         ]);
 
         $password = $request->invite_method === 'email' ? Str::password(12) : $request->password;
+        $displayName = Str::title(str_replace('_', ' ', $request->username));
 
         $staffUser = User::create([
-            'name' => $request->name,
+            'name' => $displayName,
+            'username' => $request->username,
             'email' => $request->email,
             'password' => $password,
             'distributor_id' => $distributor->id,
