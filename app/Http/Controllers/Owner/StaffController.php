@@ -10,7 +10,9 @@ use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash;
 use App\Mail\StaffInviteEmail;
+use App\Models\StaffInvitation;
 
 class StaffController extends Controller
 {
@@ -75,41 +77,28 @@ class StaffController extends Controller
         $distributor = $user->distributor;
 
         $request->validate([
-            'username' => 'required|string|max:255|unique:users,username',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'permissions' => 'nullable|array',
             'permissions.*' => 'string',
-            'invite_method' => 'required|in:email,password',
-            'password' => ['required_if:invite_method,password', 'nullable', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $password = $request->invite_method === 'email' ? Str::password(12) : $request->password;
-        $displayName = Str::title(str_replace('_', ' ', $request->username));
+        $token = Str::random(32);
 
-        $staffUser = User::create([
-            'name' => $displayName,
-            'username' => $request->username,
+        // Remove any existing invitation for this email
+        StaffInvitation::where('email', $request->email)->delete();
+
+        $invitation = StaffInvitation::create([
             'email' => $request->email,
-            'password' => $password,
+            'token_hash' => Hash::make($token),
             'distributor_id' => $distributor->id,
-            'email_verified_at' => $request->invite_method === 'password' ? now() : null,
+            'invited_by_id' => $user->id,
+            'permissions' => $request->permissions,
+            'expires_at' => now()->addDays(7),
         ]);
 
-        $staffUser->forceFill(['role' => 'staff'])->save();
+        Mail::to($request->email)->send(new StaffInviteEmail($request->email, $token));
 
-        if ($request->invite_method === 'email') {
-            Mail::to($staffUser->email)->send(new StaffInviteEmail($staffUser, $password));
-        }
-
-        if (class_exists(\Spatie\Permission\Models\Role::class)) {
-            // Scope to the distributor's team before assigning permissions
-            setPermissionsTeamId($distributor->id);
-            if ($request->has('permissions')) {
-                $staffUser->syncPermissions($request->permissions);
-            }
-        }
-
-        return redirect()->back()->with('success', 'Staff account created successfully.');
+        return redirect()->back()->with('success', 'Staff invitation sent successfully.');
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\AdminSetupController;
+use App\Http\Controllers\Auth\StaffSetupController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -42,6 +43,9 @@ Route::middleware('guest')->group(function () {
     // Admin Setup via Invitation
     Route::get('admin/setup', [AdminSetupController::class, 'show'])->name('admin.setup');
     Route::post('admin/setup', [AdminSetupController::class, 'store']);
+
+    Route::get('staff/setup', [StaffSetupController::class, 'show'])->name('staff.setup');
+    Route::post('staff/setup', [StaffSetupController::class, 'store']);
 });
 
 Route::middleware('auth')->group(function () {

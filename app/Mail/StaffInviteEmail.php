@@ -13,16 +13,16 @@ class StaffInviteEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $user;
-    public $password;
+    public $email;
+    public $token;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($user, $password)
+    public function __construct($email, $token)
     {
-        $this->user = $user;
-        $this->password = $password;
+        $this->email = $email;
+        $this->token = $token;
     }
 
     /**

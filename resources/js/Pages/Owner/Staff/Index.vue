@@ -251,54 +251,13 @@
                             <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
                                 <form @submit.prevent="submitStaff" id="staff-form" class="space-y-8">
                                     
-                                    <div class="space-y-4">
-                                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">Basic Info</h3>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                                            <input type="text" v-model="staffForm.username" required placeholder="Choose a unique username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
-                                            <p v-if="staffForm.errors.username" class="mt-1 text-xs text-red-600">{{ staffForm.errors.username }}</p>
-                                        </div>
+
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                                             <input type="email" v-model="staffForm.email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
                                             <p v-if="staffForm.errors.email" class="mt-1 text-xs text-red-600">{{ staffForm.errors.email }}</p>
                                         </div>
-                                    </div>
 
-                                    <hr class="border-gray-100">
-
-                                    <!-- Invite Method -->
-                                    <div class="space-y-4">
-                                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">Invite Method</h3>
-                                        <div class="space-y-3">
-                                            <label class="flex items-start">
-                                                <input type="radio" v-model="staffForm.invite_method" value="email" class="mt-0.5 h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300">
-                                                <div class="ml-3">
-                                                    <span class="block text-sm font-medium text-gray-900">Send Invite Email</span>
-                                                    <span class="block text-xs text-gray-500">System will email a temporary password.</span>
-                                                </div>
-                                            </label>
-                                            <label class="flex items-start">
-                                                <input type="radio" v-model="staffForm.invite_method" value="password" class="mt-0.5 h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300">
-                                                <div class="ml-3">
-                                                    <span class="block text-sm font-medium text-gray-900">Set Temporary Password</span>
-                                                    <span class="block text-xs text-gray-500">Provide a password directly to the user.</span>
-                                                </div>
-                                            </label>
-                                        </div>
-
-                                        <div v-if="staffForm.invite_method === 'password'" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
-                                                <input type="password" v-model="staffForm.password" :required="staffForm.invite_method === 'password'" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
-                                                <p v-if="staffForm.errors.password" class="mt-1 text-xs text-red-600">{{ staffForm.errors.password }}</p>
-                                            </div>
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                                                <input type="password" v-model="staffForm.password_confirmation" :required="staffForm.invite_method === 'password'" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <hr class="border-gray-100">
 
@@ -358,7 +317,7 @@
                                     Cancel
                                 </button>
                                 <button type="submit" form="staff-form" :disabled="staffForm.processing" class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50">
-                                    {{ staffForm.processing ? 'Saving...' : (staffForm.invite_method === 'email' ? 'Send Invite' : 'Save Member') }}
+                                    {{ staffForm.processing ? 'Sending...' : 'Send Invite' }}
                                 </button>
                             </div>
                         </div>
@@ -502,11 +461,7 @@ const staffDrawer = reactive({
 });
 
 const staffForm = useForm({
-    username: '',
     email: '',
-    invite_method: 'email', // 'email' or 'password'
-    password: '',
-    password_confirmation: '',
     permissions: [],
 });
 
