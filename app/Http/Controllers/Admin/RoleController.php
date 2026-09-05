@@ -19,23 +19,16 @@ class RoleController extends Controller
         // For platform admins, we only want roles where distributor_id is null
         $roles = Role::whereNull('distributor_id')->with('permissions')->get();
 
-        // Only expose admin.* permissions to the UI — group by functional area
-        // e.g. 'admin.applications.review' → group 'applications', label 'review'
+        // Match the same pattern as Owner\RoleController which works.
+        // groupBy() returns a Collection keyed by group name; Inertia serializes
+        // it as a plain object { applications: [...], orders: [...] } which Vue
+        // iterates with v-for="(perms, group) in permissions".
         $permissions = Permission::where('name', 'like', 'admin.%')
             ->get()
             ->groupBy(function ($permission) {
-                $parts = explode('.', $permission->name); // ['admin', 'applications', 'review']
-                return $parts[1] ?? 'other'; // Group key: 'applications'
-            })
-            ->map(function ($perms, $group) {
-                return [
-                    'group' => $group,
-                    // Explicitly convert to plain arrays so Inertia serializes correctly
-                    'perms' => $perms->values()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->values()->all(),
-                ];
-            })
-            ->values()
-            ->all(); // ->all() returns a plain PHP array, not a Collection
+                $parts = explode('.', $permission->name);
+                return $parts[1] ?? 'other';
+            });
 
         return Inertia::render('Admin/Roles/Index', [
             'roles' => $roles,
