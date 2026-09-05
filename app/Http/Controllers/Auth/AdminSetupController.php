@@ -49,6 +49,7 @@ class AdminSetupController extends Controller
             'token' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -64,6 +65,7 @@ class AdminSetupController extends Controller
         // Create the Admin User
         $user = User::create([
             'name' => $request->name,
+            'username' => $request->username,
             'email' => $request->email,
             'password' => $request->password, // Password is hashed automatically in User model or here
         ]);
