@@ -66,10 +66,12 @@ class AdminSetupController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => $request->password, // Password is hashed automatically in User model or here
-            'email_verified_at' => now(), // They verified by clicking the link
         ]);
 
-        $user->forceFill(['role' => 'admin'])->save();
+        $user->forceFill([
+            'role' => 'admin',
+            'email_verified_at' => now(), // They verified by clicking the link
+        ])->save();
 
         if ($invitation->role_id) {
             $role = \Spatie\Permission\Models\Role::find($invitation->role_id);
