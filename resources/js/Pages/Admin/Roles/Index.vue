@@ -102,37 +102,37 @@
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Assign Permissions</label>
 
                             <!-- No permissions fallback -->
-                            <div v-if="Object.keys(permissions).length === 0" class="rounded-xl border border-dashed border-gray-300 py-8 text-center text-gray-400 text-sm">
+                            <div v-if="permissions.length === 0" class="rounded-xl border border-dashed border-gray-300 py-8 text-center text-gray-400 text-sm">
                                 No permissions available. Make sure permissions are seeded in the database.
                             </div>
 
                             <div v-else class="space-y-4">
                                 <div
-                                    v-for="(perms, group) in permissions"
-                                    :key="group"
+                                    v-for="item in permissions"
+                                    :key="item.group"
                                     class="border border-gray-200 rounded-xl overflow-hidden"
                                 >
                                     <!-- Group Header -->
                                     <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
                                         <div class="flex items-center gap-2">
-                                            <span :class="groupColor(group)" class="w-2.5 h-2.5 rounded-full"></span>
-                                            <h4 class="text-sm font-bold text-gray-700 capitalize">{{ group }}</h4>
-                                            <span class="text-xs text-gray-400">({{ perms.length }} permission{{ perms.length > 1 ? 's' : '' }})</span>
+                                            <span :class="groupColor(item.group)" class="w-2.5 h-2.5 rounded-full"></span>
+                                            <h4 class="text-sm font-bold text-gray-700 capitalize">{{ item.group }}</h4>
+                                            <span class="text-xs text-gray-400">({{ item.perms.length }} permission{{ item.perms.length > 1 ? 's' : '' }})</span>
                                         </div>
                                         <!-- Select all for group -->
                                         <button
                                             type="button"
-                                            @click="toggleGroup(perms)"
+                                            @click="toggleGroup(item.perms)"
                                             class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
                                         >
-                                            {{ isGroupAllSelected(perms) ? 'Deselect all' : 'Select all' }}
+                                            {{ isGroupAllSelected(item.perms) ? 'Deselect all' : 'Select all' }}
                                         </button>
                                     </div>
 
                                     <!-- Permissions in Group -->
                                     <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-0 divide-x divide-y divide-gray-100">
                                         <label
-                                            v-for="p in perms"
+                                            v-for="p in item.perms"
                                             :key="p.id"
                                             class="flex items-start gap-3 p-4 cursor-pointer hover:bg-blue-50/50 transition"
                                             :class="{ 'bg-blue-50': form.permissions.includes(p.name) }"
@@ -192,7 +192,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     roles: { type: Array, default: () => [] },
-    permissions: { type: Object, default: () => ({}) },
+    permissions: { type: Array, default: () => [] },
 });
 
 const modal = reactive({

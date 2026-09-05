@@ -56,9 +56,11 @@ class AdminManagementController extends Controller
             'role_id' => $request->role_id,
         ]);
 
-        // Dispatch Notification (with raw token)
+        $roleName = $request->role_id ? \Spatie\Permission\Models\Role::find($request->role_id)?->name : null;
+
+        // Dispatch Notification (with raw token and role)
         Notification::route('mail', $request->email)
-            ->notify(new AdminInvitationNotification($rawToken, $request->email));
+            ->notify(new AdminInvitationNotification($rawToken, $request->email, $roleName));
 
         // Audit Log
         Log::info('Staff Admin Invitation Issued', [

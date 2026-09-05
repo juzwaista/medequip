@@ -3,24 +3,25 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AdminInvitation extends Notification implements ShouldQueue
+class AdminInvitation extends Notification
 {
     use Queueable;
 
     protected $token;
     protected $email;
+    protected $roleName;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($token, $email)
+    public function __construct($token, $email, $roleName = null)
     {
         $this->token = $token;
         $this->email = $email;
+        $this->roleName = $roleName;
     }
 
     /**
@@ -39,13 +40,15 @@ class AdminInvitation extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $setupUrl = url('/admin/setup?token=' . $this->token . '&email=' . urlencode($this->email));
+        $roleText = $this->roleName ? " with the role of **{$this->roleName}**" : "";
 
         return (new MailMessage)
             ->subject('MedEquip Administrative Invitation')
             ->greeting('Hello!')
-            ->line('You have been invited to join the MedEquip platform as an administrator.')
-            ->line('To complete your account setup, please click the button below to verify your email and set your password.')
-            ->action('Set Up My Account', $setupUrl)
+            ->line("You have been invited to join the MedEquip platform as an administrator{$roleText}.")
+            ->line('To complete your account setup, please click the button below.')
+            ->line('**Important:** You will be required to set a strong password to activate your account upon clicking the link.')
+            ->action('Set Up My Account & Password', $setupUrl)
             ->line('This invitation link will expire in 24 hours.')
             ->line('If you were not expecting this invitation, no further action is required.')
             ->salutation('Best regards, The MedEquip Team');
