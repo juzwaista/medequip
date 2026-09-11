@@ -19,8 +19,9 @@ class SetTeamIdMiddleware
 
         if ($user && class_exists(\Spatie\Permission\Models\Role::class)) {
             if ($user->role === 'distributor' || $user->role === 'staff') {
-                if ($user->distributor_id) {
-                    setPermissionsTeamId($user->distributor_id);
+                $teamId = $user->role === 'distributor' && $user->distributor ? $user->distributor->id : $user->distributor_id;
+                if ($teamId) {
+                    setPermissionsTeamId($teamId);
                 }
             } else {
                 // Platform admins operate outside of a team

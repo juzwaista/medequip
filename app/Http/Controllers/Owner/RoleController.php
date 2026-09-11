@@ -16,7 +16,8 @@ class RoleController extends Controller
      */
     public function index(Request $request)
     {
-        $distributorId = $request->user()->distributor_id;
+        $user = $request->user();
+        $distributorId = $user->role === 'distributor' ? $user->distributor->id : $user->distributor_id;
         
         // Only fetch roles that belong to this distributor
         $roles = Role::where('distributor_id', $distributorId)->with('permissions')->get();
@@ -40,7 +41,8 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
-        $distributorId = $request->user()->distributor_id;
+        $user = $request->user();
+        $distributorId = $user->role === 'distributor' ? $user->distributor->id : $user->distributor_id;
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('roles')->where(function ($query) use ($distributorId) {
@@ -69,10 +71,11 @@ class RoleController extends Controller
      */
     public function update(Request $request, Role $role)
     {
-        $distributorId = $request->user()->distributor_id;
+        $user = $request->user();
+        $distributorId = $user->role === 'distributor' ? $user->distributor->id : $user->distributor_id;
 
         if ($role->distributor_id !== $distributorId) {
-            abort(403, 'Unauthorized access to this role.');
+            abort(403, 'Unauthorized action.');
         }
 
         $validated = $request->validate([
@@ -101,8 +104,11 @@ class RoleController extends Controller
      */
     public function destroy(Request $request, Role $role)
     {
-        if ($role->distributor_id !== $request->user()->distributor_id) {
-            abort(403, 'Unauthorized access to this role.');
+        $user = $request->user();
+        $distributorId = $user->role === 'distributor' ? $user->distributor->id : $user->distributor_id;
+
+        if ($role->distributor_id !== $distributorId) {
+            abort(403, 'Unauthorized action.');
         }
 
         if ($role->name === 'Owner') {
