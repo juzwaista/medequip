@@ -276,8 +276,8 @@
                             </span>
                                 <Link
                                     v-if="rev.product"
-                                    :href="`/products/${rev.product.id}`"
-                                    class="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                                    :href="`/products/${rev.product.slug}`"
+                                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 line-clamp-1"
                                 >
                                     {{ rev.product.name }}
                                 </Link>

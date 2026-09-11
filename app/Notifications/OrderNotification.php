@@ -154,21 +154,21 @@ class OrderNotification extends Notification
     private function resolveActionHref(object $notifiable): string
     {
         $role = $notifiable->role ?? 'customer';
-        $orderId = $this->order->id;
+        $orderNum = $this->order->order_number;
 
         if ($this->kind === 'order_requires_prescription') {
-            return "/orders/{$orderId}";
+            return "/orders/{$orderNum}";
         }
 
         if (in_array($role, ['distributor', 'staff'], true)) {
-            return "/owner/orders/{$orderId}";
+            return "/owner/orders/{$orderNum}";
         }
 
         if ($role === 'courier') {
             return '/courier/deliveries';
         }
 
-        return "/orders/{$orderId}";
+        return "/orders/{$orderNum}";
     }
 }
 

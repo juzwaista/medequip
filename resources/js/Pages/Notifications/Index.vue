@@ -389,7 +389,7 @@ function resolveHref(n) {
     if (kind === 'welcome') return '/products';
     if (kind === 'new_chat_message') return '/messages';
 
-    const id = n.data?.order_id;
+    const id = n.data?.order_number || n.data?.order_id;
     const role = page.props.auth?.user?.role;
     if (!id) return '/notifications';
     if (role === 'distributor' || role === 'staff') return `/owner/orders/${id}`;

@@ -89,7 +89,7 @@
                             <div class="flex-1">
                                 <div class="flex justify-between">
                                     <div>
-                                        <Link :href="`/products/${item.product.id}`" class="text-lg font-semibold text-gray-900 hover:text-blue-600">
+                                        <Link :href="`/products/${item.product.slug}`" class="text-lg font-semibold text-gray-900 hover:text-blue-600">
                                             {{ item.product.name }}
                                         </Link>
                                         <p v-if="item.variation_label" class="text-sm text-blue-700 font-medium mt-0.5">{{ item.variation_label }}</p>

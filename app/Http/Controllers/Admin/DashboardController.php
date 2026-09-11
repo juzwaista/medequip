@@ -181,7 +181,7 @@ class DashboardController extends Controller
         $validated = $request->validate([
             'rejected_documents' => 'nullable|array',
             'rejected_documents.*' => 'string',
-            'reason' => 'nullable|string|max:500',
+            'reason' => 'required|string|max:500',
         ]);
 
         $reasonParts = [];

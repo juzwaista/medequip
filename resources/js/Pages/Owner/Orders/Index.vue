@@ -63,7 +63,7 @@
                     <Link
                         v-for="order in orders.data"
                         :key="'m-' + order.id"
-                        :href="`/owner/orders/${order.id}`"
+                        :href="`/owner/orders/${order.order_number}`"
                         class="block p-4 hover:bg-gray-50 active:bg-gray-100 transition min-h-[72px] touch-manipulation"
                     >
                         <div class="flex justify-between items-start gap-2">
@@ -119,7 +119,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a 
-                                    :href="`/owner/orders/${order.id}`"
+                                    :href="`/owner/orders/${order.order_number}`"
                                     class="text-blue-600 hover:text-blue-900"
                                 >
                                     View Details

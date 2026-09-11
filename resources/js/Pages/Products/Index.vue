@@ -131,7 +131,7 @@
                         <Link 
                             v-for="prod in autocompleteResults.products" 
                             :key="'p-'+prod.id" 
-                            :href="`/products/${prod.id}`"
+                            :href="`/products/${prod.slug}`"
                             class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0"
                         >
                             <div class="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">

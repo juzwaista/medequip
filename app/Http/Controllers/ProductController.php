@@ -107,7 +107,7 @@ class ProductController extends Controller
     /**
      * Display product detail page
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $slug)
     {
         $product = Product::with([
             'category',
@@ -120,7 +120,8 @@ class ProductController extends Controller
                 $q->where('status', '!=', 'banned');
             })
             ->where('is_active', true)
-            ->findOrFail($id);
+            ->where('slug', $slug)
+            ->firstOrFail();
 
         // DSS Engine: Frequently Bought Together
         $fbtProductIds = \Illuminate\Support\Facades\DB::table('order_items')

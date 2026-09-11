@@ -39,6 +39,7 @@ class StaffInvitation extends Model
     public function inviter()
     {
         return $this->belongsTo(User::class, 'invited_by_id');
+    }
     /**
      * Check if the invitation is expired.
      */

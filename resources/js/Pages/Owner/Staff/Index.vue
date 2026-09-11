@@ -42,102 +42,76 @@
                 
                 <!-- STAFF ACCOUNTS TAB -->
                 <div v-show="activeTab === 'staff'">
-                    <!-- Action Bar -->
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                        <div class="flex flex-1 gap-3 w-full sm:w-auto">
-                            <div class="relative max-w-sm w-full">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                </div>
-                                <input
-                                    type="text"
-                                    v-model="staffSearch"
-                                    class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
-                                    placeholder="Search by name or email..."
-                                />
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Add Staff Form -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
+                                <h2 class="text-xl font-bold text-gray-900 mb-6">Add New Staff</h2>
+                                <form @submit.prevent="submitStaff" class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" v-model="staffForm.email" required class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm">
+                                        <p v-if="staffForm.errors.email" class="mt-1 text-sm text-red-600">{{ staffForm.errors.email }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Assign Role Template</label>
+                                        <select v-model="staffDrawer.selectedTemplate" @change="applyRoleTemplateToStaff" required class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm">
+                                            <option value="" disabled>Select Role...</option>
+                                            <option v-for="r in shopRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" :disabled="staffForm.processing" class="w-full bg-blue-600 text-white font-black py-3 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 uppercase tracking-widest text-[11px]">
+                                        {{ staffForm.processing ? 'Sending...' : 'Send Invitation' }}
+                                    </button>
+                                </form>
                             </div>
-                            <!-- Future filter dropdowns could go here -->
                         </div>
-                        <button
-                            @click="openStaffDrawer()"
-                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 w-full sm:w-auto"
-                        >
-                            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Staff Member
-                        </button>
-                    </div>
 
-                    <!-- Staff Data Table -->
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50/50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Staff Member</th>
-                                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Role</th>
-                                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Permissions Summary</th>
-                                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <template v-if="filteredStaff.length > 0">
-                                        <tr v-for="staff in filteredStaff" :key="staff.id" class="hover:bg-gray-50/50 transition-colors">
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="flex items-center">
-                                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 font-bold text-sm border border-gray-200">
-                                                        {{ getInitials(staff.name) }}
-                                                    </div>
-                                                    <div class="ml-4">
-                                                        <div class="text-sm font-medium text-gray-900">{{ staff.name }}</div>
-                                                        <div class="text-sm text-gray-500">{{ staff.email }}</div>
-                                                    </div>
+                        <!-- Staff List -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                                    <h2 class="text-xl font-bold text-gray-900">Current Staff</h2>
+                                    <div class="relative w-64">
+                                        <input type="text" v-model="staffSearch" class="block w-full pl-3 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Search...">
+                                    </div>
+                                </div>
+                                <div v-if="filteredStaff.length > 0" class="divide-y divide-gray-200">
+                                    <div v-for="staff in filteredStaff" :key="staff.id" class="p-6 hover:bg-gray-50 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                                                    {{ getInitials(staff.name) }}
                                                 </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <p class="font-bold text-gray-900">{{ staff.name }}</p>
+                                                    <p class="text-sm text-gray-500">{{ staff.email }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-4">
                                                 <span v-if="staff.roles && staff.roles.length > 0" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                                                     {{ staff.roles[0].name }}
                                                 </span>
                                                 <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                                                    Custom
+                                                    Custom Access
                                                 </span>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="text-sm text-gray-500 truncate max-w-xs" :title="staff.permissions.map(p => formatPermissionName(p.name)).join(', ')">
-                                                    {{ staff.permissions.length > 0 ? staff.permissions.length + ' permissions' : 'No access' }}
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                
                                                 <span v-if="staff.email_verified_at" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                                                    <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-green-500" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                                                     Active
                                                 </span>
                                                 <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                                                    <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-yellow-500" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                                                     Pending
                                                 </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                                                <!-- Edit removed for now per initial spec focusing on Create, can be added easily -->
-                                                <button @click="removeStaff(staff.id)" class="text-red-500 hover:text-red-700 transition-colors">Revoke Access</button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                    <tr v-else>
-                                        <td colspan="5" class="py-24 px-6 text-center">
-                                            <svg class="mx-auto h-16 w-16 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
-                                            <h3 class="mt-4 text-base font-medium text-gray-900">No staff members found</h3>
-                                            <p class="mt-1 text-sm text-gray-500">You haven't added any team members yet.</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+                                                <button @click="removeStaff(staff.id)" class="text-red-500 hover:text-red-700 transition-colors text-sm font-medium ml-4">Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="p-12 text-center text-gray-500">
+                                    <p>No staff members found.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -231,99 +205,7 @@
 
             </div>
 
-                    <!-- Staff Modal -->
-            <Teleport to="body">
-                <div v-if="staffDrawer.open" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" @click="closeStaffDrawer()"></div>
-                        
-                        <!-- This element is to trick the browser into centering the modal contents. -->
-                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                        
-                        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
-                            <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-                                <h2 class="text-lg font-semibold text-gray-900">Add Staff Member</h2>
-                                <button @click="closeStaffDrawer()" class="text-gray-400 hover:text-gray-500">
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
-                            
-                            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
-                                <form @submit.prevent="submitStaff" id="staff-form" class="space-y-8">
-                                    
 
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                            <input type="email" v-model="staffForm.email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
-                                            <p v-if="staffForm.errors.email" class="mt-1 text-xs text-red-600">{{ staffForm.errors.email }}</p>
-                                        </div>
-
-
-                                    <hr class="border-gray-100">
-
-                                    <!-- Role Selection -->
-                                    <div class="space-y-4">
-                                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">Role & Access</h3>
-                                        <div class="space-y-3">
-                                            <label class="flex items-start">
-                                                <input type="radio" v-model="staffDrawer.roleType" value="template" class="mt-0.5 h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300">
-                                                <div class="ml-3">
-                                                    <span class="block text-sm font-medium text-gray-900">Select Role</span>
-                                                </div>
-                                            </label>
-                                            <div v-if="staffDrawer.roleType === 'template'" class="ml-7 mt-2">
-                                                <select v-model="staffDrawer.selectedTemplate" @change="applyRoleTemplateToStaff" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 sm:text-sm">
-                                                    <option value="" disabled>Select a role...</option>
-                                                    <option v-for="r in shopRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
-                                                </select>
-                                            </div>
-
-                                            <label class="flex items-start">
-                                                <input type="radio" v-model="staffDrawer.roleType" value="custom" @change="staffForm.permissions = []" class="mt-0.5 h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300">
-                                                <div class="ml-3">
-                                                    <span class="block text-sm font-medium text-gray-900">Custom Permissions</span>
-                                                </div>
-                                            </label>
-                                        </div>
-
-                                        <!-- Custom Permissions Checkboxes -->
-                                        <div v-if="staffDrawer.roleType === 'custom'" class="ml-7 mt-4 space-y-5">
-                                            <div v-for="(perms, group) in permissions" :key="group">
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <span class="text-xs font-semibold text-gray-500 uppercase">{{ group }}</span>
-                                                    <input type="checkbox"
-                                                        :checked="perms.every(p => staffForm.permissions.includes(p.name))"
-                                                        @change="toggleGroupPermissions($event, perms, staffForm.permissions)"
-                                                        class="rounded-sm border-gray-300 text-gray-900 focus:ring-gray-900 h-3.5 w-3.5 cursor-pointer"
-                                                        title="Toggle all"
-                                                    >
-                                                </div>
-                                                <div class="space-y-2">
-                                                    <label v-for="p in perms" :key="p.id" class="flex items-center gap-2 cursor-pointer">
-                                                        <input type="checkbox" :value="p.name" v-model="staffForm.permissions" class="rounded-sm border-gray-300 text-gray-900 focus:ring-gray-900 h-4 w-4">
-                                                        <span class="text-sm text-gray-700 capitalize">{{ formatPermissionName(p.name) }}</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                </form>
-                            </div>
-                            
-                            <!-- Sticky Footer -->
-                            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                                <button type="button" @click="closeStaffDrawer()" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                    Cancel
-                                </button>
-                                <button type="submit" form="staff-form" :disabled="staffForm.processing" class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50">
-                                    {{ staffForm.processing ? 'Sending...' : 'Send Invite' }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Teleport>
 
             <!-- ROLE MODAL -->
             <Teleport to="body">
@@ -489,10 +371,10 @@ const applyRoleTemplateToStaff = () => {
 };
 
 const submitStaff = () => {
-    // If they chose template but didn't select one, they might pass empty permissions, backend handles it
     staffForm.post(route('owner.staff.store'), {
         onSuccess: () => {
-            closeStaffDrawer();
+            staffForm.reset();
+            staffDrawer.selectedTemplate = '';
         }
     });
 };

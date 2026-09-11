@@ -7,7 +7,7 @@
                     <h1 class="text-3xl font-bold text-gray-900">Pay Invoice</h1>
                     <p class="text-gray-600 mt-1">{{ invoice.invoice_number }}</p>
                 </div>
-                <Link :href="`/orders/${invoice.order.id}`" class="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                <Link :href="`/orders/${invoice.order.order_number}`" class="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>

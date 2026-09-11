@@ -112,6 +112,10 @@ import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 const props = defineProps({
     suppliers: Array,
     products: Array,
+    prefill: {
+        type: Object,
+        default: () => ({})
+    }
 });
 
 const form = useForm({
@@ -119,7 +123,11 @@ const form = useForm({
     expected_delivery_date: '',
     notes: '',
     items: [
-        { product_id: '', quantity_ordered: 1, unit_cost: 0 }
+        { 
+            product_id: props.prefill?.product_id || '', 
+            quantity_ordered: props.prefill?.qty ? Number(props.prefill.qty) : 1, 
+            unit_cost: 0 
+        }
     ]
 });
 

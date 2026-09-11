@@ -286,6 +286,9 @@
                                                 placeholder="0"
                                                 class="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500"
                                             />
+                                            <Link v-if="combo.stock === 0" href="/owner/procurement/create" class="block mt-1 text-[10px] text-indigo-600 hover:underline font-bold whitespace-nowrap">
+                                                Restock via PO &rarr;
+                                            </Link>
                                         </td>
                                         <td class="px-3 py-2 text-center">
                                             <input v-model="combo.is_active" type="checkbox" class="rounded border-gray-300 text-blue-600" />
@@ -387,6 +390,11 @@
                                     required
                                     class="mt-4 w-full shrink-0 px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                                 />
+                                <div v-if="fields.initial_quantity === 0" class="mt-3 shrink-0">
+                                    <Link href="/owner/procurement/create" class="inline-flex text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-md border border-indigo-200 hover:bg-indigo-100">
+                                        + Restock via Purchase Order
+                                    </Link>
+                                </div>
                                 <p v-if="baseReserved > 0" class="text-xs text-amber-800 mt-2 shrink-0">
                                     {{ baseReserved }} unit(s) reserved on open orders (minimum on-hand).
                                 </p>

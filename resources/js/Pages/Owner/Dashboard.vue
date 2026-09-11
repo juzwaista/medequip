@@ -44,6 +44,59 @@
                 </Link>
             </div>
 
+            <!-- Getting Started Checklist -->
+            <section v-if="setupProgress < 100" class="mb-8 bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
+                <div class="bg-blue-50/50 px-6 py-4 border-b border-blue-100 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-bold text-blue-900">Getting Started</h2>
+                        <p class="text-xs text-blue-600 mt-0.5">Complete these steps to fully activate your shop.</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-black text-blue-700">{{ setupProgress }}%</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+                        <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" :style="{ width: setupProgress + '%' }"></div>
+                    </div>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <div class="mt-0.5">
+                                <svg v-if="distributor.address && distributor.latitude" class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-gray-900" :class="{'line-through text-gray-500': distributor.address && distributor.latitude}">Set store address</p>
+                                <p class="text-xs text-gray-500" v-if="!distributor.address || !distributor.latitude">Help couriers find your warehouse.</p>
+                            </div>
+                            <Link v-if="!distributor.address || !distributor.latitude" href="/owner/profile/edit" class="text-xs font-bold text-blue-600 hover:text-blue-800">Complete &rarr;</Link>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="mt-0.5">
+                                <svg v-if="distributor.logo_path && distributor.cover_photo_path" class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-gray-900" :class="{'line-through text-gray-500': distributor.logo_path && distributor.cover_photo_path}">Upload shop branding</p>
+                                <p class="text-xs text-gray-500" v-if="!distributor.logo_path || !distributor.cover_photo_path">Add a logo and cover photo to build trust.</p>
+                            </div>
+                            <Link v-if="!distributor.logo_path || !distributor.cover_photo_path" href="/owner/profile/edit" class="text-xs font-bold text-blue-600 hover:text-blue-800">Complete &rarr;</Link>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="mt-0.5">
+                                <svg v-if="stats.totalProducts > 0" class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-gray-900" :class="{'line-through text-gray-500': stats.totalProducts > 0}">Add your first product</p>
+                                <p class="text-xs text-gray-500" v-if="stats.totalProducts === 0">List your inventory to start selling.</p>
+                            </div>
+                            <Link v-if="stats.totalProducts === 0" href="/owner/inventory/create" class="text-xs font-bold text-blue-600 hover:text-blue-800">Complete &rarr;</Link>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
 
 
             <!-- Today at a Glance -->
@@ -343,7 +396,7 @@
                         <Link
                             v-for="order in filteredQueue"
                             :key="order.id"
-                            :href="`/owner/orders/${order.id}`"
+                            :href="`/owner/orders/${order.order_number}`"
                             class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-3 sm:px-6 py-4 hover:bg-slate-50 transition-colors group touch-manipulation min-h-[56px]"
                         >
                             <div class="flex items-center gap-3 shrink-0">
@@ -473,6 +526,17 @@ const filteredQueue = computed(() => {
     const pid = queueFilterProductId.value;
     if (!pid) return list;
     return list.filter((o) => (o.product_ids || []).includes(pid));
+});
+
+const setupProgress = computed(() => {
+    let completed = 0;
+    const total = 3;
+    
+    if (props.distributor.address && props.distributor.latitude) completed++;
+    if (props.distributor.logo_path && props.distributor.cover_photo_path) completed++;
+    if (props.stats.totalProducts > 0) completed++;
+    
+    return Math.round((completed / total) * 100);
 });
 
 function pipelineAccent(key) {

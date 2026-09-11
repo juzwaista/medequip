@@ -47,6 +47,7 @@ class ProcurementController extends Controller
         return Inertia::render('Owner/Procurement/CreatePO', [
             'suppliers' => $suppliers,
             'products' => $products,
+            'prefill' => $request->only(['product_id', 'qty']),
         ]);
     }
 

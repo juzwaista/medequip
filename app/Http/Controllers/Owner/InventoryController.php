@@ -608,9 +608,9 @@ class InventoryController extends Controller
     }
 
     /**
-     * Quick stock adjustment
+     * Quick manage stock, price, and reorder level
      */
-    public function adjustStock(Request $request, $id)
+    public function quickEdit(Request $request, $id)
     {
         $distributor = $this->getDistributor();
 
@@ -624,6 +624,8 @@ class InventoryController extends Controller
             'adjustment' => 'required|integer',
             'reason' => 'nullable|string|max:255',
             'product_variation_id' => $hasVariations ? 'required|exists:product_variations,id' : 'nullable|exists:product_variations,id',
+            'base_price' => 'required|numeric|min:0',
+            'reorder_level' => 'required|integer|min:0',
         ]);
 
         if ($hasVariations) {
@@ -632,6 +634,9 @@ class InventoryController extends Controller
                 return back()->withErrors(['error' => 'Invalid product option.']);
             }
         }
+
+        // Update product base price
+        $product->update(['base_price' => $validated['base_price']]);
 
         $variationId = $hasVariations ? (int) $validated['product_variation_id'] : null;
 
@@ -645,7 +650,7 @@ class InventoryController extends Controller
                 'product_variation_id' => $variationId,
                 'branch_id' => null,
                 'quantity' => 0,
-                'reorder_level' => 10,
+                'reorder_level' => $validated['reorder_level'],
                 'reserved_quantity' => 0,
             ]);
         }
@@ -656,9 +661,12 @@ class InventoryController extends Controller
             return back()->withErrors(['error' => 'Stock cannot be negative.']);
         }
 
-        $inventory->update(['quantity' => $newQuantity]);
+        $inventory->update([
+            'quantity' => $newQuantity,
+            'reorder_level' => $validated['reorder_level'],
+        ]);
 
-        return back()->with('success', "Stock adjusted successfully. New quantity: {$newQuantity}");
+        return back()->with('success', "Stock and details adjusted successfully.");
     }
 
     /**

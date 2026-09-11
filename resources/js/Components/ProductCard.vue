@@ -1,6 +1,6 @@
 <template>
     <Link
-        :href="'/products/' + product.id"
+        :href="'/products/' + product.slug"
         class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-blue-300 transition-all group flex flex-col h-full min-h-0 relative shadow-sm"
     >
         <!-- Badges -->

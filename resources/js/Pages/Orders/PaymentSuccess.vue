@@ -62,7 +62,7 @@
 
             <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link :href="`/orders/${invoice.order.id}`"
+                <Link :href="`/orders/${invoice.order.order_number}`"
                     class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg">
                     View Order Details
                 </Link>

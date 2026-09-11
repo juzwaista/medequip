@@ -37,21 +37,7 @@ class DistributorController extends Controller
 
         if ($existing) {
             if ($existing->status === 'rejected') {
-                // Don't delete — reset in place to avoid FK constraint failures (orders etc.)
-                // Clear the old document paths and reset status so the form can re-submit
-                $existing->update([
-                    'rejection_reason' => null,
-                    'valid_id_path' => null,
-                    'business_license_path' => null,
-                    'dti_sec_path' => null,
-                    'bir_form_path' => null,
-                    'fda_license_path' => null,
-                    'prc_id_path' => null,
-                    'authorization_letter_path' => null,
-                    'is_verified' => 0,
-                    'status' => 'rejected', // Keep it rejected until re-submission
-                ]);
-
+                // Return the view with the existing data so they can resubmit what was wrong.
                 return \Inertia\Inertia::render('Owner/Distributor/Create', $props);
             }
             if ($existing->status === 'pending') {
@@ -69,6 +55,8 @@ class DistributorController extends Controller
     {
         $cityKeys = array_keys(config('cavite.cities', []));
 
+        $existing = Distributor::where('user_id', auth()->id())->first();
+
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
             'address_line' => 'required|string|max:255',
@@ -78,13 +66,12 @@ class DistributorController extends Controller
             'email' => 'required|email|max:255',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            // Avoid strict mimes: shared hosts often report application/octet-stream for valid PDFs/images.
-            'valid_id' => ['required', 'file', 'max:10240', SafeUpload::document()],
-            'business_license' => ['required', 'file', 'max:10240', SafeUpload::document()],
-            'dti_sec' => ['required', 'file', 'max:10240', SafeUpload::document()],
-            'bir_form' => ['required', 'file', 'max:10240', SafeUpload::document()],
-            'fda_license' => ['required', 'file', 'max:10240', SafeUpload::document()],
-            'prc_id' => ['required', 'file', 'max:10240', SafeUpload::document()],
+            'valid_id' => [($existing && $existing->valid_id_path) ? 'nullable' : 'required', 'file', 'max:10240', SafeUpload::document()],
+            'business_license' => [($existing && $existing->business_license_path) ? 'nullable' : 'required', 'file', 'max:10240', SafeUpload::document()],
+            'dti_sec' => [($existing && $existing->dti_sec_path) ? 'nullable' : 'required', 'file', 'max:10240', SafeUpload::document()],
+            'bir_form' => [($existing && $existing->bir_form_path) ? 'nullable' : 'required', 'file', 'max:10240', SafeUpload::document()],
+            'fda_license' => [($existing && $existing->fda_license_path) ? 'nullable' : 'required', 'file', 'max:10240', SafeUpload::document()],
+            'prc_id' => [($existing && $existing->prc_id_path) ? 'nullable' : 'required', 'file', 'max:10240', SafeUpload::document()],
             'authorization_letter' => ['nullable', 'file', 'max:10240', SafeUpload::document()],
             // Expiration dates
             'valid_id_expires_at' => 'required|date',
@@ -101,14 +88,14 @@ class DistributorController extends Controller
         ]);
 
         // Store the uploaded files securely on the local disk
-        $validIdPath = $request->file('valid_id')->store('distributor_documents/valid_ids', 'local');
-        $licensePath = $request->file('business_license')->store('distributor_documents/licenses', 'local');
-        $dtiSecPath = $request->file('dti_sec')->store('distributor_documents/dti_sec', 'local');
-        $birFormPath = $request->file('bir_form')->store('distributor_documents/bir_forms', 'local');
-        $fdaLicensePath = $request->file('fda_license')->store('distributor_documents/fda_licenses', 'local');
-        $prcIdPath = $request->file('prc_id')->store('distributor_documents/prc_ids', 'local');
+        $validIdPath = $request->hasFile('valid_id') ? $request->file('valid_id')->store('distributor_documents/valid_ids', 'local') : $existing->valid_id_path;
+        $licensePath = $request->hasFile('business_license') ? $request->file('business_license')->store('distributor_documents/licenses', 'local') : $existing->business_license_path;
+        $dtiSecPath = $request->hasFile('dti_sec') ? $request->file('dti_sec')->store('distributor_documents/dti_sec', 'local') : $existing->dti_sec_path;
+        $birFormPath = $request->hasFile('bir_form') ? $request->file('bir_form')->store('distributor_documents/bir_forms', 'local') : $existing->bir_form_path;
+        $fdaLicensePath = $request->hasFile('fda_license') ? $request->file('fda_license')->store('distributor_documents/fda_licenses', 'local') : $existing->fda_license_path;
+        $prcIdPath = $request->hasFile('prc_id') ? $request->file('prc_id')->store('distributor_documents/prc_ids', 'local') : $existing->prc_id_path;
 
-        $authLetterPath = null;
+        $authLetterPath = $existing ? $existing->authorization_letter_path : null;
         if ($request->hasFile('authorization_letter')) {
             $authLetterPath = $request->file('authorization_letter')->store('distributor_documents/auth_letters', 'local');
         }
@@ -162,6 +149,10 @@ class DistributorController extends Controller
     {
         $user = Auth::user();
         $distributor = Distributor::where('user_id', $user->id)->first();
+
+        if ($distributor && $distributor->status === 'approved') {
+            return redirect()->route('owner.shop.setup');
+        }
 
         return Inertia::render('Owner/Distributor/Pending', [
             'distributor' => $distributor,

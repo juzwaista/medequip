@@ -112,11 +112,11 @@
                             </div>
 
                             <div class="mb-4">
-                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Additional Notes (Optional)</label>
-                                <textarea v-model="rejectForm.reason" rows="3" class="w-full text-sm border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" placeholder="Please clarify the issues..."></textarea>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Additional Notes <span class="text-red-500">*</span></label>
+                                <textarea v-model="rejectForm.reason" rows="3" required class="w-full text-sm border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" placeholder="Please clarify the issues..."></textarea>
                             </div>
 
-                            <button @click="reject" :disabled="isProcessing || (!rejectForm.rejected_documents.length && !rejectForm.reason)" class="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-lg transition disabled:opacity-50">
+                            <button @click="reject" :disabled="isProcessing || !rejectForm.reason" class="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-lg transition disabled:opacity-50">
                                 Reject & Send Feedback
                             </button>
                         </div>

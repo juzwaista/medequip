@@ -81,7 +81,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                                     <a
-                                        :href="`/products/${p.id}`"
+                                        :href="`/products/${p.slug}`"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         class="text-xs font-semibold text-blue-600 hover:text-blue-800"

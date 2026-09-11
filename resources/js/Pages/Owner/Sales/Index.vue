@@ -169,7 +169,7 @@
                                             <svg :class="['h-4 w-4 text-gray-400 transition-transform', expandedRows.includes(order.id) ? 'rotate-90 text-blue-500' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                             </svg>
-                                            <Link :href="`/owner/orders/${order.id}`" @click.stop
+                                            <Link :href="`/owner/orders/${order.order_number}`" @click.stop
                                                 class="font-mono text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">
                                                 {{ order.order_number }}
                                             </Link>

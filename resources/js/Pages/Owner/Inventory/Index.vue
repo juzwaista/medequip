@@ -164,7 +164,7 @@
                                     @click="openStockModal(product)"
                                     class="flex-1 min-w-0 px-1.5 py-1.5 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition font-medium text-[11px] sm:text-xs flex items-center justify-center touch-manipulation"
                                 >
-                                    Stock
+                                    Manage
                                 </button>
                                 <button 
                                     type="button"
@@ -231,7 +231,7 @@
             <div v-if="showStockModal" class="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[100] sm:p-4" @click="closeStockModal">
                 <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-6 max-h-[90dvh] overflow-y-auto overscroll-contain" @click.stop>
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-bold text-gray-900">Adjust Stock</h3>
+                        <h3 class="text-xl font-bold text-gray-900">Manage Stock & Pricing</h3>
                         <button @click="closeStockModal" class="text-gray-400 hover:text-gray-600">
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -247,6 +247,17 @@
                     </div>
 
                     <form @submit.prevent="submitStockAdjustment">
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Base Price (₱) *</label>
+                            <input 
+                                v-model.number="stockBasePrice"
+                                type="number"
+                                step="0.01"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
                         <div v-if="selectedProduct?.variations?.length" class="mb-4">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Product option *</label>
                             <select
@@ -262,7 +273,44 @@
                                     {{ v.display_label || `${v.option_name}: ${v.option_value}` }}
                                 </option>
                             </select>
-                            <p class="text-xs font-medium text-gray-500 mt-1">Adjust stock for the selected variation.</p>
+                            <p class="text-xs font-medium text-gray-500 mt-1">Select variation to adjust stock and reorder level.</p>
+                        </div>
+
+                        <div class="mb-4 flex gap-4">
+                            <div class="flex-1">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Reorder Level *</label>
+                                <input 
+                                    v-model.number="stockReorderLevel"
+                                    type="number"
+                                    min="0"
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg text-center font-bold text-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Stock Adj.</label>
+                                <div class="flex gap-1">
+                                    <button 
+                                        type="button"
+                                        @click="stockAdjustment = stockAdjustment - 1"
+                                        class="px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold"
+                                    >
+                                        -
+                                    </button>
+                                    <input 
+                                        v-model.number="stockAdjustment"
+                                        type="number"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg text-center font-bold text-lg focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <button 
+                                        type="button"
+                                        @click="stockAdjustment = stockAdjustment + 1"
+                                        class="px-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -289,9 +337,9 @@
                                 </button>
                             </div>
                             <div class="flex gap-2">
-                                <button type="button" @click="stockAdjustment = 10" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 font-medium rounded text-sm hover:bg-gray-200">+10</button>
-                                <button type="button" @click="stockAdjustment = 50" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 font-medium rounded text-sm hover:bg-gray-200">+50</button>
-                                <button type="button" @click="stockAdjustment = -10" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 font-medium rounded text-sm hover:bg-gray-200">-10</button>
+                                <button type="button" @click="stockAdjustment += 10" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 font-medium rounded text-sm hover:bg-gray-200">+10</button>
+                                <button type="button" @click="stockAdjustment += 50" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 font-medium rounded text-sm hover:bg-gray-200">+50</button>
+                                <button type="button" @click="stockAdjustment -= 10" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 font-medium rounded text-sm hover:bg-gray-200">-10</button>
                             </div>
                         </div>
 
@@ -370,7 +418,24 @@ const selectedProduct = ref(null);
 const stockVariationId = ref(null);
 const stockAdjustment = ref(0);
 const stockReason = ref('');
+const stockBasePrice = ref(0);
+const stockReorderLevel = ref(10);
 const adjustingStock = ref(false);
+
+const updateReorderLevel = (varId) => {
+    if (!selectedProduct.value || !selectedProduct.value.inventory) {
+        stockReorderLevel.value = 10;
+        return;
+    }
+    const inv = selectedProduct.value.inventory.find(i => i.product_variation_id === varId);
+    stockReorderLevel.value = inv ? inv.reorder_level : 10;
+};
+
+watch(stockVariationId, (newId) => {
+    if (showStockModal.value) {
+        updateReorderLevel(newId);
+    }
+});
 
 const applyFilters = () => {
     router.get('/owner/inventory', {
@@ -394,8 +459,10 @@ const openStockModal = (product) => {
     selectedProduct.value = product;
     stockAdjustment.value = 0;
     stockReason.value = '';
+    stockBasePrice.value = Number(product.base_price) || 0;
     const vars = (product.variations || []).filter((x) => x.is_active !== false);
     stockVariationId.value = vars.length ? vars[0].id : null;
+    updateReorderLevel(stockVariationId.value);
     showStockModal.value = true;
 };
 
@@ -413,12 +480,14 @@ const submitStockAdjustment = () => {
     const payload = {
         adjustment: stockAdjustment.value,
         reason: stockReason.value,
+        base_price: stockBasePrice.value,
+        reorder_level: stockReorderLevel.value,
     };
     if (selectedProduct.value.variations?.length) {
         payload.product_variation_id = stockVariationId.value;
     }
 
-    router.post(`/owner/inventory/${selectedProduct.value.id}/adjust`, payload, {
+    router.post(`/owner/inventory/${selectedProduct.value.id}/quick-edit`, payload, {
         onSuccess: () => { closeStockModal(); },
         onFinish: () => { adjustingStock.value = false; }
     });

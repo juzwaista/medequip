@@ -222,7 +222,7 @@
                         <!-- Actions -->
                         <div class="flex flex-wrap gap-2 sm:gap-3">
                             <Link 
-                                :href="`/orders/${order.id}`"
+                                :href="`/orders/${order.order_number}`"
                                 class="px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-xs sm:text-sm"
                             >
                                 View Details
@@ -421,7 +421,7 @@ const clearFilters = () => {
 
 const confirmCancel = (order) => {
     if (confirm(`Are you sure you want to cancel order ${order.order_number}? This action cannot be undone.`)) {
-        router.post(`/orders/${order.id}/cancel`, {}, {
+        router.post(`/orders/${order.order_number}/cancel`, {}, {
             onSuccess: () => {
             },
             onError: (errors) => {
@@ -433,7 +433,7 @@ const confirmCancel = (order) => {
 
 const confirmReceived = (order) => {
     if (confirm(`Confirm that you received order ${order.order_number}? This completes the order and releases payment held by the platform to the seller.`)) {
-        router.post(`/orders/${order.id}/confirm-received`, {}, {
+        router.post(`/orders/${order.order_number}/confirm-received`, {}, {
             onSuccess: () => {
             },
             onError: (errors) => {
@@ -450,6 +450,6 @@ const canPayNow = (order) => {
 };
 
 const payNow = (order) => {
-    router.post(`/orders/${order.id}/pay-now`);
+    router.post(`/orders/${order.order_number}/pay-now`);
 };
 </script>

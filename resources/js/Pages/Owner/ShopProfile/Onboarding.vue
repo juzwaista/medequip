@@ -46,10 +46,11 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1">Shop phone <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1">Shop phone <span class="text-red-500">*</span></label>
                     <input
                         v-model="form.phone"
                         type="tel"
+                        required
                         inputmode="numeric"
                         maxlength="11"
                         class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -72,12 +73,12 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Logo <span class="text-gray-400 font-normal">(optional)</span></label>
-                        <input type="file" accept="image/*" class="text-sm w-full" @change="form.logo = $event.target.files[0]" />
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">Logo <span class="text-red-500">*</span></label>
+                        <input type="file" required accept="image/*" class="text-sm w-full" @change="form.logo = $event.target.files[0]" />
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Cover image <span class="text-gray-400 font-normal">(optional)</span></label>
-                        <input type="file" accept="image/*" class="text-sm w-full" @change="form.cover_photo = $event.target.files[0]" />
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">Cover image <span class="text-red-500">*</span></label>
+                        <input type="file" required accept="image/*" class="text-sm w-full" @change="form.cover_photo = $event.target.files[0]" />
                     </div>
                 </div>
 

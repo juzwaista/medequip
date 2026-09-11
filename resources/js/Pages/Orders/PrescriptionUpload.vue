@@ -67,7 +67,7 @@
                             {{ form.processing ? 'Uploading…' : 'Submit for review' }}
                         </button>
                         <Link
-                            :href="`/orders/${order.id}`"
+                            :href="`/orders/${order.order_number}`"
                             class="px-4 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 text-center"
                         >
                             Back to order
@@ -104,7 +104,7 @@ const onFile = (e) => {
 };
 
 const submit = () => {
-    form.post(`/orders/${props.order.id}/prescription`, {
+    form.post(`/orders/${props.order.order_number}/prescription`, {
         forceFormData: true,
     });
 };

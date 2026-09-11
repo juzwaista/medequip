@@ -38,9 +38,14 @@
                                             Current: {{ item.current_stock }} | Suggested: {{ item.recommended_quantity }} | Days until stockout: {{ item.days_until_stockout }}
                                         </p>
                                     </div>
-                                    <button @click="markActioned(item.id)" class="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">
-                                        Mark Actioned
-                                    </button>
+                                    <div class="flex flex-col gap-2 items-end">
+                                        <Link :href="route('owner.procurement.create', { product_id: item.product_id, qty: item.recommended_quantity })" class="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 w-full text-center">
+                                            Generate PO
+                                        </Link>
+                                        <button @click="markActioned(item.id)" class="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 w-full">
+                                            Mark Actioned
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

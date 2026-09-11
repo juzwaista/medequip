@@ -280,7 +280,7 @@ function handleItemClick(item) {
     // Provide fallback routing identical to logic in Notifications/Index.vue
     if (!href) {
         const kind = item.data?.kind || '';
-        const id = item.data?.order_id;
+        const id = item.data?.order_number || item.data?.order_id;
         
         if (kind === 'welcome') href = '/products';
         else if (kind === 'new_chat_message') href = '/messages';

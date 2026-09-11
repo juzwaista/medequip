@@ -145,7 +145,7 @@
                                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                         Wholesale pricing available
                                     </span>
-                                    <Link href="/profile" class="text-blue-600 font-semibold hover:underline">Upgrade to Business</Link>
+                                    <Link href="/business-account/apply" class="text-blue-600 font-semibold hover:underline">Upgrade to Business</Link>
                                 </div>
                             </template>
                         </div>
@@ -272,9 +272,8 @@
                                 <span class="hidden sm:inline text-sm">{{ adding ? 'Adding…' : 'Cart' }}</span>
                             </button>
 
-                            <!-- RFQ Request Button (B2B only) -->
+                            <!-- RFQ Request Button -->
                             <button
-                                v-if="isApprovedBusiness"
                                 type="button"
                                 @click="openRfqModal"
                                 :disabled="product.distributor.is_suspended"
@@ -373,7 +372,7 @@
                     <Link
                         v-for="related in relatedProducts"
                         :key="related.id"
-                        :href="`/products/${related.id}`"
+                        :href="`/products/${related.slug}`"
                         class="group relative rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition flex flex-col"
                     >
                         <div v-if="related.is_dss_recommendation" class="absolute top-2 left-2 z-10 bg-indigo-600 shadow-sm text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md flex items-center gap-1">
@@ -456,6 +455,45 @@
                         </div>
                     </form>
                 </div>
+            </div>
+
+            <!-- B2B Upsell Modal -->
+            <div
+                v-if="b2bUpsellModalOpen"
+                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
+                role="dialog"
+                aria-modal="true"
+                @click.self="b2bUpsellModalOpen = false"
+            >
+                <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 text-center">
+                    <div class="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                    
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Unlock B2B Features</h2>
+                    <p class="text-sm text-gray-600 mb-6">
+                        Requesting quotes and accessing wholesale pricing is reserved for verified business accounts. Upgrade your account today for free!
+                    </p>
+                    
+                    <div class="space-y-3">
+                        <Link 
+                            href="/business-account/apply"
+                            class="block w-full px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+                        >
+                            Apply for B2B Account
+                        </Link>
+                        <button
+                            type="button"
+                            @click="b2bUpsellModalOpen = false"
+                            class="block w-full px-5 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                            Maybe Later
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- End B2B Upsell Modal -->
+
             <!-- RFQ Modal -->
             <div
                 v-if="rfqModalOpen"
@@ -536,7 +574,6 @@
             </div>
             <!-- End RFQ Modal -->
         </div>
-        </div>
     </MainLayout>
 </template>
 
@@ -597,6 +634,7 @@ const activeImageIndex = ref(0);
 const selectedVariationId = ref(null);
 const reportModalOpen = ref(false);
 const rfqModalOpen = ref(false);
+const b2bUpsellModalOpen = ref(false);
 
 const reportForm = useForm({
     reason: 'misleading',
@@ -851,8 +889,12 @@ const addToCart = () => {
 };
 
 const openRfqModal = () => {
+    if (!page.props.auth?.user) {
+        window.location.href = '/login';
+        return;
+    }
     if (!isApprovedBusiness.value) {
-        alert("Please complete your Business Profile setup in Settings and wait for approval to request quotes.");
+        b2bUpsellModalOpen.value = true;
         return;
     }
     rfqForm.requested_quantity = quantity.value;

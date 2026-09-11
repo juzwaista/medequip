@@ -42,7 +42,7 @@ class StaffController extends Controller
             ->get();
 
         $shopRoles = class_exists(\Spatie\Permission\Models\Role::class) 
-            ? \Spatie\Permission\Models\Role::with('permissions')->where('distributor_id', $distributor->id)->get(['id', 'name', 'description']) 
+            ? \Spatie\Permission\Models\Role::with('permissions')->where('distributor_id', $distributor->id)->get() 
             : [];
 
         $permissions = class_exists(\Spatie\Permission\Models\Permission::class)
@@ -96,7 +96,12 @@ class StaffController extends Controller
             'expires_at' => now()->addDays(7),
         ]);
 
-        Mail::to($request->email)->send(new StaffInviteEmail($request->email, $token));
+        try {
+            Mail::to($request->email)->send(new StaffInviteEmail($request->email, $token));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send staff invite email: ' . $e->getMessage());
+            return redirect()->back()->with('warning', 'Staff invitation created, but email failed to send (check mail config).');
+        }
 
         return redirect()->back()->with('success', 'Staff invitation sent successfully.');
     }

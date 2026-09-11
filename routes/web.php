@@ -60,7 +60,7 @@ Route::get('/help', function () {
 // Product Routes (Public) - search must come before the {id} wildcard
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
-Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/category/{category:slug}', [ProductController::class, 'byCategory'])->name('products.category');
 
 // Cart Routes
@@ -150,6 +150,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/rfq', [\App\Http\Controllers\RfqController::class, 'store'])->name('rfq.store');
     Route::post('/rfq/{message}/respond', [\App\Http\Controllers\RfqController::class, 'respond'])->name('rfq.respond');
     Route::post('/rfq/{message}/accept', [\App\Http\Controllers\RfqController::class, 'accept'])->name('rfq.accept');
+
+    // Business Account Application
+    Route::get('/business-account/apply', [\App\Http\Controllers\BusinessProfileController::class, 'create'])->name('business.apply');
+    Route::post('/business-account/apply', [\App\Http\Controllers\BusinessProfileController::class, 'store'])->name('business.store');
 });
 
 
@@ -306,8 +310,8 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
                 'destroy' => 'inventory.destroy',
             ],
         ]);
-        Route::post('/inventory/{id}/adjust', [\App\Http\Controllers\Owner\InventoryController::class, 'adjustStock'])
-            ->name('inventory.adjust');
+        Route::post('/inventory/{id}/quick-edit', [\App\Http\Controllers\Owner\InventoryController::class, 'quickEdit'])
+            ->name('inventory.quickEdit');
 
         // Legacy /products/* URLs → unified inventory (single add/edit flow)
         Route::get('/products', fn () => redirect()->route('owner.inventory.index'))->name('products.index');
@@ -413,6 +417,20 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::post('/distributors/{id}/reject', [\App\Http\Controllers\Admin\DashboardController::class, 'rejectDistributor'])
             ->middleware('admin.permission:admin.applications.reject')
             ->name('distributors.reject');
+
+        // Business Profiles Management
+        Route::get('/business-profiles', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'index'])
+            ->middleware('admin.permission:admin.applications.review')
+            ->name('business-profiles.index');
+        Route::get('/business-profiles/{businessProfile}', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'show'])
+            ->middleware('admin.permission:admin.applications.review')
+            ->name('business-profiles.show');
+        Route::post('/business-profiles/{businessProfile}/approve', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'approve'])
+            ->middleware('admin.permission:admin.applications.approve')
+            ->name('business-profiles.approve');
+        Route::post('/business-profiles/{businessProfile}/reject', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'reject'])
+            ->middleware('admin.permission:admin.applications.reject')
+            ->name('business-profiles.reject');
 
         // DSS Risk Actions
         Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');

@@ -24,7 +24,7 @@
                     <p class="text-sm text-amber-800 mt-1">Upload a clear photo of your prescription. Payment is available after the distributor approves it.</p>
                 </div>
                 <Link
-                    :href="`/orders/${order.id}/prescription`"
+                    :href="`/orders/${order.order_number}/prescription`"
                     class="inline-flex justify-center px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"
                 >
                     Upload prescription
@@ -616,7 +616,7 @@ function submitAllRatings() {
 
 const cancelOrder = () => {
     if (confirm(`Are you sure you want to cancel order ${props.order.order_number}? This action cannot be undone.`)) {
-        router.post(`/orders/${props.order.id}/cancel`, {}, {
+        router.post(`/orders/${props.order.order_number}/cancel`, {}, {
             onSuccess: () => {
             },
             onError: (errors) => {
@@ -628,7 +628,7 @@ const cancelOrder = () => {
 
 const confirmReceived = () => {
     if (confirm(`Confirm that you received order ${props.order.order_number}? This completes the order and releases payment held by the platform to the seller.`)) {
-        router.post(`/orders/${props.order.id}/confirm-received`, {}, {
+        router.post(`/orders/${props.order.order_number}/confirm-received`, {}, {
             onSuccess: () => {
             },
             onError: (errors) => {
@@ -659,6 +659,6 @@ const orderGrandTotal = computed(() => {
 });
 
 const payNow = () => {
-    router.post(`/orders/${props.order.id}/pay-now`);
+    router.post(`/orders/${props.order.order_number}/pay-now`);
 };
 </script>

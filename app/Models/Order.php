@@ -10,6 +10,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
+    {
+        return 'order_number';
+    }
+
     protected $fillable = [
         'customer_id',
         'distributor_id',

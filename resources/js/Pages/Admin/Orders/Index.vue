@@ -62,7 +62,7 @@
                                 </td>
                                 <td class="px-6 py-3 text-gray-400 text-xs">{{ formatDate(o.created_at) }}</td>
                                 <td class="px-6 py-3">
-                                    <Link :href="`/admin/orders/${o.id}`" class="text-xs text-blue-600 font-semibold hover:text-blue-800">View</Link>
+                                    <Link :href="`/admin/orders/${o.order_number}`" class="text-xs text-blue-600 font-semibold hover:text-blue-800">View</Link>
                                 </td>
                             </tr>
                         </tbody>

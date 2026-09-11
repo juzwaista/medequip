@@ -78,6 +78,7 @@
                                 My Addresses
                             </Link>
                             <Link 
+                                v-if="!$page.props.auth.user?.business_profile"
                                 href="/discount-ids"
                                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                             >
@@ -95,6 +96,26 @@
                                 </svg>
                                 Become a Distributor
                             </Link>
+                            
+                            <template v-if="!$page.props.auth.user?.business_profile">
+                                <Link 
+                                    href="/business-account/apply"
+                                    class="flex items-center px-4 py-2 text-sm text-indigo-700 font-medium hover:bg-indigo-50 transition"
+                                >
+                                    <svg class="h-5 w-5 mr-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    Apply for B2B Account
+                                </Link>
+                            </template>
+                            <template v-else>
+                                <div class="flex items-center px-4 py-2 text-sm text-gray-500 bg-gray-50">
+                                    <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    B2B Account ({{ $page.props.auth.user.business_profile.status }})
+                                </div>
+                            </template>
                         </template>
 
                         <!-- Distributor Specific Links -->
