@@ -124,7 +124,15 @@
 
         <!-- Main Content — pb-20 so mobile bottom nav doesn't overlap content -->
         <main class="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
-            <slot />
+            <transition
+                name="page"
+                mode="out-in"
+                appear
+            >
+                <div :key="$page.url" class="flex-1 flex flex-col min-w-0">
+                    <slot />
+                </div>
+            </transition>
         </main>
 
         <!-- Footer (desktop only gets full footer) -->
@@ -248,7 +256,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AccountMenu from '@/Components/AccountMenu.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
@@ -332,3 +340,16 @@ onMounted(() => {
     setInterval(updateCartCount, 10000);
 });
 </script>
+
+<style>
+/* Page Transition CSS */
+.page-enter-active,
+.page-leave-active {
+    transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+}
+.page-enter-from,
+.page-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
+}
+</style>

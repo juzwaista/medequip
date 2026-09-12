@@ -16,6 +16,7 @@
                 v-if="product.image_url"
                 :src="product.image_url"
                 :alt="product.name"
+                loading="lazy"
                 class="max-w-full max-h-full object-contain group-hover:scale-105 transition duration-500 mix-blend-multiply"
                 :class="{'grayscale opacity-50': isOutOfStock || !product.is_active || (product.distributor && product.distributor.is_suspended)}"
             />

@@ -60,7 +60,7 @@ class OrderChatAndNotificationsTest extends TestCase
     {
         [$buyer, $seller, $order] = $this->createOrderFixture();
 
-        $this->actingAs($buyer)->postJson("/orders/{$order->id}/messages", [
+        $this->actingAs($buyer)->postJson("/orders/{$order->order_number}/messages", [
             'body' => 'Hello shop',
         ])->assertCreated();
 
@@ -165,7 +165,7 @@ class OrderChatAndNotificationsTest extends TestCase
     {
         [$buyer, , $order] = $this->createOrderFixture();
 
-        $this->actingAs($buyer)->postJson("/orders/{$order->id}/messages", [
+        $this->actingAs($buyer)->postJson("/orders/{$order->order_number}/messages", [
             'body' => 'This is damn late',
         ])->assertCreated();
 
@@ -178,13 +178,13 @@ class OrderChatAndNotificationsTest extends TestCase
     {
         [$buyer, $seller, $order] = $this->createOrderFixture();
 
-        $this->actingAs($seller)->postJson("/owner/orders/{$order->id}/messages", [
+        $this->actingAs($seller)->postJson("/owner/orders/{$order->order_number}/messages", [
             'body' => 'We are preparing your order',
         ])->assertCreated();
 
         $messageId = $order->chatMessages()->latest('id')->value('id');
 
-        $this->actingAs($buyer)->postJson("/orders/{$order->id}/messages/{$messageId}/report", [
+        $this->actingAs($buyer)->postJson("/orders/{$order->order_number}/messages/{$messageId}/report", [
             'reason' => 'spam',
             'details' => 'Test report',
         ])->assertOk()->assertJson(['ok' => true]);
@@ -228,7 +228,7 @@ class OrderChatAndNotificationsTest extends TestCase
     {
         [$buyer, $seller, $order] = $this->createOrderFixture();
 
-        $this->actingAs($buyer)->postJson("/orders/{$order->id}/messages", [
+        $this->actingAs($buyer)->postJson("/orders/{$order->order_number}/messages", [
             'body' => 'Hello shop',
         ])->assertCreated();
 

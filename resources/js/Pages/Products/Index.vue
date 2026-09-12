@@ -454,10 +454,11 @@ const applyFilters = () => {
     }, {
         preserveState: true,
         preserveScroll: true,
-        replace: true,
+        showProgress: false,
         only: ['products', 'filters'],
         onFinish: () => {
             isLoading.value = false;
+            isFilterOpen.value = false;
         }
     });
 };

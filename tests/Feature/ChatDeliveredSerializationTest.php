@@ -18,14 +18,14 @@ class ChatDeliveredSerializationTest extends TestCase
 
         $order->getOrCreateShopConversation();
 
-        $this->actingAs($buyer)->postJson("/orders/{$order->id}/messages", [
+        $this->actingAs($buyer)->postJson("/orders/{$order->order_number}/messages", [
             'body' => 'Hello shop',
         ])->assertCreated();
 
         $seller->refresh();
         $seller->forceFill(['last_seen_at' => now()->addSecond()])->save();
 
-        $json = $this->actingAs($buyer)->getJson("/orders/{$order->id}/messages")->assertOk()->json();
+        $json = $this->actingAs($buyer)->getJson("/orders/{$order->order_number}/messages")->assertOk()->json();
         $messages = $json['messages'] ?? [];
         $this->assertNotEmpty($messages);
         $last = end($messages);

@@ -215,7 +215,7 @@ class OrderAndPaymentFlowTest extends TestCase
     {
         $order = $this->createOrderWithInvoice();
 
-        $response = $this->actingAs($this->customer)->get("/orders/{$order->id}");
+        $response = $this->actingAs($this->customer)->get("/orders/{$order->order_number}");
         $response->assertStatus(200);
     }
 
@@ -224,7 +224,7 @@ class OrderAndPaymentFlowTest extends TestCase
         $order = $this->createOrderWithInvoice();
         $otherCustomer = User::factory()->customer()->create(['email_verified_at' => now()]);
 
-        $response = $this->actingAs($otherCustomer)->get("/orders/{$order->id}");
+        $response = $this->actingAs($otherCustomer)->get("/orders/{$order->order_number}");
         $response->assertStatus(403);
     }
 
