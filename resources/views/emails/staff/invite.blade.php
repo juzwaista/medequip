@@ -11,6 +11,10 @@ Please click the button below to set up your account and choose your username an
 Set Up Account
 </x-mail::button>
 
+If you're having trouble clicking the "Set Up Account" button, copy and paste the URL below into your web browser:
+
+<span class="break-all">[{{ url('/staff/setup?token='.$token.'&email='.$email) }}]({{ url('/staff/setup?token='.$token.'&email='.$email) }})</span>
+
 Thanks,<br>
 {{ config('app.name') }}
 </x-mail::message>

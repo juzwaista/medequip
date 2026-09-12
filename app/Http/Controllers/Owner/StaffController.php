@@ -89,7 +89,7 @@ class StaffController extends Controller
 
         $invitation = StaffInvitation::create([
             'email' => $request->email,
-            'token_hash' => Hash::make($token),
+            'token_hash' => hash('sha256', $token),
             'distributor_id' => $distributor->id,
             'invited_by_id' => $user->id,
             'permissions' => $request->permissions,
