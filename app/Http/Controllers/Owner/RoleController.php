@@ -45,9 +45,20 @@ class RoleController extends Controller
         $distributorId = $user->role === 'distributor' ? $user->distributor->id : $user->distributor_id;
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles')->where(function ($query) use ($distributorId) {
-                return $query->where('distributor_id', $distributorId);
-            })],
+            'name' => [
+                'required', 'string', 'max:255',
+                function ($attribute, $value, $fail) use ($distributorId) {
+                    $exists = Role::where('name', $value)
+                        ->where(function ($q) use ($distributorId) {
+                            $q->where('distributor_id', $distributorId)
+                              ->orWhereNull('distributor_id');
+                        })->exists();
+                    
+                    if ($exists) {
+                        $fail('The role name has already been taken or is reserved by the platform.');
+                    }
+                }
+            ],
             'description' => 'nullable|string|max:1000',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,name'
@@ -79,9 +90,21 @@ class RoleController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles')->where(function ($query) use ($distributorId) {
-                return $query->where('distributor_id', $distributorId);
-            })->ignore($role->id)],
+            'name' => [
+                'required', 'string', 'max:255',
+                function ($attribute, $value, $fail) use ($distributorId, $role) {
+                    $exists = Role::where('name', $value)
+                        ->where('id', '!=', $role->id)
+                        ->where(function ($q) use ($distributorId) {
+                            $q->where('distributor_id', $distributorId)
+                              ->orWhereNull('distributor_id');
+                        })->exists();
+                    
+                    if ($exists) {
+                        $fail('The role name has already been taken or is reserved by the platform.');
+                    }
+                }
+            ],
             'description' => 'nullable|string|max:1000',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,name'
