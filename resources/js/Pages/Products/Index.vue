@@ -361,7 +361,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
+import { ref, reactive, watch, onMounted, computed, onUnmounted } from 'vue';
 import { Head, router, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import ProductCard from '@/Components/ProductCard.vue';
