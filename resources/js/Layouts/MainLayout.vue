@@ -129,7 +129,7 @@
                 mode="out-in"
                 appear
             >
-                <div :key="$page.url" class="flex-1 flex flex-col min-w-0">
+                <div :key="$page.component" class="flex-1 flex flex-col min-w-0">
                     <slot />
                 </div>
             </transition>
