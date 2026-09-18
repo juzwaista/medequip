@@ -103,7 +103,6 @@ class RegisteredUserController extends Controller
             'company_name' => ['required_if:is_business,true', 'nullable', 'string', 'max:255'],
             'business_type' => ['required_if:is_business,true', 'nullable', 'string', 'max:255'],
             'tin_number' => ['nullable', 'string', 'max:50'],
-            'sec_dti_document' => ['nullable', 'file', 'max:5120', new SafeUpload],
 
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09 and contain only numbers.',
@@ -152,17 +151,12 @@ class RegisteredUserController extends Controller
 
             // Create business profile if registering as a business buyer
             if ($request->boolean('is_business') && $request->filled('company_name')) {
-                $docPath = null;
-                if ($request->hasFile('sec_dti_document')) {
-                    $docPath = $request->file('sec_dti_document')->store('business-documents', 'public');
-                }
-
                 \App\Models\BusinessProfile::create([
                     'user_id' => $user->id,
                     'company_name' => $request->company_name,
                     'business_type' => $request->business_type,
                     'tin_number' => $request->tin_number,
-                    'sec_dti_document_path' => $docPath,
+                    'sec_dti_document_path' => null,
                     'status' => 'pending',
                 ]);
             }
