@@ -52,8 +52,38 @@
 
                 <!-- Status Card -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-                    <!-- Pending -->
-                    <div v-if="profile.status === 'pending'">
+                    <!-- Missing Document -->
+                    <div v-if="profile.status === 'pending' && !profile.sec_dti_document_path">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">Action Required</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-gray-900 mb-2">Upload your Business Document</h2>
+                        <p class="text-sm text-gray-700 leading-relaxed mb-6">
+                            To activate your wholesale pricing access, we need to verify your business. Please upload a clear copy of your SEC, DTI Certificate, or Mayor's Permit.
+                        </p>
+                        
+                        <form @submit.prevent="uploadDoc" class="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">SEC / DTI Document <span class="text-red-500">*</span></label>
+                            <input type="file" required @change="e => form.sec_dti_document = e.target.files[0]" accept=".pdf,.jpg,.jpeg,.png"
+                                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-3">
+                            <p v-if="form.errors.sec_dti_document" class="text-red-600 text-xs mb-3">{{ form.errors.sec_dti_document }}</p>
+                            
+                            <button type="submit" :disabled="form.processing"
+                                class="w-full sm:w-auto flex justify-center py-2.5 px-6 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50 transition-colors">
+                                <svg v-if="form.processing" class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                {{ form.processing ? 'Uploading...' : 'Upload Document' }}
+                            </button>
+                        </form>
+
+                        <div class="mt-6 bg-amber-50 border border-amber-100 rounded-lg p-4">
+                            <p class="text-sm text-amber-800">
+                                <strong>While you wait:</strong> You can continue browsing and purchasing products at retail prices. Wholesale pricing will be unlocked once your document is approved.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Pending (with Document) -->
+                    <div v-else-if="profile.status === 'pending' && profile.sec_dti_document_path">
                         <div class="flex items-center gap-3 mb-4">
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">Pending Review</span>
                         </div>
@@ -124,7 +154,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, useForm } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import OnboardingWizardModal from '@/Components/OnboardingWizardModal.vue';
 
@@ -135,4 +165,18 @@ const props = defineProps({
 
 const page = usePage();
 const isDistributor = computed(() => page.props.auth?.user?.role === 'distributor');
+
+const form = useForm({
+    sec_dti_document: null,
+});
+
+const uploadDoc = () => {
+    form.post(route('business-account.upload-document'), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+        },
+    });
+};
 </script>

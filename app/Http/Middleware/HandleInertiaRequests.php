@@ -83,6 +83,7 @@ class HandleInertiaRequests extends Middleware
                         'status' => $user->businessProfile->status,
                         'company_name' => $user->businessProfile->company_name,
                         'rejection_reason' => $user->businessProfile->rejection_reason,
+                        'sec_dti_document_path' => $user->businessProfile->sec_dti_document_path,
                     ] : null,
                 ] : null,
             ],

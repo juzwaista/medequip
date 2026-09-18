@@ -60,10 +60,6 @@ Route::get('/guides/b2b', function () {
     return \Inertia\Inertia::render('Guides/B2B');
 })->name('guides.b2b');
 
-// Corporate B2B Registration (public — for new users)
-Route::get('/corporate', [\App\Http\Controllers\CorporateController::class, 'index'])->name('corporate.index');
-Route::post('/corporate/register', [\App\Http\Controllers\CorporateController::class, 'register'])->name('corporate.register');
-
 // Product Routes (Public) - search must come before the {id} wildcard
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
@@ -151,6 +147,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/business-account/apply', [\App\Http\Controllers\BusinessAccountController::class, 'create'])->name('business-account.apply');
     Route::post('/business-account/apply', [\App\Http\Controllers\BusinessAccountController::class, 'store'])->name('business-account.store');
     Route::get('/business-account/status', [\App\Http\Controllers\BusinessAccountController::class, 'status'])->name('business-account.status');
+    Route::post('/business-account/upload-document', [\App\Http\Controllers\BusinessAccountController::class, 'uploadDocument'])->name('business-account.upload-document');
 
     // Saved Purchase Orders (B2B)
     Route::get('/purchase-orders', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'index'])->name('purchase-orders.index');

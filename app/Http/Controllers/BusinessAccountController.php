@@ -93,4 +93,33 @@ class BusinessAccountController extends Controller
             'autoQualified' => false,
         ]);
     }
+
+    /**
+     * Upload the missing SEC/DTI document for an existing business profile.
+     */
+    public function uploadDocument(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $profile = $user->businessProfile;
+
+        if (!$profile) {
+            return redirect()->route('business-account.apply');
+        }
+
+        $request->validate([
+            'sec_dti_document' => ['required', 'file', 'max:5120', new SafeUpload],
+        ]);
+
+        if ($profile->sec_dti_document_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->sec_dti_document_path);
+        }
+
+        $docPath = $request->file('sec_dti_document')->store('business-documents', 'public');
+
+        $profile->update([
+            'sec_dti_document_path' => $docPath,
+        ]);
+
+        return redirect()->back()->with('success', 'Document uploaded successfully! Our team will review your application soon.');
+    }
 }

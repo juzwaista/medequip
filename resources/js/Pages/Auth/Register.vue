@@ -359,10 +359,6 @@
                             Already have an account?
                             <Link href="/login" class="text-blue-600 hover:underline font-bold ml-1">Sign in</Link>
                         </p>
-                        <p class="text-xs text-center mt-3 text-gray-400">
-                            Purchasing for a hospital or clinic?
-                            <a href="/corporate" class="text-blue-500 hover:underline">Apply for a Corporate Account</a>
-                        </p>
                     </div>
                 </div>
             </div>
