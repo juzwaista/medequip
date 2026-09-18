@@ -176,6 +176,30 @@ class User extends Authenticatable implements MustVerifyEmail
         return ! is_null($this->banned_at);
     }
 
+    /**
+     * Check if user has B2B wholesale access.
+     *
+     * Access is granted if the user is:
+     * - A verified distributor (auto-qualifies)
+     * - Staff of a verified distributor (auto-qualifies)
+     * - A customer with an approved business profile
+     */
+    public function canAccessWholesale(): bool
+    {
+        // Verified distributors auto-qualify
+        if ($this->role === 'distributor' && $this->distributor?->is_verified) {
+            return true;
+        }
+
+        // Staff of verified distributors auto-qualify
+        if ($this->role === 'staff' && $this->employer?->is_verified) {
+            return true;
+        }
+
+        // Has an approved business profile
+        return $this->businessProfile?->status === 'approved';
+    }
+
 
 
     /**

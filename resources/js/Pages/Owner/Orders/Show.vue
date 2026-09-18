@@ -460,8 +460,32 @@
 
                 <!-- Actions Sidebar: first on mobile so status isn’t buried -->
                 <div class="lg:col-span-1 space-y-4 sm:space-y-6 order-1 lg:order-2 min-w-0">
+                    
+                    <!-- Purchase Order Verification -->
+                    <div v-if="order.status === 'pending_po_verification'" class="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 lg:sticky lg:top-4">
+                        <h3 class="font-bold text-blue-900 mb-2">Verify Purchase Order</h3>
+                        <p class="text-xs text-blue-800 mb-4 leading-relaxed">This order was placed using a Purchase Order. Please verify the document and credit terms before accepting the order.</p>
+                        
+                        <div class="mb-5">
+                            <a :href="'/storage/' + order.po_document_path" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-50 transition shadow-sm w-full justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                View PO Document
+                            </a>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button @click="approvePO" :disabled="updating" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm">
+                                Approve PO
+                                <Tooltip @click.stop content="Approving this PO confirms you accept the buyer's terms. The order will move to Approved, and you will be responsible for collecting the payment directly." position="top">
+                                    <svg class="w-4 h-4 text-blue-300 hover:text-white transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </Tooltip>
+                            </button>
+                            <button @click="rejectPO" :disabled="updating" class="flex-1 bg-white border border-red-200 text-red-600 font-bold py-2.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50 text-sm">Reject</button>
+                        </div>
+                    </div>
+
                     <!-- Update Status -->
-                    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:sticky lg:top-4">
+                    <div v-if="order.status !== 'pending_po_verification'" class="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:sticky lg:top-4">
                         <h3 class="font-bold text-gray-900 mb-4">Update Status</h3>
                         <form @submit.prevent="updateStatus">
                             <select 
@@ -529,7 +553,12 @@
                                     <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                                     Updating...
                                 </span>
-                                <span v-else>Update Status</span>
+                                <span v-else class="flex items-center justify-center gap-2">
+                                    Update Status
+                                    <Tooltip @click.stop content="Updating the status will notify the customer. Make sure to pack the item securely!" position="top">
+                                        <svg class="w-4 h-4 text-blue-300 hover:text-white transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    </Tooltip>
+                                </span>
                             </button>
                         </form>
                     </div>
@@ -822,6 +851,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
+import Tooltip from '@/Components/Tooltip.vue';
 import QrcodeVue from 'qrcode.vue';
 
 const props = defineProps({
@@ -843,6 +873,7 @@ const transitionMap = computed(() => {
     const isPickup = props.order.fulfillment_method === 'pickup';
     
     return {
+        pending_po_verification: ['approved', 'rejected'],
         pending:   ['approved', 'rejected', 'cancelled'],
         approved:  [isPickup ? 'ready_for_pickup' : 'packed', 'cancelled'],
         packed:    [],
@@ -917,6 +948,18 @@ const rejectDiscount = () => {
         preserveScroll: true,
         onFinish: () => { discountProcessing.value = false; },
     });
+};
+
+const approvePO = () => {
+    if (!confirm('Approve this Purchase Order? You will be responsible for collecting payment based on the agreed terms.')) return;
+    statusForm.status = 'approved';
+    updateStatus();
+};
+
+const rejectPO = () => {
+    if (!confirm('Reject this Purchase Order? The order will be cancelled.')) return;
+    statusForm.status = 'rejected';
+    updateStatus();
 };
 const orderSubtotal = computed(() => Number(props.order?.subtotal || 0));
 const orderShippingFee = computed(() => Number(props.order?.shipping_fee || 0));

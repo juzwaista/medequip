@@ -16,6 +16,8 @@
                 </div>
             </Teleport>
 
+            <OnboardingWizardModal type="distributor" />
+
             <header class="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
                 <div class="min-w-0">
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Overview</h1>
@@ -452,6 +454,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
+import OnboardingWizardModal from '@/Components/OnboardingWizardModal.vue';
 
 const props = defineProps({
     distributor: Object,

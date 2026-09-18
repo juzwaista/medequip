@@ -241,4 +241,18 @@ class Distributor extends Model
 
         return max(0, $totalReleased - $totalWithdrawn);
     }
+
+    protected static function booted()
+    {
+        static::updated(function ($distributor) {
+            if ($distributor->isDirty('company_name')) {
+                $businessProfile = \App\Models\BusinessProfile::where('user_id', $distributor->user_id)->first();
+                if ($businessProfile) {
+                    $businessProfile->update([
+                        'company_name' => $distributor->company_name
+                    ]);
+                }
+            }
+        });
+    }
 }

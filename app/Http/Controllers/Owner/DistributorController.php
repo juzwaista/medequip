@@ -35,10 +35,39 @@ class DistributorController extends Controller
             'barangays' => config('cavite.barangays'),
         ];
 
+        $businessProfile = Auth::user()->businessProfile;
+
         if ($existing) {
             if ($existing->status === 'rejected') {
-                // Return the view with the existing data so they can resubmit what was wrong.
-                return \Inertia\Inertia::render('Owner/Distributor/Create', $props);
+                // Return the view with the existing data so they can resubmit only what was wrong.
+                return \Inertia\Inertia::render('Owner/Distributor/Create', array_merge($props, [
+                    'existingDistributor' => [
+                        'company_name'      => $existing->company_name,
+                        'address_line'      => $existing->address,
+                        'city'              => $existing->city,
+                        'barangay'          => $existing->barangay,
+                        'contact_number'    => $existing->contact_number,
+                        'email'             => $existing->email,
+                        'latitude'          => $existing->latitude,
+                        'longitude'         => $existing->longitude,
+                        'rejection_reason'  => $existing->rejection_reason,
+                        // Document presence flags (not paths — paths stay secure on server)
+                        'has_valid_id'             => !empty($existing->valid_id_path),
+                        'has_business_license'     => !empty($existing->business_license_path),
+                        'has_dti_sec'              => !empty($existing->dti_sec_path),
+                        'has_bir_form'             => !empty($existing->bir_form_path),
+                        'has_fda_license'          => !empty($existing->fda_license_path),
+                        'has_prc_id'               => !empty($existing->prc_id_path),
+                        'has_authorization_letter' => !empty($existing->authorization_letter_path),
+                        // Expiry dates (pre-fill these so user doesn't re-enter them)
+                        'valid_id_expires_at'              => $existing->valid_id_expires_at?->format('Y-m-d'),
+                        'business_license_expires_at'      => $existing->business_license_expires_at?->format('Y-m-d'),
+                        'dti_sec_expires_at'               => $existing->dti_sec_expires_at?->format('Y-m-d'),
+                        'bir_form_expires_at'              => $existing->bir_form_expires_at?->format('Y-m-d'),
+                        'fda_license_expires_at'           => $existing->fda_license_expires_at?->format('Y-m-d'),
+                        'prc_id_expires_at'                => $existing->prc_id_expires_at?->format('Y-m-d'),
+                    ],
+                ]));
             }
             if ($existing->status === 'pending') {
                 return redirect()->route('owner.distributors.pending')
@@ -46,6 +75,12 @@ class DistributorController extends Controller
             }
 
             return redirect()->route('owner.dashboard');
+        }
+
+        if ($businessProfile && $businessProfile->status === 'approved') {
+            $props['existingDistributor'] = [
+                'company_name' => $businessProfile->company_name,
+            ];
         }
 
         return \Inertia\Inertia::render('Owner/Distributor/Create', $props);

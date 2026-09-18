@@ -743,6 +743,15 @@ const checkSlug = debounce(async () => {
 }, 500);
 
 const submit = () => {
+    // Convert boolean `closed` to 0/1 integers before multipart serialization.
+    // In FormData, JS `false` values on checkboxes can be omitted entirely,
+    // which causes the backend to treat missing keys as null/true.
+    // Explicit 0/1 integers are always included in the payload.
+    const normalizedHours = (form.business_hours || []).map(entry => ({
+        ...entry,
+        closed: entry.closed ? 1 : 0,
+    }));
+    form.business_hours = normalizedHours;
     form.post(route('owner.profile.update'), { preserveScroll: true });
 };
 </script>

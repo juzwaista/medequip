@@ -88,6 +88,10 @@ class OrderNotification extends Notification
                 'New order received',
                 "Order {$num} has been placed (\u{20B1}".number_format((float) $amt, 2).'). Review and process it.',
             ],
+            'po_verification_required' => [
+                'PO Verification Required',
+                "Order {$num} was placed using a Purchase Order. Please review the attached document and approve it to proceed.",
+            ],
             'order_requires_prescription' => [
                 'Prescription required',
                 "Order {$num} contains items that need a prescription. Tap here to upload your prescription photo.",

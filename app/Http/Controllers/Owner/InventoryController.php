@@ -599,6 +599,13 @@ class InventoryController extends Controller
                 $redirect->with('warning', implode(' ', $catalogWarnings));
             }
 
+            // Sync DSS alerts after stock/reorder changes
+            try {
+                (new \App\Services\DssEngineService)->syncAlerts($distributor->id, 60);
+            } catch (\Throwable $e) {
+                Log::warning('[InventoryController] DSS sync failed after product update', ['error' => $e->getMessage()]);
+            }
+
             return $redirect;
         } catch (\Throwable $e) {
             Log::error('[InventoryController] Product update failed', ['error' => $e->getMessage()]);
@@ -665,6 +672,13 @@ class InventoryController extends Controller
             'quantity' => $newQuantity,
             'reorder_level' => $validated['reorder_level'],
         ]);
+
+        // Immediately sync DSS alerts so low-stock flags are cleared if stock was replenished
+        try {
+            (new \App\Services\DssEngineService)->syncAlerts($distributor->id, 60);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[InventoryController] DSS sync failed after quickEdit', ['error' => $e->getMessage()]);
+        }
 
         return back()->with('success', "Stock and details adjusted successfully.");
     }

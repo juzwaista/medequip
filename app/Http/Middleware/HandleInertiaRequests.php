@@ -77,8 +77,12 @@ class HandleInertiaRequests extends Middleware
                     'warning_message' => $warningMessage,
                     'tin' => $user->tin,
                     'has_discount_id' => \App\Models\CustomerDiscountId::where('user_id', $user->id)->exists(),
+                    'can_access_wholesale' => $user->canAccessWholesale(),
                     'business_profile' => $user->businessProfile ? [
+                        'id' => $user->businessProfile->id,
                         'status' => $user->businessProfile->status,
+                        'company_name' => $user->businessProfile->company_name,
+                        'rejection_reason' => $user->businessProfile->rejection_reason,
                     ] : null,
                 ] : null,
             ],

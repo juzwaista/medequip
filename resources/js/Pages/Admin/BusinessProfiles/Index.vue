@@ -3,33 +3,25 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Business Account Applications</h1>
-                    <p class="text-gray-600 mt-2 text-sm">Review applications for B2B accounts.</p>
+                    <h1 class="text-3xl font-bold text-gray-900">B2B Account Applications</h1>
+                    <p class="text-gray-600 mt-2 text-sm">Review and manage business account applications.</p>
                 </div>
             </div>
 
             <div class="bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden">
-                <!-- Tabs / Filters -->
+                <!-- Status Tabs -->
                 <div class="border-b border-gray-200 px-6 py-4 flex gap-4">
-                    <Link 
-                        :href="route('admin.business-profiles.index', { status: 'pending' })"
-                        class="px-4 py-2 text-sm font-semibold rounded-lg transition"
-                        :class="filters.status === 'pending' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'"
-                    >
+                    <Link :href="route('admin.business-profiles.index', { status: 'pending' })"
+                        :class="['px-4 py-2 text-sm font-semibold rounded-lg transition', filters.status === 'pending' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50']">
                         Pending Review
+                        <span v-if="filters.status !== 'pending' && pendingCount > 0" class="ml-1.5 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold bg-amber-100 text-amber-800 rounded-full">{{ pendingCount }}</span>
                     </Link>
-                    <Link 
-                        :href="route('admin.business-profiles.index', { status: 'approved' })"
-                        class="px-4 py-2 text-sm font-semibold rounded-lg transition"
-                        :class="filters.status === 'approved' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'"
-                    >
+                    <Link :href="route('admin.business-profiles.index', { status: 'approved' })"
+                        :class="['px-4 py-2 text-sm font-semibold rounded-lg transition', filters.status === 'approved' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50']">
                         Approved
                     </Link>
-                    <Link 
-                        :href="route('admin.business-profiles.index', { status: 'rejected' })"
-                        class="px-4 py-2 text-sm font-semibold rounded-lg transition"
-                        :class="filters.status === 'rejected' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'"
-                    >
+                    <Link :href="route('admin.business-profiles.index', { status: 'rejected' })"
+                        :class="['px-4 py-2 text-sm font-semibold rounded-lg transition', filters.status === 'rejected' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50']">
                         Rejected
                     </Link>
                 </div>
@@ -59,10 +51,8 @@
                                 <td class="px-6 py-4 capitalize text-gray-700">{{ profile.business_type }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ new Date(profile.created_at).toLocaleDateString() }}</td>
                                 <td class="px-6 py-4 text-right">
-                                    <Link 
-                                        :href="route('admin.business-profiles.show', profile.id)"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition shadow-sm"
-                                    >
+                                    <Link :href="route('admin.business-profiles.show', profile.id)"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition shadow-sm">
                                         Review
                                     </Link>
                                 </td>
@@ -70,23 +60,15 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Pagination -->
                 <div v-if="profiles.links.length > 3" class="px-6 py-4 border-t border-gray-200">
                     <div class="flex flex-wrap items-center gap-1">
-                        <template v-for="(link, k) in profiles.links" :key="k">
-                            <Link 
-                                v-if="link.url"
-                                :href="link.url"
-                                class="px-3 py-1 text-sm rounded-md transition"
-                                :class="link.active ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-gray-600 hover:bg-gray-100 border border-transparent hover:border-gray-200'"
-                                v-html="link.label"
-                            />
-                            <span 
-                                v-else 
-                                class="px-3 py-1 text-sm text-gray-400 cursor-not-allowed" 
-                                v-html="link.label"
-                            />
+                        <template v-for="(link, index) in profiles.links" :key="index">
+                            <Link v-if="link.url" :href="link.url"
+                                :class="['px-3 py-1 text-sm rounded-md transition', link.active ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-gray-600 hover:bg-gray-100 border border-transparent hover:border-gray-200']"
+                                v-html="link.label" />
+                            <span v-else class="px-3 py-1 text-sm text-gray-400 cursor-not-allowed" v-html="link.label" />
                         </template>
                     </div>
                 </div>
@@ -96,11 +78,17 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     profiles: Object,
     filters: Object,
+});
+
+const pendingCount = computed(() => {
+    // This is a simple count — in a real app you'd pass this from the server
+    return props.filters.status === 'pending' ? props.profiles.total : 0;
 });
 </script>

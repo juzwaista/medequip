@@ -152,7 +152,6 @@ class OrderController extends Controller
             'savedAddresses'       => auth()->user()->addresses()->latest()->get(),
             'savedDiscountIds'     => auth()->user()->discountIds()->latest()->get(),
             'savedPurchaseOrders'  => auth()->user()->savedPurchaseOrders()->get(),
-            'businessProfile'      => auth()->user()->businessProfile,
             'cod_available' => false, // Forced false to hide COD for now
             'cod_limit_exceeded' => $codLimitExceeded,
             'cod_limit_message' => $codLimitMessage,
@@ -346,7 +345,7 @@ class OrderController extends Controller
                     if (!empty($item['rfq_price'])) {
                         $itemSubtotal += round((float) $item['rfq_price'], 2) * $quantity;
                     } else {
-                        $isApprovedBusiness = $user?->businessProfile?->status === 'approved';
+                        $isApprovedBusiness = in_array($user?->role, ['distributor', 'staff']);
                         $isWholesale = $isApprovedBusiness && $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
                         $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
                         $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
@@ -361,7 +360,7 @@ class OrderController extends Controller
                     'customer_name' => $validated['customer_name'],
                     'distributor_id' => $distributorData['distributor_id'],
                     'order_number' => Order::generateOrderNumber(),
-                    'status' => 'pending',
+                    'status' => $validated['payment_method'] === 'purchase_order' ? 'pending_po_verification' : 'pending',
                     'subtotal' => 0,
                     'total_amount' => 0,
                     'delivery_address' => $validated['delivery_address'],
@@ -439,7 +438,7 @@ class OrderController extends Controller
                     if (filter_var($request->input('save_purchase_order'), FILTER_VALIDATE_BOOLEAN)) {
                         $user->savedPurchaseOrders()->create([
                             'po_number' => 'PO-' . strtoupper(uniqid()),
-                            'company_name' => $user->businessProfile->company_name ?? 'My Company',
+                            'company_name' => $user->distributor->company_name ?? 'My Company',
                             'document_path' => $poPath,
                         ]);
                     }
@@ -596,7 +595,8 @@ class OrderController extends Controller
                 $placed->loadMissing(['distributor.user', 'customer']);
 
                 if ($placed->distributor?->user) {
-                    $placed->distributor->user->notify(new OrderNotification($placed, 'order_placed'));
+                    $notificationType = $placed->status === 'pending_po_verification' ? 'po_verification_required' : 'order_placed';
+                    $placed->distributor->user->notify(new OrderNotification($placed, $notificationType));
                 }
 
                 if ($placed->needsPrescriptionUpload() && $placed->customer) {

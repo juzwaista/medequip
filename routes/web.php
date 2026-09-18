@@ -56,6 +56,13 @@ Route::get('/contact', function () {
 Route::get('/help', function () {
     return \Inertia\Inertia::render('Static/Help');
 })->name('help');
+Route::get('/guides/b2b', function () {
+    return \Inertia\Inertia::render('Guides/B2B');
+})->name('guides.b2b');
+
+// Corporate B2B Registration (public — for new users)
+Route::get('/corporate', [\App\Http\Controllers\CorporateController::class, 'index'])->name('corporate.index');
+Route::post('/corporate/register', [\App\Http\Controllers\CorporateController::class, 'register'])->name('corporate.register');
 
 // Product Routes (Public) - search must come before the {id} wildcard
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -140,6 +147,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/discount-ids/{discountId}', [\App\Http\Controllers\CustomerDiscountIdController::class, 'destroy'])->name('discount-ids.destroy');
     Route::post('/discount-ids/{discountId}/default', [\App\Http\Controllers\CustomerDiscountIdController::class, 'setDefault'])->name('discount-ids.setDefault');
 
+    // B2B Account Application (for existing logged-in users)
+    Route::get('/business-account/apply', [\App\Http\Controllers\BusinessAccountController::class, 'create'])->name('business-account.apply');
+    Route::post('/business-account/apply', [\App\Http\Controllers\BusinessAccountController::class, 'store'])->name('business-account.store');
+    Route::get('/business-account/status', [\App\Http\Controllers\BusinessAccountController::class, 'status'])->name('business-account.status');
+
     // Saved Purchase Orders (B2B)
     Route::get('/purchase-orders', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'index'])->name('purchase-orders.index');
     Route::post('/purchase-orders', [\App\Http\Controllers\SavedPurchaseOrderController::class, 'store'])->name('purchase-orders.store');
@@ -151,9 +163,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/rfq/{message}/respond', [\App\Http\Controllers\RfqController::class, 'respond'])->name('rfq.respond');
     Route::post('/rfq/{message}/accept', [\App\Http\Controllers\RfqController::class, 'accept'])->name('rfq.accept');
 
-    // Business Account Application
-    Route::get('/business-account/apply', [\App\Http\Controllers\BusinessProfileController::class, 'create'])->name('business.apply');
-    Route::post('/business-account/apply', [\App\Http\Controllers\BusinessProfileController::class, 'store'])->name('business.store');
 });
 
 
@@ -418,19 +427,11 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
             ->middleware('admin.permission:admin.applications.reject')
             ->name('distributors.reject');
 
-        // Business Profiles Management
-        Route::get('/business-profiles', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'index'])
-            ->middleware('admin.permission:admin.applications.review')
-            ->name('business-profiles.index');
-        Route::get('/business-profiles/{businessProfile}', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'show'])
-            ->middleware('admin.permission:admin.applications.review')
-            ->name('business-profiles.show');
-        Route::post('/business-profiles/{businessProfile}/approve', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'approve'])
-            ->middleware('admin.permission:admin.applications.approve')
-            ->name('business-profiles.approve');
-        Route::post('/business-profiles/{businessProfile}/reject', [\App\Http\Controllers\Admin\BusinessProfileReviewController::class, 'reject'])
-            ->middleware('admin.permission:admin.applications.reject')
-            ->name('business-profiles.reject');
+        // B2B Account Management
+        Route::get('/business-profiles', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'index'])->name('business-profiles.index');
+        Route::get('/business-profiles/{profile}', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'show'])->name('business-profiles.show');
+        Route::post('/business-profiles/{profile}/approve', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'approve'])->name('business-profiles.approve');
+        Route::post('/business-profiles/{profile}/reject', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'reject'])->name('business-profiles.reject');
 
         // DSS Risk Actions
         Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');

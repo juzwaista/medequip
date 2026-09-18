@@ -76,14 +76,7 @@
                                 <p class="text-sm text-gray-500 mt-1">{{ d.owner_name }} &middot; {{ d.owner_email }}</p>
                                 <p v-if="d.contact_number || d.address" class="text-xs text-gray-400 mt-0.5">{{ [d.contact_number, d.address].filter(Boolean).join(' · ') }}</p>
 
-                                <!-- Documents -->
-                                <div v-if="hasDocuments(d)" class="mt-3 flex flex-wrap gap-2">
-                                    <a v-for="doc in getDocuments(d)" :key="doc.label" :href="doc.href" target="_blank"
-                                        class="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-100 font-medium transition">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                        {{ doc.label }}
-                                    </a>
-                                </div>
+
                             </div>
 
                             <!-- Actions -->

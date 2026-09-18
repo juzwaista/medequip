@@ -221,6 +221,7 @@ class OrderController extends Controller
             'rejected' => [],          // Terminal state
             'discount_review' => ['approved', 'rejected', 'cancelled'],
             'prescription_review' => ['approved', 'rejected', 'cancelled'],
+            'pending_po_verification' => ['approved', 'rejected', 'cancelled'],
         ];
 
         if (! in_array($newStatus, $validTransitions[$oldStatus] ?? [])) {
@@ -241,7 +242,7 @@ class OrderController extends Controller
         }
 
         // If approving order, validate stock and deduct inventory
-        if ($newStatus === 'approved' && $oldStatus === 'pending') {
+        if ($newStatus === 'approved' && in_array($oldStatus, ['pending', 'pending_po_verification'])) {
             // Re-validate stock availability before approval
             foreach ($order->items as $item) {
                 if ($item->inventory->quantity < $item->quantity) {
@@ -275,7 +276,7 @@ class OrderController extends Controller
         if (in_array($newStatus, ['rejected', 'cancelled'])) {
             try {
                 foreach ($order->items as $item) {
-                    if ($oldStatus === 'pending') {
+                    if (in_array($oldStatus, ['pending', 'pending_po_verification'])) {
                         // Stock was reserved but NOT physically deducted — release reservation only
                         $item->inventory->releaseReservation($item->quantity);
                     } elseif ($oldStatus === 'approved') {
@@ -387,7 +388,7 @@ class OrderController extends Controller
         $order->status = $newStatus;
         $order->save();
 
-        if ($newStatus === 'approved' && $oldStatus === 'pending') {
+        if ($newStatus === 'approved' && in_array($oldStatus, ['pending', 'pending_po_verification'])) {
             try {
                 app(OrderChatAutomationService::class)->sendOrderAcceptedMessage($order->fresh());
             } catch (\Exception $e) {

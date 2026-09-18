@@ -793,8 +793,7 @@ const lineAvailable = computed(() => {
 });
 
 const isApprovedBusiness = computed(() => {
-    const user = page.props.auth?.user;
-    return user && user.business_profile?.status === 'approved';
+    return page.props.can_access_wholesale;
 });
 
 const hasBusinessProfile = computed(() => {
@@ -803,7 +802,7 @@ const hasBusinessProfile = computed(() => {
 });
 
 const wholesaleSavings = computed(() => {
-    if (!hasBusinessProfile.value) return null;
+    if (!isApprovedBusiness.value) return null;
     if (!props.product.wholesale_price || !props.product.wholesale_min_qty) return null;
     if (Number(quantity.value) < Number(props.product.wholesale_min_qty)) return null;
 

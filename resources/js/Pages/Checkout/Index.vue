@@ -1315,14 +1315,18 @@
                                     <!-- PO icon -->
                                     <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     <span
-                                        class="text-sm font-semibold"
+                                        class="text-sm font-semibold flex items-center gap-1.5"
                                         :class="
                                             form.payment_method === 'purchase_order'
                                                 ? 'text-indigo-700'
                                                 : 'text-gray-700'
                                         "
-                                        >Purchase Order (Net-30)</span
                                     >
+                                        Purchase Order (Net-30)
+                                        <Tooltip @click.stop content="Upload your company's Purchase Order document. The seller will verify it before processing your order." position="top">
+                                            <svg class="w-4 h-4 text-indigo-400 hover:text-indigo-600 transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        </Tooltip>
+                                    </span>
                                     <svg
                                         v-if="form.payment_method === 'purchase_order'"
                                         class="h-4 w-4 text-indigo-500"
@@ -1461,6 +1465,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useForm, Link, usePage } from "@inertiajs/vue3";
 import MainLayout from "@/Layouts/MainLayout.vue";
+import Tooltip from "@/Components/Tooltip.vue";
 import MapDisplay from "@/Components/MapDisplay.vue";
 import { useOCR } from "@/Composables/useOCR";
 
@@ -1501,10 +1506,7 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    businessProfile: {
-        type: Object,
-        default: null,
-    },
+
     cart_has_prescription_items: {
         type: Boolean,
         default: false,
@@ -1693,7 +1695,7 @@ const form = useForm({
 });
 
 const isApprovedBusiness = computed(() => {
-    return props.businessProfile?.status === 'approved';
+    return page.props.can_access_wholesale;
 });
 
 const localDiscountAmount = computed(() => {

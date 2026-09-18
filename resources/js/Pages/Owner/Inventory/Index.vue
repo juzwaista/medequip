@@ -149,8 +149,26 @@
                             </div>
                         </div>
 
-                        <div class="mt-auto">
-                            <p class="text-base sm:text-lg font-bold text-blue-600 mb-2">₱{{ Number(product.base_price).toLocaleString() }}</p>
+                         <div class="mt-auto">
+                            <!-- Price: show range if variations exist, else base price -->
+                            <div class="mb-2">
+                                <template v-if="product.variations && product.variations.length > 0">
+                                    <template v-if="priceRange(product).min === priceRange(product).max">
+                                        <p class="text-base sm:text-lg font-bold text-blue-600">₱{{ Number(priceRange(product).min).toLocaleString() }}</p>
+                                    </template>
+                                    <template v-else>
+                                        <p class="text-sm sm:text-base font-bold text-blue-600 leading-tight">
+                                            ₱{{ Number(priceRange(product).min).toLocaleString() }}
+                                            <span class="text-gray-400 font-normal">–</span>
+                                            ₱{{ Number(priceRange(product).max).toLocaleString() }}
+                                        </p>
+                                        <p class="text-[10px] text-gray-400 mt-0.5">{{ product.variations.length }} variation{{ product.variations.length === 1 ? '' : 's' }}</p>
+                                    </template>
+                                </template>
+                                <template v-else>
+                                    <p class="text-base sm:text-lg font-bold text-blue-600">₱{{ Number(product.base_price).toLocaleString() }}</p>
+                                </template>
+                            </div>
 
                             <div class="flex gap-1.5">
                                 <Link 
@@ -392,6 +410,15 @@ const expiryWarningDays = computed(() => {
     const n = Number(props.expiry_warning_days);
     return Number.isFinite(n) && n >= 1 ? Math.min(365, Math.round(n)) : 60;
 });
+
+// Returns the min and max price across a product's variations
+const priceRange = (product) => {
+    const vars = product.variations || [];
+    if (!vars.length) return { min: product.base_price, max: product.base_price };
+    const prices = vars.map(v => Number(v.price ?? product.base_price)).filter(p => !isNaN(p));
+    if (!prices.length) return { min: product.base_price, max: product.base_price };
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+};
 
 // NEW: Catch the dashboard filter
 const alertFilter = ref(props.filters.filter || '');

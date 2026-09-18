@@ -156,7 +156,12 @@
                             />
                         </div>
                         <div class="flex h-full min-h-0 flex-col rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
-                            <label class="shrink-0 text-sm font-semibold text-gray-800">Wholesale price (₱)</label>
+                            <label class="shrink-0 text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                                Wholesale price (₱)
+                                <Tooltip content="Wholesale pricing applies to approved B2B Corporate buyers when they meet the minimum quantity." position="top">
+                                    <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </Tooltip>
+                            </label>
                             <p class="mt-1.5 min-h-[3.25rem] flex-1 text-xs leading-relaxed text-gray-500">Optional lower price for bulk orders. If you enter a price, set the minimum quantity below.</p>
                             <input
                                 v-model.number="fields.wholesale_price"
@@ -167,7 +172,12 @@
                             />
                         </div>
                         <div v-if="fields.wholesale_price" class="sm:col-span-2 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
-                            <label class="block text-sm font-semibold text-gray-800">Minimum wholesale quantity <span class="text-red-500">*</span></label>
+                            <label class="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+                                Minimum wholesale quantity <span class="text-red-500">*</span>
+                                <Tooltip content="Corporate buyers must order at least this many units to qualify for wholesale rates." position="top">
+                                    <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </Tooltip>
+                            </label>
                             <p class="text-xs text-gray-500 mt-1.5 mb-3">Customers must order at least this many units to get the wholesale price.</p>
                             <input
                                 v-model.number="fields.wholesale_min_qty"
@@ -392,6 +402,7 @@
 import { ref, computed, watch, onUnmounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
+import Tooltip from '@/Components/Tooltip.vue';
 import BarcodeScannerModal from '@/Components/BarcodeScannerModal.vue';
 
 const props = defineProps({

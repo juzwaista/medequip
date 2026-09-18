@@ -754,7 +754,7 @@
 import { ref, onBeforeUnmount } from 'vue';
 import { router } from '@inertiajs/vue3';
 import CourierLayout from '@/Layouts/CourierLayout.vue';
-import { BrowserMultiFormatReader } from '@zxing/browser';
+// @zxing/browser is loaded dynamically in startCamera() to avoid crashing the component
 
 const props = defineProps({
     availableDeliveries: Array,
@@ -828,6 +828,8 @@ const startCamera = async () => {
     flow.value.cameraError = '';
     await new Promise(r => setTimeout(r, 150));
     try {
+        // Dynamic import so a load failure doesn't white-screen the whole page
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
         if (!codeReader) {
             codeReader = new BrowserMultiFormatReader();
         }

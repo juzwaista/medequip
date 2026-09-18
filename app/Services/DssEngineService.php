@@ -84,7 +84,7 @@ class DssEngineService
         ];
     }
 
-    protected function syncAlerts(int $distributorId, int $expiryWarningDays): void
+    public function syncAlerts(int $distributorId, int $expiryWarningDays): void
     {
         DssAlert::where('distributor_id', $distributorId)
             ->where('is_read', false)

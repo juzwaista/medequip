@@ -131,7 +131,7 @@ const props = defineProps({
 
 const search = ref(props.filters.search || '');
 
-const performSearch = () => {
+const applySearch = () => {
     router.get('/owner/products', { search: search.value }, {
         preserveState: true,
         preserveScroll: true,

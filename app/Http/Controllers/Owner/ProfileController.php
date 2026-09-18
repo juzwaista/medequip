@@ -65,7 +65,7 @@ class ProfileController extends Controller
             'business_hours.*.day' => 'required_with:business_hours|string',
             'business_hours.*.open' => 'nullable|string',
             'business_hours.*.close' => 'nullable|string',
-            'business_hours.*.closed' => 'nullable|boolean',
+            'business_hours.*.closed' => 'nullable|in:0,1,true,false',
             'social_links' => 'nullable|array',
             'social_links.facebook' => 'nullable|url|max:500',
             'social_links.instagram' => 'nullable|url|max:500',
@@ -136,6 +136,15 @@ class ProfileController extends Controller
 
         $featuredIds = $validated['featured_product_ids'] ?? [];
         unset($validated['featured_product_ids']);
+
+        // Coerce business_hours.*.closed to a proper boolean before saving,
+        // since multipart data can send it as string "0"/"1"/"true"/"false"
+        if (!empty($validated['business_hours'])) {
+            $validated['business_hours'] = array_map(function ($entry) {
+                $entry['closed'] = filter_var($entry['closed'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                return $entry;
+            }, $validated['business_hours']);
+        }
 
         $distributor->update($validated);
 

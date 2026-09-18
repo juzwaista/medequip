@@ -243,16 +243,27 @@
                                         </div>
                                     </div>
                                     <div class="flex-shrink-0 flex items-center gap-2">
-                                        <span v-if="form[doc.key]" class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full truncate max-w-[100px]">
-                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                            {{ form[doc.key].name }}
-                                        </span>
-                                        <label :for="doc.key" class="cursor-pointer bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition flex-shrink-0">
-                                            {{ form[doc.key] ? 'Change' : 'Upload' }}
-                                        </label>
-                                        <input :id="doc.key" type="file" accept=".jpg,.jpeg,.png"
-                                            @change="e => handleFileChange(doc.key, e.target.files[0])"
-                                            class="sr-only"/>
+                                        <template v-if="serverHasDocs[doc.key]">
+                                            <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                Already uploaded
+                                            </span>
+                                            <button type="button" @click="replaceDoc(doc.key)" class="bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition">
+                                                Replace
+                                            </button>
+                                        </template>
+                                        <template v-else>
+                                            <span v-if="form[doc.key]" class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                                                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                {{ form[doc.key].name }}
+                                            </span>
+                                            <label :for="doc.key" class="cursor-pointer bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition flex-shrink-0">
+                                                {{ form[doc.key] ? 'Change' : 'Upload' }}
+                                            </label>
+                                            <input :id="doc.key" type="file" accept=".jpg,.jpeg,.png"
+                                                @change="e => handleFileChange(doc.key, e.target.files[0])"
+                                                class="sr-only"/>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -338,6 +349,7 @@ const props = defineProps({
     ownerPhone: String,
     cities: Object,
     barangays: Object,
+    existingDistributor: { type: Object, default: null },
 });
 
 const { scanImage, extractExpirationDate } = useOCR();
@@ -383,16 +395,18 @@ let isProgrammaticChange = false;
 const STORAGE_KEY = 'distributor_application_draft';
 const lastSaved = ref(null);
 
+const ex = props.existingDistributor;
+
 const form = useForm({
-    company_name: '',
+    company_name: ex?.company_name || '',
     address: '',        // Final composed string
-    address_line: '',   // Street/Unit
-    city: '',
-    barangay: '',
-    contact_number: props.ownerPhone || '',
-    email: props.ownerEmail || '',
-    latitude: '',
-    longitude: '',
+    address_line: ex?.address_line || '',   // Street/Unit
+    city: ex?.city || '',
+    barangay: ex?.barangay || '',
+    contact_number: ex?.contact_number || props.ownerPhone || '',
+    email: ex?.email || props.ownerEmail || '',
+    latitude: ex?.latitude || '',
+    longitude: ex?.longitude || '',
     valid_id: null,
     business_license: null,
     dti_sec: null,
@@ -401,15 +415,49 @@ const form = useForm({
     prc_id: null,
     authorization_letter: null,
     // Expiration dates
-    valid_id_expires_at: '',
-    business_license_expires_at: '',
-    dti_sec_expires_at: '',
-    bir_form_expires_at: '',
-    fda_license_expires_at: '',
-    prc_id_expires_at: '',
+    valid_id_expires_at: ex?.valid_id_expires_at || '',
+    business_license_expires_at: ex?.business_license_expires_at || '',
+    dti_sec_expires_at: ex?.dti_sec_expires_at || '',
+    bir_form_expires_at: ex?.bir_form_expires_at || '',
+    fda_license_expires_at: ex?.fda_license_expires_at || '',
+    prc_id_expires_at: ex?.prc_id_expires_at || '',
 });
 
+// Track which docs the server already has (from previous approved/uploaded steps)
+// Keys match the docField key names above
+const serverHasDocs = reactive({
+    valid_id:             !!ex?.has_valid_id,
+    business_license:     !!ex?.has_business_license,
+    dti_sec:              !!ex?.has_dti_sec,
+    bir_form:             !!ex?.has_bir_form,
+    fda_license:          !!ex?.has_fda_license,
+    prc_id:               !!ex?.has_prc_id,
+    authorization_letter: !!ex?.has_authorization_letter,
+});
+
+// When user clicks "Replace" on an already-uploaded doc, we clear the server flag
+const replaceDoc = (key) => {
+    serverHasDocs[key] = false;
+};;
+
 onMounted(() => {
+    // Pre-sync address fields if re-applying with existing data
+    if (ex?.city) {
+        selectedCity.value = ex.city;
+        _applyCityChange(ex.city);
+        if (props.barangays?.[ex.city]) {
+            const list = props.barangays[ex.city];
+            if (list.includes(ex.barangay)) {
+                selectedBarangay.value = ex.barangay;
+            } else if (ex.barangay) {
+                selectedBarangay.value = 'other';
+                manualBarangay.value = ex.barangay;
+            }
+        }
+        // Skip loading draft — server data takes precedence on re-application
+        return;
+    }
+
     const draft = localStorage.getItem(STORAGE_KEY);
     if (draft) {
         try {
@@ -668,7 +716,7 @@ const validateStep1 = () => {
 
 const validateStep2 = () => {
     const required = docFields.filter(d => !d.optional);
-    const missing = required.find(d => !form[d.key]);
+    const missing = required.find(d => !form[d.key] && !serverHasDocs[d.key]);
     if (missing) {
         form.errors[missing.key] = `${missing.label} is required.`;
         return;

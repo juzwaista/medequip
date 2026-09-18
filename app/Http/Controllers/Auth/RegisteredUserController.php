@@ -97,11 +97,14 @@ class RegisteredUserController extends Controller
             'terms_accepted' => ['required', 'accepted'],
             'latitude' => ['required_if:role,customer', 'nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['required_if:role,customer', 'nullable', 'numeric', 'between:-180,180'],
+
+            // B2B business fields
             'is_business' => ['nullable', 'boolean'],
             'company_name' => ['required_if:is_business,true', 'nullable', 'string', 'max:255'],
-            'business_type' => ['required_if:is_business,true', 'nullable', 'string', 'max:100'],
+            'business_type' => ['required_if:is_business,true', 'nullable', 'string', 'max:255'],
             'tin_number' => ['nullable', 'string', 'max:50'],
-            'sec_dti_document' => ['nullable', new SafeUpload(['pdf', 'jpg', 'jpeg', 'png'], 5120)],
+            'sec_dti_document' => ['nullable', 'file', 'max:5120', new SafeUpload],
+
         ], [
             'contact_number.regex' => 'Contact number must be 11 digits, start with 09 and contain only numbers.',
             'contact_number.required' => 'Contact number is required.',
@@ -112,6 +115,8 @@ class RegisteredUserController extends Controller
             'longitude.required_if' => 'Please pin your exact location on the map.',
             'terms_accepted.required' => 'You must accept the Terms and Conditions to create an account.',
             'terms_accepted.accepted' => 'You must accept the Terms and Conditions to create an account.',
+            'company_name.required_if' => 'Company name is required for business accounts.',
+            'business_type.required_if' => 'Business type is required for business accounts.',
         ]);
 
         $displayName = Str::title(str_replace('_', ' ', $request->username));
@@ -145,16 +150,19 @@ class RegisteredUserController extends Controller
                 'longitude' => $request->longitude,
             ]);
 
-            if ($request->boolean('is_business')) {
-                $path = $request->file('sec_dti_document') 
-                    ? $request->file('sec_dti_document')->store('business_docs', 'public') 
-                    : null;
+            // Create business profile if registering as a business buyer
+            if ($request->boolean('is_business') && $request->filled('company_name')) {
+                $docPath = null;
+                if ($request->hasFile('sec_dti_document')) {
+                    $docPath = $request->file('sec_dti_document')->store('business-documents', 'public');
+                }
 
-                $user->businessProfile()->create([
+                \App\Models\BusinessProfile::create([
+                    'user_id' => $user->id,
                     'company_name' => $request->company_name,
                     'business_type' => $request->business_type,
                     'tin_number' => $request->tin_number,
-                    'sec_dti_document_path' => $path,
+                    'sec_dti_document_path' => $docPath,
                     'status' => 'pending',
                 ]);
             }

@@ -71,9 +71,12 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="max-w-xs overflow-hidden">
-                                            <p v-if="log.metadata" class="text-[10px] font-mono text-gray-500 leading-normal line-clamp-2">
-                                                {{ JSON.stringify(log.metadata) }}
-                                            </p>
+                                            <div v-if="log.metadata" class="text-[10px] font-mono text-gray-500 leading-normal line-clamp-3 space-y-1">
+                                                <div v-for="(value, key) in log.metadata" :key="key">
+                                                    <span class="font-bold text-gray-700 capitalize">{{ key.replace(/_/g, ' ') }}:</span> 
+                                                    <span>{{ value }}</span>
+                                                </div>
+                                            </div>
                                             <span v-else class="text-gray-300 text-[10px] font-medium italic">—</span>
                                         </div>
                                     </td>

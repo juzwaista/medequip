@@ -40,6 +40,8 @@
         </div>
     </div> -->
 
+    <OnboardingWizardModal v-if="$page.props.auth.user?.can_access_wholesale && !$page.props.auth.user?.is_distributor" type="buyer" />
+
     <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 min-h-[300px] flex items-center">
     <!-- Subtle animated background pattern with strict overflow container -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -359,10 +361,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { router, Link, usePage } from '@inertiajs/vue3';
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
+import { Head, router, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import ProductCard from '@/Components/ProductCard.vue';
+import OnboardingWizardModal from '@/Components/OnboardingWizardModal.vue';
 
 const props = defineProps({
     products: Object,
