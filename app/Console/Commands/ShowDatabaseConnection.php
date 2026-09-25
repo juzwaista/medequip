@@ -46,7 +46,7 @@ class ShowDatabaseConnection extends Command
         $this->line('• `accounts:purge-deactivated` is scheduled daily only in production (not local).');
         $this->warn('• If you use `php artisan test` while bootstrap/cache/config.php exists, tests used to');
         $this->line('  run migrate:fresh against your REAL MySQL (wiping users). PHPUnit now uses tests/bootstrap.php');
-        $this->line('  to remove that cache first and force sqlite :memory:.');
+        $this->line('  to remove that cache first and force the dedicated `medequip_testing` MySQL database.');
         if (app()->environment('local')) {
             $this->line('• Recreate a test login: composer run dev-account  (or: php artisan db:seed --class=LocalTestAccountSeeder)');
         }
