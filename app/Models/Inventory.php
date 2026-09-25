@@ -104,11 +104,12 @@ class Inventory extends Model
             ->where('id', $this->id)
             ->whereRaw('(quantity - reserved_quantity) >= ?', [$quantity])
             ->update([
-                'reserved_quantity' => \Illuminate\Support\Facades\DB::raw('reserved_quantity + ' . $quantity)
+                'reserved_quantity' => \Illuminate\Support\Facades\DB::raw('reserved_quantity + '.$quantity),
             ]);
 
         if ($updated) {
             $this->reserved_quantity += $quantity;
+
             return true;
         }
 
@@ -116,11 +117,21 @@ class Inventory extends Model
     }
 
     /**
-     * Release reserved stock (e.g., order cancelled)
+     * Release reserved stock (e.g., order cancelled).
+     *
+     * Atomic conditional UPDATE (mirrors reserve()) so concurrent callers can't race past
+     * the "enough reserved to release" check the way a read-then-write on $this would.
      */
     public function releaseReservation(int $quantity): void
     {
-        if ($quantity > $this->reserved_quantity) {
+        $updated = \Illuminate\Support\Facades\DB::table($this->getTable())
+            ->where('id', $this->id)
+            ->where('reserved_quantity', '>=', $quantity)
+            ->update([
+                'reserved_quantity' => \Illuminate\Support\Facades\DB::raw('reserved_quantity - '.$quantity),
+            ]);
+
+        if (! $updated) {
             \Log::error('[Inventory] Attempting to release more than reserved', [
                 'inventory_id' => $this->id,
                 'product_id' => $this->product_id,
@@ -133,26 +144,41 @@ class Inventory extends Model
             );
         }
 
-        $this->decrement('reserved_quantity', $quantity);
+        $this->reserved_quantity = max(0, $this->reserved_quantity - $quantity);
 
         \Log::info('[Inventory] Reserved stock released', [
             'inventory_id' => $this->id,
             'released' => $quantity,
-            'remaining_reserved' => $this->reserved_quantity - $quantity,
+            'remaining_reserved' => $this->reserved_quantity,
         ]);
     }
 
     /**
-     * Deduct stock (after order approval)
+     * Deduct stock (after order approval).
+     *
+     * Atomic conditional UPDATE (mirrors reserve()): the quantity check and the write happen
+     * in one statement, and the reserved_quantity decrement is clamped via CASE so it never
+     * goes negative — using a portable CASE expression rather than LEAST()/min() since those
+     * differ between MySQL (production) and SQLite (tests).
      */
     public function deduct(int $quantity): bool
     {
-        if ($this->quantity < $quantity) {
+        $updated = \Illuminate\Support\Facades\DB::table($this->getTable())
+            ->where('id', $this->id)
+            ->where('quantity', '>=', $quantity)
+            ->update([
+                'quantity' => \Illuminate\Support\Facades\DB::raw('quantity - '.$quantity),
+                'reserved_quantity' => \Illuminate\Support\Facades\DB::raw(
+                    'CASE WHEN reserved_quantity >= '.$quantity.' THEN reserved_quantity - '.$quantity.' ELSE 0 END'
+                ),
+            ]);
+
+        if (! $updated) {
             return false;
         }
 
-        $this->decrement('quantity', $quantity);
-        $this->decrement('reserved_quantity', min($quantity, $this->reserved_quantity));
+        $this->quantity -= $quantity;
+        $this->reserved_quantity = max(0, $this->reserved_quantity - $quantity);
 
         return true;
     }

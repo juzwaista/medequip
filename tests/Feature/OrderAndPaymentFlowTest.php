@@ -11,11 +11,11 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
-use App\Models\Wallet;
 use App\Services\OrderInvoiceService;
 use App\Services\PayMongoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class OrderAndPaymentFlowTest extends TestCase
@@ -161,20 +161,31 @@ class OrderAndPaymentFlowTest extends TestCase
         $this->assertEquals(1000.00, $fees['platform_fee_amount'] + $fees['net_seller_amount']);
     }
 
-
-
     // ─── Admin moderation ─────────────────────────────────
+
+    /**
+     * Regular admins now need admin.permission:X on several routes that used to be
+     * gated only by role:admin,super_admin (see PROJECT_CONTEXT.md §11 problem #11).
+     */
+    protected function makeAdminWithPermission(string $permission): User
+    {
+        $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
+        Permission::firstOrCreate(['name' => $permission]);
+        $admin->givePermissionTo($permission);
+
+        return $admin;
+    }
 
     public function test_admin_can_ban_user(): void
     {
-        $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
+        $admin = $this->makeAdminWithPermission('admin.users.manage');
         $target = User::factory()->customer()->create(['email_verified_at' => now()]);
 
         $response = $this->actingAs($admin)
-                         ->withSession(['login.otp_verified' => true])
-                         ->post("/admin/users/{$target->id}/ban", [
-            'reason' => 'Repeated policy violations in test',
-        ]);
+            ->withSession(['login.otp_verified' => true])
+            ->post("/admin/users/{$target->id}/ban", [
+                'reason' => 'Repeated policy violations in test',
+            ]);
 
         $response->assertRedirect();
         $target->refresh();
@@ -184,12 +195,12 @@ class OrderAndPaymentFlowTest extends TestCase
 
     public function test_admin_can_unban_user(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = $this->makeAdminWithPermission('admin.users.manage');
         $target = User::factory()->create(['banned_at' => now(), 'ban_reason' => 'test']);
 
         $response = $this->actingAs($admin)
-                         ->withSession(['login.otp_verified' => true])
-                         ->post("/admin/users/{$target->id}/unban");
+            ->withSession(['login.otp_verified' => true])
+            ->post("/admin/users/{$target->id}/unban");
 
         $response->assertRedirect();
         $target->refresh();
@@ -287,18 +298,18 @@ class OrderAndPaymentFlowTest extends TestCase
         $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
 
         $response = $this->actingAs($admin)
-                         ->withSession(['login.otp_verified' => true])
-                         ->get('/admin/dashboard');
+            ->withSession(['login.otp_verified' => true])
+            ->get('/admin/dashboard');
         $response->assertStatus(200);
     }
 
     public function test_reports_hub_requires_admin(): void
     {
-        $admin = User::factory()->admin()->create(['email_verified_at' => now()]);
+        $admin = $this->makeAdminWithPermission('admin.reports.review');
 
         $response = $this->actingAs($admin)
-                         ->withSession(['login.otp_verified' => true])
-                         ->get('/admin/reports');
+            ->withSession(['login.otp_verified' => true])
+            ->get('/admin/reports');
         $response->assertStatus(200);
 
         $response = $this->actingAs($this->customer)->get('/admin/reports');

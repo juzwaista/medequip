@@ -10,6 +10,7 @@ use App\Notifications\OrderNotification;
 use App\Rules\SafeUpload;
 use App\Services\OrderChatAutomationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class DeliveryController extends Controller
@@ -126,7 +127,7 @@ class DeliveryController extends Controller
 
     public function accept(Delivery $delivery)
     {
-        if ($delivery->courier_id !== null) {
+        if (! auth()->user()->can('accept', $delivery)) {
             return back()->withErrors(['error' => 'This delivery has already been accepted by another courier.']);
         }
 
@@ -145,9 +146,7 @@ class DeliveryController extends Controller
 
     public function cancel(Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         if (! in_array($delivery->status, ['scheduled', 'picking_up'])) {
             return back()->withErrors(['error' => 'Delivery cannot be cancelled at this stage.']);
@@ -175,9 +174,7 @@ class DeliveryController extends Controller
      */
     public function startPickup(Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         if ($delivery->status !== 'scheduled') {
             return back()->withErrors(['error' => 'Delivery is not in scheduled state.']);
@@ -208,9 +205,7 @@ class DeliveryController extends Controller
      */
     public function confirmScan(Request $request, Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         if ($delivery->status !== 'picking_up') {
             return back()->withErrors(['error' => 'Delivery must be in picking_up state.']);
@@ -233,9 +228,7 @@ class DeliveryController extends Controller
      */
     public function confirmPickup(Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         if (! $delivery->item_scanned_at) {
             return back()->withErrors(['error' => 'Please scan the item first before confirming pickup.']);
@@ -265,9 +258,7 @@ class DeliveryController extends Controller
      */
     public function confirmDelivery(Request $request, Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         if ($delivery->status !== 'in_transit') {
             return back()->withErrors(['error' => 'Delivery must be in transit to confirm.']);
@@ -347,9 +338,7 @@ class DeliveryController extends Controller
      */
     public function updateStatus(Request $request, Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         $request->validate([
             'status' => 'required|in:delivered,failed',
@@ -389,9 +378,7 @@ class DeliveryController extends Controller
      */
     public function reportFailure(Request $request, Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         $request->validate([
             'reason' => 'required|in:recipient_absent,wrong_address,delivery_accident,customer_refused,other',
@@ -436,9 +423,7 @@ class DeliveryController extends Controller
      */
     public function markRemittanceSent(Delivery $delivery)
     {
-        if ($delivery->courier_id != auth()->user()->courier->id) {
-            abort(403);
-        }
+        $this->authorize('update', $delivery);
 
         $order = $delivery->order;
 
@@ -467,9 +452,20 @@ class DeliveryController extends Controller
         if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
             $payoutService = app(\App\Services\AutomatedPayoutService::class);
             $delivery->loadMissing('courier');
-            
+
             if ($delivery->courier) {
-                $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
+                $succeeded = $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
+
+                if (! $succeeded) {
+                    // Delivery is still marked delivered even if the automated payout is a no-op
+                    // (e.g. SIMULATE_PAYOUTS off) — surface it with delivery/courier context,
+                    // since AutomatedPayoutService's own log has neither.
+                    Log::warning('[DeliveryController] Courier payout did not complete automatically; manual payout required', [
+                        'delivery_id' => $delivery->id,
+                        'courier_id' => $delivery->courier_id,
+                        'courier_fee' => $delivery->courier_fee,
+                    ]);
+                }
             } else {
                 // Fallback if no courier relation exists but we still want to mark it internally
                 $delivery->update([

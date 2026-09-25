@@ -768,16 +768,16 @@ class OrderController extends Controller
      */
     public function confirmReceived(Order $order)
     {
-        if ($order->customer_id !== auth()->id()) {
-            abort(403);
-        }
+        $this->authorize('confirmReceived', $order);
 
         if (! $order->canBeConfirmedReceived()) {
             return back()->with('error', 'This order cannot be confirmed yet.');
         }
 
+        $failedPayouts = [];
+
         try {
-            DB::transaction(function () use ($order) {
+            DB::transaction(function () use ($order, &$failedPayouts) {
                 $order->update([
                     'received_at' => now(),
                     'status' => 'completed',
@@ -790,15 +790,20 @@ class OrderController extends Controller
                     $order->invoice->payments()
                         ->where('status', 'verified')
                         ->where('escrow_status', 'held')
-                        ->each(function ($payment) use ($payoutService, $distributor) {
+                        ->each(function ($payment) use ($payoutService, $distributor, &$failedPayouts) {
                             $payment->releaseEscrow();
                             if ($distributor) {
-                                // The seller gets the (amount - fees) which is already computed into the payment escrow logically, 
+                                // The seller gets the (amount - fees) which is already computed into the payment escrow logically,
                                 // wait, we just transfer the net amount they are owed. Let's pass the net amount.
                                 // $payment->amount is the gross. But $payment->platform_fee is the fee. So net is amount - platform_fee.
                                 // net_seller_amount is pre-computed by applyEscrowFees() at verification time.
                                 $netAmount = (float) $payment->net_seller_amount;
-                                $payoutService->disburse($netAmount, $distributor, $payment);
+                                if (! $payoutService->disburse($netAmount, $distributor, $payment)) {
+                                    // Escrow is still released even if the automated payout is a no-op
+                                    // (e.g. SIMULATE_PAYOUTS off) — that must not pass unnoticed, since
+                                    // AutomatedPayoutService's own log has no order/payment context.
+                                    $failedPayouts[] = $payment->id;
+                                }
                             }
                         });
 
@@ -813,6 +818,14 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                 ]);
             });
+
+            if (! empty($failedPayouts)) {
+                Log::warning('[OrderController] Seller payout did not complete automatically after escrow release; manual payout required', [
+                    'order_id' => $order->id,
+                    'distributor_id' => $order->distributor_id,
+                    'payment_ids' => $failedPayouts,
+                ]);
+            }
         } catch (\Throwable $e) {
             Log::error('[OrderController] confirmReceived payout failed', [
                 'order_id' => $order->id,
@@ -838,9 +851,7 @@ class OrderController extends Controller
      */
     public function payNow(Order $order)
     {
-        if ($order->customer_id !== auth()->id()) {
-            abort(403);
-        }
+        $this->authorize('pay', $order);
 
         if (in_array($order->status, ['cancelled', 'rejected'])) {
             return back()->withErrors(['payment' => 'Cannot pay for cancelled or rejected orders.']);

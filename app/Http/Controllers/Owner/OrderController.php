@@ -65,12 +65,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $distributor = $this->getDistributor();
-
-        // Ensure distributor owns this order
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         $order->load([
             'customer',
@@ -138,11 +133,7 @@ class OrderController extends Controller
      */
     public function receipt(Order $order)
     {
-        $distributor = $this->getDistributor();
-
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         $order->load([
             'customer',
@@ -177,16 +168,7 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, Order $order, OrderPrescriptionRefundService $refundService)
     {
-        $distributor = $this->getDistributor();
-
-        if ($order->distributor_id !== $distributor->id) {
-            Log::warning('[OrderController] Unauthorized status update attempt', [
-                'order_id' => $order->id,
-                'distributor_id' => $distributor->id,
-                'order_distributor_id' => $order->distributor_id,
-            ]);
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         $request->validate([
             'status' => 'required|in:pending,approved,rejected,packed,cancelled,ready_for_pickup',
@@ -241,152 +223,175 @@ class OrderController extends Controller
             return back()->with('info', 'Order status is already '.$oldStatus);
         }
 
-        // If approving order, validate stock and deduct inventory
-        if ($newStatus === 'approved' && in_array($oldStatus, ['pending', 'pending_po_verification'])) {
-            // Re-validate stock availability before approval
-            foreach ($order->items as $item) {
-                if ($item->inventory->quantity < $item->quantity) {
-                    Log::error('[OrderController] Insufficient stock for approval', [
-                        'product_id' => $item->product_id,
-                        'product_name' => $item->product->name,
-                        'required' => $item->quantity,
-                        'available' => $item->inventory->quantity,
-                    ]);
+        // Everything below mutates inventory/delivery/order state together, so it runs as one
+        // transaction: a failure partway through (e.g. one item out of stock) must not leave
+        // some items deducted/restored while others aren't. Inventory rows touched by this
+        // order are locked up front so a concurrent status update on the same stock can't race
+        // past the quantity checks below (Inventory::reserve() is already atomic on its own;
+        // deduct()/releaseReservation() are now atomic per-row too, but the multi-item
+        // all-or-nothing guarantee still needs this transaction).
+        try {
+            DB::transaction(function () use ($request, $order, $oldStatus, $newStatus, $refundService) {
+                $inventoryIds = $order->items->pluck('inventory_id')->filter()->unique()->values();
+                $lockedInventory = $inventoryIds->isNotEmpty()
+                    ? \App\Models\Inventory::whereIn('id', $inventoryIds)->lockForUpdate()->get()->keyBy('id')
+                    : collect();
 
-                    return back()->withErrors([
-                        'error' => "Insufficient stock for {$item->product->name}. Required: {$item->quantity}, Available: {$item->inventory->quantity}",
-                    ]);
+                $inventoryFor = fn ($item) => $lockedInventory->get($item->inventory_id) ?? $item->inventory;
+
+                // If approving order, validate stock and deduct inventory
+                if ($newStatus === 'approved' && in_array($oldStatus, ['pending', 'pending_po_verification'])) {
+                    // Re-validate stock availability before approval
+                    foreach ($order->items as $item) {
+                        $inventory = $inventoryFor($item);
+                        if ($inventory->quantity < $item->quantity) {
+                            Log::error('[OrderController] Insufficient stock for approval', [
+                                'product_id' => $item->product_id,
+                                'product_name' => $item->product->name,
+                                'required' => $item->quantity,
+                                'available' => $inventory->quantity,
+                            ]);
+
+                            throw new \RuntimeException("Insufficient stock for {$item->product->name}. Required: {$item->quantity}, Available: {$inventory->quantity}");
+                        }
+                    }
+
+                    // Deduct actual stock and clear reservation
+                    foreach ($order->items as $item) {
+                        $inventory = $inventoryFor($item);
+                        if (! $inventory->deduct($item->quantity)) {
+                            Log::error('[OrderController] Failed to deduct stock', [
+                                'inventory_id' => $item->inventory_id,
+                                'quantity' => $item->quantity,
+                            ]);
+
+                            throw new \RuntimeException('Failed to deduct inventory');
+                        }
+                    }
                 }
-            }
 
-            // Deduct actual stock and clear reservation
-            foreach ($order->items as $item) {
-                if (! $item->inventory->deduct($item->quantity)) {
-                    Log::error('[OrderController] Failed to deduct stock', [
-                        'inventory_id' => $item->inventory_id,
-                        'quantity' => $item->quantity,
-                    ]);
+                // If rejecting/cancelling, handle inventory correctly based on prior status
+                if (in_array($newStatus, ['rejected', 'cancelled'])) {
+                    try {
+                        foreach ($order->items as $item) {
+                            $inventory = $inventoryFor($item);
+                            if (in_array($oldStatus, ['pending', 'pending_po_verification'])) {
+                                // Stock was reserved but NOT physically deducted — release reservation only
+                                $inventory->releaseReservation($item->quantity);
+                            } elseif ($oldStatus === 'approved') {
+                                // Stock was already physically deducted at approval — restore it
+                                $inventory->increment('quantity', $item->quantity);
+                                // Also zero out any residual reservation (should already be 0)
+                                $inventory->update([
+                                    'reserved_quantity' => max(0, $inventory->reserved_quantity - $item->quantity),
+                                ]);
+                            }
+                            // packed/shipped orders should not be cancellable — enforced by status machine
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('[OrderController] Failed to restore inventory during cancellation', [
+                            'error' => $e->getMessage(),
+                            'order_id' => $order->id,
+                        ]);
 
-                    return back()->withErrors(['error' => 'Failed to deduct inventory']);
+                        throw new \RuntimeException('Failed to restore inventory: '.$e->getMessage());
+                    }
                 }
-            }
-        }
 
-        // If rejecting/cancelling, handle inventory correctly based on prior status
-        if (in_array($newStatus, ['rejected', 'cancelled'])) {
-            try {
-                foreach ($order->items as $item) {
-                    if (in_array($oldStatus, ['pending', 'pending_po_verification'])) {
-                        // Stock was reserved but NOT physically deducted — release reservation only
-                        $item->inventory->releaseReservation($item->quantity);
-                    } elseif ($oldStatus === 'approved') {
-                        // Stock was already physically deducted at approval — restore it
-                        $item->inventory->increment('quantity', $item->quantity);
-                        // Also zero out any residual reservation (should already be 0)
-                        $item->inventory->update([
-                            'reserved_quantity' => max(0, $item->inventory->reserved_quantity - $item->quantity),
+                // If packed, handle photos and create delivery record
+                if ($newStatus === 'packed' && $oldStatus !== 'packed') {
+                    if ($request->hasFile('packaging_before')) {
+                        $order->packaging_before_image_path = $request->file('packaging_before')->store('orders/packaging', 'public');
+                    }
+                    if ($request->hasFile('packaging_after')) {
+                        $order->packaging_after_image_path = $request->file('packaging_after')->store('orders/packaging', 'public');
+                    }
+
+                    // Capture fragile flag
+                    if ($request->has('is_fragile')) {
+                        $order->is_fragile = filter_var($request->is_fragile, FILTER_VALIDATE_BOOLEAN);
+                    }
+
+                    $order->packed_at = now();
+                    $order->status = 'packed';
+
+                    // Load required relations for delivery and chat automation
+                    $order->loadMissing(['distributor', 'items.product']);
+                    $distributor = $order->distributor;
+                    $sellerAddress = $distributor->branch_address ?? $distributor->address ?? $distributor->company_name ?? 'Seller Address Not Provided';
+
+                    // Check if delivery already exists to preserve tracking number
+                    $delivery = Delivery::where('order_id', $order->id)->lockForUpdate()->first();
+                    $deliveryData = [
+                        'delivery_address' => $order->delivery_address ?? 'No address provided',
+                        'seller_address' => $sellerAddress,
+                        'courier_fee' => round((float) ($order->shipping_fee ?? 0) * (float) config('services.shipping.courier_share_rate', 0.8), 2),
+                        'courier_payout_status' => 'pending',
+                        'status' => 'scheduled',
+                    ];
+
+                    if (!$delivery) {
+                        $deliveryData['tracking_number'] = Delivery::generateTrackingNumber();
+                        Delivery::create(array_merge(['order_id' => $order->id], $deliveryData));
+                    } else {
+                        $delivery->update($deliveryData);
+                    }
+
+                    // Notify via chat with photos
+                    try {
+                        app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order);
+                    } catch (\Throwable $e) {
+                        Log::error('[OrderController] Chat photos automation failed', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
                         ]);
                     }
-                    // packed/shipped orders should not be cancellable — enforced by status machine
                 }
-            } catch (\Exception $e) {
-                Log::error('[OrderController] Failed to restore inventory during cancellation', [
-                    'error' => $e->getMessage(),
-                    'order_id' => $order->id,
-                ]);
 
-                return back()->withErrors(['error' => 'Failed to restore inventory: '.$e->getMessage()]);
-            }
+                // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).
+                // However, if the owner manually transitions it, we just let the state update.
+                if ($newStatus === 'delivered') {
+                    $order->delivered_at = now();
+                    if ($order->delivery) {
+                        $order->delivery->update([
+                            'status' => 'delivered',
+                            'actual_delivery_at' => now(),   // Bug 17 fix: correct column name
+                        ]);
+                    }
+
+                    // No inventory change here - already deducted at approval
+                }
+
+                if ($newStatus === 'ready_for_pickup') {
+                    $order->ready_for_pickup_at = now();
+                    // Optional: Auto-notify via chat for pickup
+                    try {
+                        app(OrderChatAutomationService::class)->sendReadyForPickupMessage($order);
+                    } catch (\Exception $e) {
+                        Log::warning('[OrderController] Failed to send pickup chat message', ['error' => $e->getMessage()]);
+                    }
+                }
+
+                // Update order status and persist any other changes made in blocks above
+                $order->status = $newStatus;
+                $order->save();
+
+                // If owner cancels/rejects after payment, refund customer and claw back seller proceeds.
+                if (in_array($newStatus, ['rejected', 'cancelled'], true)) {
+                    $refundService->refundAfterOrderCancellation($order->fresh(), $newStatus);
+                }
+            });
+        } catch (\Throwable $e) {
+            Log::error('[OrderController] Status update failed, transaction rolled back', [
+                'order_id' => $order->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
-
-        // If packed, handle photos and create delivery record
-        if ($newStatus === 'packed' && $oldStatus !== 'packed') {
-            try {
-                if ($request->hasFile('packaging_before')) {
-                    $order->packaging_before_image_path = $request->file('packaging_before')->store('orders/packaging', 'public');
-                }
-                if ($request->hasFile('packaging_after')) {
-                    $order->packaging_after_image_path = $request->file('packaging_after')->store('orders/packaging', 'public');
-                }
-
-                // Capture fragile flag
-                if ($request->has('is_fragile')) {
-                    $order->is_fragile = filter_var($request->is_fragile, FILTER_VALIDATE_BOOLEAN);
-                }
-
-                $order->packed_at = now();
-                $order->status = 'packed';
-
-                // Load required relations for delivery and chat automation
-                $order->loadMissing(['distributor', 'items.product']);
-                $distributor = $order->distributor;
-                $sellerAddress = $distributor->branch_address ?? $distributor->address ?? $distributor->company_name ?? 'Seller Address Not Provided';
-
-                // Check if delivery already exists to preserve tracking number
-                $delivery = Delivery::where('order_id', $order->id)->first();
-                $deliveryData = [
-                    'delivery_address' => $order->delivery_address ?? 'No address provided',
-                    'seller_address' => $sellerAddress,
-                    'courier_fee' => round((float) ($order->shipping_fee ?? 0) * (float) config('services.shipping.courier_share_rate', 0.8), 2),
-                    'courier_payout_status' => 'pending',
-                    'status' => 'scheduled',
-                ];
-
-                if (!$delivery) {
-                    $deliveryData['tracking_number'] = Delivery::generateTrackingNumber();
-                    Delivery::create(array_merge(['order_id' => $order->id], $deliveryData));
-                } else {
-                    $delivery->update($deliveryData);
-                }
-
-                // Notify via chat with photos 
-                try {
-                    app(OrderChatAutomationService::class)->sendPackagingPhotosMessage($order);
-                } catch (\Throwable $e) {
-                    Log::error('[OrderController] Chat photos automation failed', [
-                        'order_id' => $order->id,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                }
-
-            } catch (\Throwable $e) {
-                Log::error('[OrderController] Failed during packed status update', [
-                    'order_id' => $order->id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                return back()->withErrors(['error' => 'Failed to process packaging: ' . $e->getMessage()]);
-            }
-        }
-
-        // We no longer create the delivery record on 'shipped', because the Courier will be the one updating it to 'shipped' (in transit).
-        // However, if the owner manually transitions it, we just let the state update.
-        if ($newStatus === 'delivered') {
-            $order->delivered_at = now();
-            if ($order->delivery) {
-                $order->delivery->update([
-                    'status' => 'delivered',
-                    'actual_delivery_at' => now(),   // Bug 17 fix: correct column name
-                ]);
-            }
-
-            // No inventory change here - already deducted at approval
-        }
-
-        if ($newStatus === 'ready_for_pickup') {
-            $order->ready_for_pickup_at = now();
-            // Optional: Auto-notify via chat for pickup
-            try {
-                app(OrderChatAutomationService::class)->sendReadyForPickupMessage($order);
-            } catch (\Exception $e) {
-                Log::warning('[OrderController] Failed to send pickup chat message', ['error' => $e->getMessage()]);
-            }
-        }
-
-        // Update order status and persist any other changes made in blocks above
-        $order->status = $newStatus;
-        $order->save();
 
         if ($newStatus === 'approved' && in_array($oldStatus, ['pending', 'pending_po_verification'])) {
             try {
@@ -394,11 +399,6 @@ class OrderController extends Controller
             } catch (\Exception $e) {
                 Log::warning('[OrderController] Failed to send order accepted chat message', ['error' => $e->getMessage()]);
             }
-        }
-
-        // If owner cancels/rejects after payment, refund customer and claw back seller proceeds.
-        if (in_array($newStatus, ['rejected', 'cancelled'], true)) {
-            $refundService->refundAfterOrderCancellation($order->fresh(), $newStatus);
         }
 
         $order = $order->fresh();
@@ -435,11 +435,7 @@ class OrderController extends Controller
      */
     public function addNote(Request $request, Order $order)
     {
-        $distributor = $this->getDistributor();
-
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         $request->validate([
             'note' => 'required|string|max:1000',
@@ -462,11 +458,7 @@ class OrderController extends Controller
      */
     public function confirmCodRemittance(Order $order)
     {
-        $distributor = $this->getDistributor();
-
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         if ($order->payment_method !== 'cod') {
             return back()->withErrors(['error' => 'This is not a COD order.']);
@@ -486,37 +478,55 @@ class OrderController extends Controller
             return back()->with('info', 'COD remittance already confirmed.');
         }
 
-        // Confirm remittance received from courier
-        $delivery->update(['cod_remitted_at' => now()]);
+        $payoutSucceeded = true;
 
-        // Release courier payout — held until now for COD orders
-        if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
-            $payoutService = app(\App\Services\AutomatedPayoutService::class);
-            if ($delivery->courier) {
-                $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
-            } else {
-                $delivery->update([
-                    'courier_payout_status' => 'paid',
-                    'courier_paid_at' => now(),
-                ]);
+        DB::transaction(function () use ($order, $delivery, &$payoutSucceeded) {
+            // Confirm remittance received from courier
+            $delivery->update(['cod_remitted_at' => now()]);
+
+            // Release courier payout — held until now for COD orders
+            if ($delivery->courier_payout_status === 'pending' && (float) $delivery->courier_fee > 0) {
+                if ($delivery->courier) {
+                    $payoutService = app(\App\Services\AutomatedPayoutService::class);
+                    $payoutSucceeded = $payoutService->disburse((float) $delivery->courier_fee, $delivery->courier, $delivery);
+                } else {
+                    $delivery->update([
+                        'courier_payout_status' => 'paid',
+                        'courier_paid_at' => now(),
+                    ]);
+                }
             }
-        }
 
-        // Mark order completed
-        $order->update([
-            'status' => 'completed',
-            'received_at' => now(),
-        ]);
+            // Mark order completed
+            $order->update([
+                'status' => 'completed',
+                'received_at' => now(),
+            ]);
 
-        // Sync COD invoice and payment status now that cash is confirmed received.
-        $order->loadMissing('invoice.payments');
-        if ($order->invoice) {
-            $order->invoice->payments()
-                ->where('payment_method', 'cod')
-                ->where('status', 'pending')
-                ->update(['status' => 'verified', 'verified_at' => now()]);
+            // Sync COD invoice and payment status now that cash is confirmed received.
+            $order->loadMissing('invoice.payments');
+            if ($order->invoice) {
+                $order->invoice->payments()
+                    ->where('payment_method', 'cod')
+                    ->where('status', 'pending')
+                    ->update(['status' => 'verified', 'verified_at' => now()]);
 
-            $order->invoice->update(['status' => 'paid']);
+                $order->invoice->update(['status' => 'paid']);
+            }
+        });
+
+        // The order still completes even if the automated payout didn't go through (it's a
+        // no-op unless SIMULATE_PAYOUTS is on) — but that must not pass silently. Surface it
+        // here with order/delivery context, since AutomatedPayoutService's own log has neither.
+        if (! $payoutSucceeded) {
+            Log::warning('[OrderController] Courier payout did not complete automatically during COD remittance; manual payout required', [
+                'order_id' => $order->id,
+                'delivery_id' => $delivery->id,
+                'courier_id' => $delivery->courier_id,
+                'courier_fee' => $delivery->courier_fee,
+            ]);
+
+            return back()->with('success', 'COD remittance confirmed and order completed, but the courier payout could not be sent automatically — it needs to be sent manually.');
         }
 
         return back()->with('success', 'COD remittance confirmed. Courier payout released. Order is now complete.');
@@ -527,11 +537,7 @@ class OrderController extends Controller
      */
     public function approvePrescription(Request $request, Order $order, PrescriptionChatService $prescriptionChat)
     {
-        $distributor = $this->getDistributor();
-
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         if ($order->prescription_status !== Order::PRESCRIPTION_PENDING_REVIEW) {
             if ($request->expectsJson()) {
@@ -569,11 +575,7 @@ class OrderController extends Controller
      */
     public function rejectPrescription(Request $request, Order $order, OrderPrescriptionRefundService $refundService, PrescriptionChatService $prescriptionChat)
     {
-        $distributor = $this->getDistributor();
-
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         $request->validate([
             'reason' => 'required|string|max:500',
@@ -642,10 +644,7 @@ class OrderController extends Controller
      */
     public function approveDiscount(Request $request, Order $order)
     {
-        $distributor = $this->getDistributor();
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         if (!$order->needsDiscountReview()) {
             return back()->withErrors(['error' => 'Discount is not pending review.']);
@@ -673,10 +672,7 @@ class OrderController extends Controller
      */
     public function rejectDiscount(Request $request, Order $order, OrderPrescriptionRefundService $refundService)
     {
-        $distributor = $this->getDistributor();
-        if ($order->distributor_id !== $distributor->id) {
-            abort(403);
-        }
+        $this->authorize('update', $order);
 
         $request->validate([
             'reason' => 'required|string|max:500',
