@@ -17,6 +17,8 @@ class OrderItem extends Model
         'total_price',
         'subtotal',
         'is_wholesale',
+        'units_per_pack',
+        'unit_label',
     ];
 
     protected $casts = [

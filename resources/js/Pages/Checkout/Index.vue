@@ -344,6 +344,12 @@
                                     >
                                         {{ item.variation_label }}
                                     </p>
+                                    <p
+                                        v-if="item.units_per_pack > 1"
+                                        class="text-[11px] text-gray-500 mt-0.5"
+                                    >
+                                        Sold per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each ({{ item.pieces }} pcs)
+                                    </p>
                                     <div class="flex flex-col gap-0.5 mt-1.5">
                                         <span
                                             class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"
@@ -373,7 +379,7 @@
                                             class="text-xs text-gray-300 line-through font-medium"
                                             >₱{{
                                                 Number(
-                                                    item.product.base_price *
+                                                    item.retail_unit_price *
                                                         item.quantity,
                                                 ).toLocaleString()
                                             }}</span
@@ -1367,25 +1373,26 @@
                             class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6"
                         >
                             <h3 class="font-bold text-indigo-900 mb-2">Purchase Order Details</h3>
-                            <p class="text-xs text-indigo-800 mb-4">Please upload a valid Purchase Order document or select a previously saved one. Payment is expected within 30 days of invoice.</p>
-                            
+                            <p class="text-xs text-indigo-800 mb-4">Upload the Purchase Order document for this order. Payment is expected within 30 days of invoice.</p>
+
                             <div v-if="savedPurchaseOrders.length > 0" class="mb-4">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Use a saved Purchase Order</label>
-                                <select v-model="form.saved_purchase_order_id" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" @change="form.saved_purchase_order_id ? form.po_document = null : null">
-                                    <option :value="null">-- Upload a new document instead --</option>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Company / billing details</label>
+                                <select v-model="form.saved_purchase_order_id" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option :value="null">-- No saved profile --</option>
                                     <option v-for="po in savedPurchaseOrders" :key="po.id" :value="po.id">
-                                        {{ po.po_number }} ({{ po.company_name }})
+                                        {{ po.label }} ({{ po.company_name }})
                                     </option>
                                 </select>
                             </div>
-                            
-                            <div v-if="!form.saved_purchase_order_id">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Upload New PO Document *</label>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">PO Document *</label>
                                 <input type="file" @change="e => form.po_document = e.target.files[0]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200" accept=".pdf,.png,.jpg,.jpeg" />
-                                
-                                <label class="mt-3 flex items-center gap-2 cursor-pointer">
+                                <p v-if="form.errors.po_document" class="text-red-600 text-xs mt-1.5">{{ form.errors.po_document }}</p>
+
+                                <label v-if="!form.saved_purchase_order_id" class="mt-3 flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" v-model="form.save_purchase_order" class="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" />
-                                    <span class="text-xs text-gray-700 font-medium">Save this Purchase Order document for future checkouts</span>
+                                    <span class="text-xs text-gray-700 font-medium">Save my company details for future purchase orders</span>
                                 </label>
                             </div>
                         </div>
@@ -1444,7 +1451,9 @@
                             {{
                                 form.processing
                                     ? "Processing..."
-                                    : `Pay ₱${Number(grandTotal).toLocaleString()} & Place Order`
+                                    : form.payment_method === "purchase_order"
+                                      ? `Submit Purchase Order (₱${Number(grandTotal).toLocaleString()})`
+                                      : `Pay ₱${Number(grandTotal).toLocaleString()} & Place Order`
                             }}
                         </button>
 
@@ -1623,36 +1632,6 @@ const formatTIN = (e) => {
     form.tin = formatted;
 };
 
-watch(
-    () => props.cod_available,
-    (ok) => {
-        if (!ok && form.payment_method === "cod") {
-            form.payment_method = "gcash";
-        }
-    },
-    { immediate: true },
-);
-
-// Clear discount errors when toggled off
-watch(() => form.apply_discount, (val) => {
-    if (!val) {
-        // Clear all discount related errors immediately when unchecked
-        const fieldsToClear = [
-            'discount_type',
-            'discount_id_number',
-            'discount_id_name',
-            'discount_id_image',
-            'discount_terms'
-        ];
-        fieldsToClear.forEach(field => {
-            if (form.errors[field]) delete form.errors[field];
-        });
-        
-        // Also ensure any lingering validation errors from backend for these fields are cleared
-        form.clearErrors(...fieldsToClear);
-    }
-});
-
 const form = useForm({
     customer_name: "",
     delivery_address: "",
@@ -1694,8 +1673,40 @@ const form = useForm({
     save_purchase_order: false,
 });
 
+// These watchers read `form`, so they must be declared after it (a watch getter runs when the
+// watcher is created, and `immediate` runs the callback straight away).
+watch(
+    () => props.cod_available,
+    (ok) => {
+        if (!ok && form.payment_method === "cod") {
+            form.payment_method = "gcash";
+        }
+    },
+    { immediate: true },
+);
+
+// Clear discount errors when toggled off
+watch(() => form.apply_discount, (val) => {
+    if (!val) {
+        // Clear all discount related errors immediately when unchecked
+        const fieldsToClear = [
+            'discount_type',
+            'discount_id_number',
+            'discount_id_name',
+            'discount_id_image',
+            'discount_terms'
+        ];
+        fieldsToClear.forEach(field => {
+            if (form.errors[field]) delete form.errors[field];
+        });
+        
+        // Also ensure any lingering validation errors from backend for these fields are cleared
+        form.clearErrors(...fieldsToClear);
+    }
+});
+
 const isApprovedBusiness = computed(() => {
-    return page.props.can_access_wholesale;
+    return !!page.props.auth?.user?.can_access_wholesale;
 });
 
 const localDiscountAmount = computed(() => {
@@ -1748,7 +1759,7 @@ const grandTotal = computed(() => {
 
 const originalSubtotal = computed(() => {
     return props.cartItems.reduce(
-        (sum, item) => sum + Number(item.product.base_price) * item.quantity,
+        (sum, item) => sum + Number(item.retail_unit_price) * item.quantity,
         0,
     );
 });
@@ -1819,7 +1830,6 @@ const isFormValid = computed(() => {
 
     const poOk =
         form.payment_method !== 'purchase_order' ||
-        form.saved_purchase_order_id ||
         form.po_document;
 
     return (

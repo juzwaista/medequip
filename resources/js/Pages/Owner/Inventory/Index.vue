@@ -138,11 +138,11 @@
                                     'text-yellow-600': product.stock_status === 'medium',
                                     'text-green-600': product.stock_status === 'good'
                                 }">
-                                    {{ product.total_stock }}
+                                    {{ product.has_mixed_packs ? product.stock_pieces : product.total_stock }}<span v-if="product.has_mixed_packs" class="text-[10px] font-semibold text-gray-500 ml-0.5">pcs</span>
                                 </span>
                             </div>
                             <div class="flex justify-between text-[10px] sm:text-[11px] text-gray-600 leading-tight">
-                                <span>Avail: {{ product.available_stock }}</span>
+                                <span>Avail: {{ product.has_mixed_packs ? `${product.available_pieces} pcs` : product.available_stock }}</span>
                                 <span class="text-orange-600 h-3 sm:h-4 w-12 text-right">
                                     <template v-if="product.total_reserved > 0">Rsrv: {{ product.total_reserved }}</template>
                                 </span>

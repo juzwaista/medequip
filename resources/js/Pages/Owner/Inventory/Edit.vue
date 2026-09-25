@@ -158,6 +158,30 @@
                 <section class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Pricing</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                        <!-- How the product is sold: pack size -->
+                        <div class="sm:col-span-2 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
+                            <label class="text-sm font-semibold text-gray-800">How do you sell this product?</label>
+                            <p class="text-xs text-gray-500 mt-1.5 mb-3">The prices below are per selling unit. If one unit holds several pieces (for example a box of 10), enter how many. Wholesale minimums are counted in <strong>pieces</strong>, so buyers of boxes qualify correctly.</p>
+                            <div class="flex flex-wrap items-end gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Sold as</label>
+                                    <input v-model="fields.unit_label" list="unit-label-options" type="text" maxlength="30" placeholder="piece" class="w-40 px-4 py-2.5 border border-gray-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" />
+                                    <datalist id="unit-label-options">
+                                        <option value="piece" /><option value="box" /><option value="pack" /><option value="bottle" /><option value="vial" /><option value="roll" /><option value="set" /><option value="case" />
+                                    </datalist>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Pieces per {{ !fields.unit_label || fields.unit_label.toLowerCase() === 'piece' ? 'unit' : fields.unit_label }}</label>
+                                    <input v-model.number="fields.units_per_pack" type="number" min="1" max="100000" class="w-32 px-4 py-2.5 border border-gray-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500" />
+                                </div>
+                            </div>
+                            <p v-if="productPack > 1" class="text-xs text-indigo-700 mt-3">
+                                Each {{ fields.unit_label || 'unit' }} = {{ productPack }} pcs
+                                <template v-if="Number(fields.base_price) > 0"> · about ₱{{ (Number(fields.base_price) / productPack).toLocaleString(undefined, { maximumFractionDigits: 2 }) }} per piece at retail</template>.
+                                To also sell single pieces or another pack size, add an option below and set its “Pieces / unit”.
+                            </p>
+                        </div>
+
                         <div class="flex h-full min-h-0 flex-col rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
                             <label class="shrink-0 text-sm font-semibold text-gray-800">Retail price (₱) <span class="text-red-500">*</span></label>
                             <p class="mt-1.5 min-h-[3.25rem] flex-1 text-xs leading-relaxed text-gray-500">Your main selling price per unit. Variant price adjustments add to or subtract from this (and from wholesale when it applies).</p>
@@ -188,12 +212,12 @@
                         </div>
                         <div v-if="fields.wholesale_price" class="sm:col-span-2 rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
                             <label class="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
-                                Minimum wholesale quantity <span class="text-red-500">*</span>
+                                Minimum wholesale quantity (pieces) <span class="text-red-500">*</span>
                                 <Tooltip content="Corporate buyers must order at least this many units to qualify for wholesale rates." position="top">
                                     <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 </Tooltip>
                             </label>
-                            <p class="text-xs text-gray-500 mt-1.5 mb-3">Customers must order at least this many units to get the wholesale price.</p>
+                            <p class="text-xs text-gray-500 mt-1.5 mb-3">Buyers must order at least this many <strong>pieces</strong> in total (across all pack sizes of this product) to get the wholesale price.</p>
                             <input
                                 v-model.number="fields.wholesale_min_qty"
                                 type="number"
@@ -201,6 +225,9 @@
                                 required
                                 class="w-full max-w-xs px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                             />
+                            <p v-if="productPack > 1 && Number(fields.wholesale_min_qty) > 0" class="text-xs text-indigo-700 mt-2">
+                                = {{ Math.ceil(Number(fields.wholesale_min_qty) / productPack) }} {{ pluralize(fields.unit_label || 'unit', Math.ceil(Number(fields.wholesale_min_qty) / productPack)) }} of {{ productPack }} pcs.
+                            </p>
                         </div>
                     </div>
                 </section>
@@ -260,6 +287,8 @@
                                     <tr>
                                         <th class="text-left px-3 py-2 font-semibold">Variant</th>
                                         <th class="text-left px-3 py-2 font-semibold min-w-[8.5rem] whitespace-normal">Adj (₱)</th>
+                                        <th class="text-left px-3 py-2 font-semibold w-40">Pieces / unit</th>
+                                        <th class="text-left px-3 py-2 font-semibold w-28">Retail</th>
                                         <th class="text-left px-3 py-2 font-semibold w-32">SKU</th>
                                         <th class="text-left px-3 py-2 font-semibold w-24">Stock</th>
                                         <th class="text-center px-3 py-2 font-semibold w-16">Active</th>
@@ -280,6 +309,13 @@
                                                 class="w-full min-w-[6rem] px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500"
                                             />
                                         </td>
+                                        <td class="px-3 py-2 align-top">
+                                            <div class="flex gap-1">
+                                                <input v-model.number="combo.units_per_pack" type="number" min="1" :placeholder="String(productPack)" title="Pieces in one unit of this option. Leave blank to use the product's." class="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500" />
+                                                <input v-model="combo.unit_label" type="text" maxlength="30" :placeholder="fields.unit_label || 'piece'" title="What this option is called (box, piece...)" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500" />
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 align-top text-gray-700 whitespace-nowrap">₱{{ comboRetail(combo) }}</td>
                                         <td class="px-3 py-2">
                                             <input
                                                 v-model="combo.sku"
@@ -489,6 +525,8 @@ const fields = ref({
     base_price: props.product.base_price,
     wholesale_price: props.product.wholesale_price || '',
     wholesale_min_qty: props.product.wholesale_min_qty || '',
+    unit_label: props.product.unit_label || 'piece',
+    units_per_pack: props.product.units_per_pack || 1,
     has_warranty: props.product.has_warranty || false,
     warranty_months: props.product.warranty_months || '',
     has_expiry: props.product.has_expiry || false,
@@ -617,6 +655,8 @@ function initVariationsFromProduct() {
                 match.id = v.id;
                 match.price_adjustment = Number(v.price_adjustment ?? 0);
                 match.sku = v.sku || '';
+                match.units_per_pack = v.units_per_pack ?? '';
+                match.unit_label = v.unit_label ?? '';
                 match.is_active = v.is_active !== false;
                 match.stock = Number(props.variation_stocks[v.id] ?? 0);
                 match._reserved = Number(props.variation_reserved?.[v.id] ?? 0);
@@ -640,6 +680,8 @@ function initVariationsFromProduct() {
                 match.id = v.id;
                 match.price_adjustment = Number(v.price_adjustment ?? 0);
                 match.sku = v.sku || '';
+                match.units_per_pack = v.units_per_pack ?? '';
+                match.unit_label = v.unit_label ?? '';
                 match.is_active = v.is_active !== false;
                 match.stock = Number(props.variation_stocks[v.id] ?? 0);
                 match._reserved = Number(props.variation_reserved?.[v.id] ?? 0);
@@ -671,6 +713,18 @@ function removeGroupValue(gi, vi) {
     regenerateCombinations();
 }
 
+// "box" -> "boxes", "piece" -> "pieces"
+const pluralize = (word, n) => (n === 1 ? word : (/(s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`));
+
+const productPack = computed(() => Math.max(1, Number(fields.value.units_per_pack) || 1));
+
+// Retail price of one unit of a variant: per-piece price x the variant's pieces, plus its adjustment.
+function comboRetail(c) {
+    const pack = Math.max(1, Number(c.units_per_pack) || productPack.value);
+    const price = ((Number(fields.value.base_price) || 0) * pack) / productPack.value + (Number(c.price_adjustment) || 0);
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function regenerateCombinations() {
     const groups = optionGroups.value.filter(g => g.name.trim() && g.values.length > 0);
     if (groups.length === 0) { combinations.value = []; return; }
@@ -697,6 +751,8 @@ function regenerateCombinations() {
             id: old?.id ?? null,
             price_adjustment: old?.price_adjustment ?? 0,
             sku: old?.sku ?? '',
+            units_per_pack: old?.units_per_pack ?? '',
+            unit_label: old?.unit_label ?? '',
             stock: old?.stock ?? 0,
             is_active: old?.is_active ?? true,
             _reserved: old?._reserved ?? 0,
@@ -751,6 +807,8 @@ function submitForm() {
     if (fields.value.wholesale_min_qty !== '' && fields.value.wholesale_min_qty != null) {
         fd.append('wholesale_min_qty', String(fields.value.wholesale_min_qty));
     }
+    fd.append('unit_label', String(fields.value.unit_label || 'piece').trim() || 'piece');
+    fd.append('units_per_pack', String(Math.max(1, Number(fields.value.units_per_pack) || 1)));
     appendBool(fd, 'has_warranty', fields.value.has_warranty);
     if (fields.value.has_warranty && fields.value.warranty_months) {
         fd.append('warranty_months', String(fields.value.warranty_months));
@@ -770,6 +828,8 @@ function submitForm() {
                 combination: c.combination,
                 price_adjustment: c.price_adjustment ?? 0,
                 sku: c.sku || null,
+                units_per_pack: c.units_per_pack ? Number(c.units_per_pack) : null,
+                unit_label: c.unit_label ? String(c.unit_label).trim() : null,
                 is_active: c.is_active,
             };
             if (c.id != null) payload.id = c.id;

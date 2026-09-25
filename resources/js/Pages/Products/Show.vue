@@ -129,14 +129,14 @@
                     <div class="mt-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                         <div class="flex flex-wrap items-baseline gap-2">
                             <span class="text-2xl font-bold text-gray-900">₱{{ Number(effectiveRetail).toLocaleString() }}</span>
-                            <span class="text-sm text-gray-500">Retail</span>
+                            <span class="text-sm text-gray-500">Retail<template v-if="linePack > 1 || lineUnitLabel !== 'piece'"> · per {{ lineUnitLabel }}<template v-if="linePack > 1"> ({{ linePack }} pcs)</template></template></span>
                         </div>
                         <div v-if="product.wholesale_price" class="mt-3 pt-3 border-t border-gray-100">
                             <template v-if="isApprovedBusiness">
                                 <div class="flex flex-wrap items-center gap-2 text-sm">
                                     <span class="font-semibold text-emerald-700">₱{{ Number(effectiveWholesale).toLocaleString() }}</span>
                                     <span class="text-gray-600">wholesale</span>
-                                    <span class="text-xs text-gray-500">· min {{ product.wholesale_min_qty }} pcs</span>
+                                    <span class="text-xs text-gray-500">· from {{ product.wholesale_min_qty }} pcs<template v-if="linePack > 1"> ({{ wholesaleMinUnits }} {{ pluralize(lineUnitLabel, wholesaleMinUnits) }})</template>, counted across all pack sizes</span>
                                 </div>
                             </template>
                             <template v-else>
@@ -205,7 +205,8 @@
                     <p class="mt-4 text-sm">
                         <span class="font-medium text-gray-800">{{ hasVariations ? 'Total Stock:' : 'Stock:' }}</span>
                         <span :class="totalStock > 0 ? 'text-emerald-700' : 'text-red-600'" class="ml-1 font-semibold">
-                            {{ totalStock > 0 ? `${totalStock} available` : 'Out of stock' }}
+                            <!-- Options in different pack sizes can't be added as "units", so total them in pieces -->
+                            {{ totalStock > 0 ? (hasMixedPacks ? `${availablePieces} pcs available in total` : `${totalStock} available`) : 'Out of stock' }}
                         </span>
                     </p>
 
@@ -597,6 +598,8 @@ const props = defineProps({
     relatedProducts: Array,
     totalStock: Number,
     availableStock: Number,
+    hasMixedPacks: { type: Boolean, default: false },
+    availablePieces: { type: Number, default: 0 },
     hasVariations: {
         type: Boolean,
         default: false,
@@ -772,9 +775,24 @@ const selectedVariation = computed(() => {
 
 const priceAdjustment = computed(() => (selectedVariation.value ? Number(selectedVariation.value.price_adjustment) : 0));
 
-const effectiveRetail = computed(() => Number(props.product.base_price) + priceAdjustment.value);
+// Pack sizes: the product's price is per its own selling unit; an option that sells a different
+// number of pieces per unit (e.g. "Box of 10") costs (per-piece price × its pieces) + adjustment.
+// "box" -> "boxes", "piece" -> "pieces"
+const pluralize = (word, n) => (n === 1 ? word : (/(s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`));
+
+const productPack = computed(() => Math.max(1, Number(props.product.units_per_pack) || 1));
+const linePack = computed(() => Math.max(1, Number(selectedVariation.value?.units_per_pack) || productPack.value));
+const lineUnitLabel = computed(() => selectedVariation.value?.unit_label || props.product.unit_label || 'piece');
+const scaleToLine = (price) => (Number(price) * linePack.value) / productPack.value;
+
+const effectiveRetail = computed(() => scaleToLine(props.product.base_price) + priceAdjustment.value);
 const effectiveWholesale = computed(() =>
-    props.product.wholesale_price ? Number(props.product.wholesale_price) + priceAdjustment.value : null
+    props.product.wholesale_price ? scaleToLine(props.product.wholesale_price) + priceAdjustment.value : null
+);
+
+const piecesInQuantity = computed(() => Number(quantity.value) * linePack.value);
+const wholesaleMinUnits = computed(() =>
+    props.product.wholesale_min_qty ? Math.ceil(Number(props.product.wholesale_min_qty) / linePack.value) : null
 );
 
 const variationOptionLabel = computed(() => {
@@ -793,7 +811,7 @@ const lineAvailable = computed(() => {
 });
 
 const isApprovedBusiness = computed(() => {
-    return page.props.can_access_wholesale;
+    return !!page.props.auth?.user?.can_access_wholesale;
 });
 
 const hasBusinessProfile = computed(() => {
@@ -804,7 +822,7 @@ const hasBusinessProfile = computed(() => {
 const wholesaleSavings = computed(() => {
     if (!isApprovedBusiness.value) return null;
     if (!props.product.wholesale_price || !props.product.wholesale_min_qty) return null;
-    if (Number(quantity.value) < Number(props.product.wholesale_min_qty)) return null;
+    if (piecesInQuantity.value < Number(props.product.wholesale_min_qty)) return null;
 
     const retail = Number(effectiveRetail.value);
     const wholesale = Number(effectiveWholesale.value);

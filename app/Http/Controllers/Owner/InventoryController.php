@@ -133,6 +133,13 @@ class InventoryController extends Controller
             $product->total_reserved = $totalReserved;
             $product->available_stock = $available;
 
+            // Options sold in different pack sizes (pieces vs boxes) can't be added together as
+            // "units", so the card shows the total in pieces for those products.
+            $product->has_mixed_packs = $product->hasMixedPacks();
+            $pieces = $product->stockInPieces();
+            $product->stock_pieces = $pieces['quantity'];
+            $product->available_pieces = $pieces['quantity'] - $pieces['reserved'];
+
             // Stock status aligned to dashboard alert logic (reorder_level),
             // so when DSS says "Low Stock Products" the UI badge matches.
             $activeCountForCheck = $product->variations->where('is_active', true)->count();
@@ -240,6 +247,8 @@ class InventoryController extends Controller
             'base_price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_qty' => 'nullable|integer|min:1',
+            'units_per_pack' => 'nullable|integer|min:1|max:100000',
+            'unit_label' => 'nullable|string|max:30',
             'has_warranty' => 'boolean',
             'warranty_months' => 'nullable|integer|min:1|max:120|required_if:has_warranty,1',
             'has_expiry' => 'boolean',
@@ -271,6 +280,8 @@ class InventoryController extends Controller
                 'variations.*.combination' => 'nullable|array',
                 'variations.*.price_adjustment' => 'nullable|numeric',
                 'variations.*.sku' => 'nullable|string|max:100',
+                'variations.*.units_per_pack' => 'nullable|integer|min:1|max:100000',
+                'variations.*.unit_label' => 'nullable|string|max:30',
             ]
         );
 
@@ -319,6 +330,8 @@ class InventoryController extends Controller
                     'base_price' => $validated['base_price'],
                     'wholesale_price' => $validated['wholesale_price'] ?? null,
                     'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
+                    'units_per_pack' => $validated['units_per_pack'] ?? 1,
+                    'unit_label' => ($validated['unit_label'] ?? null) ?: 'piece',
                     'has_warranty' => (bool) ($validated['has_warranty'] ?? false),
                     'warranty_months' => ($validated['has_warranty'] ?? false)
                         ? ($validated['warranty_months'] ?? null)
@@ -441,6 +454,8 @@ class InventoryController extends Controller
             'base_price' => 'required|numeric|min:0',
             'wholesale_price' => 'nullable|numeric|min:0',
             'wholesale_min_qty' => 'nullable|integer|min:1',
+            'units_per_pack' => 'nullable|integer|min:1|max:100000',
+            'unit_label' => 'nullable|string|max:30',
             'has_warranty' => 'boolean',
             'warranty_months' => 'nullable|integer|min:1|max:120|required_if:has_warranty,1',
             'has_expiry' => 'boolean',
@@ -477,6 +492,8 @@ class InventoryController extends Controller
                 'variations.*.combination' => 'nullable|array',
                 'variations.*.price_adjustment' => 'nullable|numeric',
                 'variations.*.sku' => 'nullable|string|max:100',
+                'variations.*.units_per_pack' => 'nullable|integer|min:1|max:100000',
+                'variations.*.unit_label' => 'nullable|string|max:30',
                 'variations.*.is_active' => 'nullable|boolean',
             ]
         );
@@ -527,6 +544,8 @@ class InventoryController extends Controller
                     'base_price' => $validated['base_price'],
                     'wholesale_price' => $validated['wholesale_price'] ?? null,
                     'wholesale_min_qty' => $validated['wholesale_min_qty'] ?? null,
+                    'units_per_pack' => $validated['units_per_pack'] ?? 1,
+                    'unit_label' => ($validated['unit_label'] ?? null) ?: 'piece',
                     'has_warranty' => (bool) ($validated['has_warranty'] ?? false),
                     'warranty_months' => ($validated['has_warranty'] ?? false)
                         ? ($validated['warranty_months'] ?? null)

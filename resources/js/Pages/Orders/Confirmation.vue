@@ -46,7 +46,7 @@
                             <p class="text-sm text-gray-700 mt-1">{{ entry.distributor?.company_name || 'Distributor' }}</p>
                         </div>
                         <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold capitalize">
-                            {{ entry.status }}
+                            {{ String(entry.status).replace(/_/g, " ") }}
                         </span>
                     </div>
 
@@ -104,6 +104,14 @@
                 </p>
                 <p v-if="codOrdersTotal > 0" class="text-sm text-gray-700">
                     For cash on delivery orders, pay <strong>₱{{ Number(codOrdersTotal).toLocaleString() }}</strong> to your courier when those orders arrive.
+                </p>
+            </div>
+            <div
+                v-else-if="hasPurchaseOrders && !hasOnlinePaidOrders && !hasUnpaidOnlineOrders"
+                class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 sm:p-6 mb-6"
+            >
+                <p class="text-sm text-indigo-900">
+                    <strong>Purchase order submitted:</strong> the seller will verify your PO document and credit terms before accepting the order. No online payment is needed now. Payment is due on the agreed Net-30 terms.
                 </p>
             </div>
             <div
@@ -167,9 +175,13 @@ const allOrdersCod = computed(() => {
     return orders.length > 0 && orders.every((o) => o.payment_method === 'cod');
 });
 
+const isOfflinePayment = (o) => o.payment_method === 'cod' || o.payment_method === 'purchase_order';
+
+const hasPurchaseOrders = computed(() => normalizedOrders.value.some((o) => o.payment_method === 'purchase_order'));
+
 const hasOnlinePaidOrders = computed(() => {
     return normalizedOrders.value.some((o) => {
-        if (o.payment_method === 'cod') return false;
+        if (isOfflinePayment(o)) return false;
         return o.invoice?.status === 'paid' || 
                o.invoice?.payments?.some(p => p.status === 'verified');
     });
@@ -177,7 +189,7 @@ const hasOnlinePaidOrders = computed(() => {
 
 const hasUnpaidOnlineOrders = computed(() => {
     return normalizedOrders.value.some((o) => {
-        if (o.payment_method === 'cod') return false;
+        if (isOfflinePayment(o)) return false;
         return !o.invoice || (o.invoice.status !== 'paid' && !o.invoice.payments?.some(p => p.status === 'verified'));
     });
 });
@@ -197,7 +209,7 @@ const codOrdersTotal = computed(() =>
 
 const onlineOrdersTotal = computed(() =>
     normalizedOrders.value
-        .filter((o) => o.payment_method && o.payment_method !== 'cod')
+        .filter((o) => o.payment_method && !isOfflinePayment(o))
         .reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
 );
 
@@ -211,6 +223,7 @@ const formatPaymentMethod = (method) => {
         'paymongo': 'Online Payment',
         'wallet': 'Wallet',
         'cod': 'Cash on Delivery',
+        'purchase_order': 'Purchase Order (Net-30)',
     };
     return labels[method] || method;
 };

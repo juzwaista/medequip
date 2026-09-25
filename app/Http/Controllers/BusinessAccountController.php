@@ -49,7 +49,7 @@ class BusinessAccountController extends Controller
             'company_name'      => 'required|string|max:255',
             'business_type'     => 'required|string|max:255',
             'tin_number'        => 'nullable|string|max:50',
-            'sec_dti_document'  => ['nullable', 'file', 'max:5120', new SafeUpload],
+            'sec_dti_document'  => ['nullable', 'file', 'max:5120', SafeUpload::document()],
         ]);
 
         $docPath = null;
@@ -107,7 +107,7 @@ class BusinessAccountController extends Controller
         }
 
         $request->validate([
-            'sec_dti_document' => ['required', 'file', 'max:5120', new SafeUpload],
+            'sec_dti_document' => ['required', 'file', 'max:5120', SafeUpload::document()],
         ]);
 
         if ($profile->sec_dti_document_path) {

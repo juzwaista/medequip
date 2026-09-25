@@ -15,6 +15,8 @@ class ProductVariation extends Model
         'combination',
         'price_adjustment',
         'sku',
+        'units_per_pack',
+        'unit_label',
         'sort_order',
         'is_active',
     ];

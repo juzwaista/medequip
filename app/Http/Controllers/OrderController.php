@@ -86,7 +86,7 @@ class OrderController extends Controller
             $cart = CartService::pruneCart(session()->get('cart', []));
             
             // Handle Selective Checkout from Cart
-            if (request()->has('selected_items')) {
+            if (request()->filled('selected_items')) {
                 $selectedKeys = explode(',', request('selected_items'));
                 $cart = array_intersect_key($cart, array_flip($selectedKeys));
             }
@@ -96,7 +96,7 @@ class OrderController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
-        $cartItems = CartService::enrichCartItems($cart, $request->user());
+        $cartItems = CartService::enrichCartItems($cart, auth()->user());
 
         $subtotal = CartService::calculateSubtotal($cartItems);
 
@@ -117,15 +117,7 @@ class OrderController extends Controller
 
             $distributor = \App\Models\Distributor::find($distributorId);
             if ($distributor && $distributor->max_cod_amount > 0) {
-                $orderSubtotal = (float) $dItems->sum(function ($item) {
-                    $p = $item['product'];
-                    $qty = $item['quantity'];
-                    $v = $item['variation'] ?? null;
-                    $isWholesale = $p->wholesale_price && $p->wholesale_min_qty && $qty >= $p->wholesale_min_qty;
-                    $base = $isWholesale ? (float) $p->wholesale_price : (float) $p->base_price;
-                    $adj = $v ? (float) $v->price_adjustment : 0.0;
-                    return round($base + $adj, 2) * $qty;
-                });
+                $orderSubtotal = (float) $dItems->sum('subtotal');
 
                 $orderTotal = $orderSubtotal + $req['fee'];
                 if ($orderTotal > $distributor->max_cod_amount) {
@@ -248,7 +240,7 @@ class OrderController extends Controller
             $cart = CartService::pruneCart(session()->get('cart', []));
 
             // Handle Selective Checkout
-            if ($request->has('selected_items')) {
+            if ($request->filled('selected_items')) {
                 $selectedKeys = explode(',', $request->input('selected_items'));
                 $cart = array_intersect_key($cart, array_flip($selectedKeys));
             }
@@ -329,32 +321,13 @@ class OrderController extends Controller
 
 
             $createdOrders = [];
+            $savedPoProfile = false;
 
             foreach ($ordersByDistributor as $distributorData) {
                 $distributor = \App\Models\Distributor::findOrFail($distributorData['distributor_id']);
                 $isPickup = $validated['fulfillment_method'] === 'pickup';
                 $shippingReq = $isPickup ? ['fee' => 0, 'vehicle' => 'motorcycle'] : $this->calculateShippingRequirement($distributorData['items']);
                 
-                $itemSubtotal = 0;
-                foreach ($distributorData['items'] as $item) {
-                    $product = $item['product'];
-                    $quantity = $item['quantity'];
-                    $variation = $item['variation'] ?? null;
-
-                    // Respect RFQ negotiated price if present
-                    if (!empty($item['rfq_price'])) {
-                        $itemSubtotal += round((float) $item['rfq_price'], 2) * $quantity;
-                    } else {
-                        $isApprovedBusiness = in_array($user?->role, ['distributor', 'staff']);
-                        $isWholesale = $isApprovedBusiness && $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
-                        $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
-                        $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
-                        $itemSubtotal += round($base + $adjustment, 2) * $quantity;
-                    }
-                }
-                
-                $orderTotal = $itemSubtotal + $shippingReq['fee'];
-
                 $order = Order::create([
                     'customer_id' => auth()->id(),
                     'customer_name' => $validated['customer_name'],
@@ -435,11 +408,18 @@ class OrderController extends Controller
                         'po_document_path' => $poPath,
                     ]);
 
-                    if (filter_var($request->input('save_purchase_order'), FILTER_VALIDATE_BOOLEAN)) {
+                    // Save the buyer's company details as a reusable PO profile (once, even when
+                    // the cart splits into several orders). The PO document itself stays per order.
+                    if (! $savedPoProfile && filter_var($request->input('save_purchase_order'), FILTER_VALIDATE_BOOLEAN)) {
+                        $savedPoProfile = true;
                         $user->savedPurchaseOrders()->create([
-                            'po_number' => 'PO-' . strtoupper(uniqid()),
-                            'company_name' => $user->distributor->company_name ?? 'My Company',
-                            'document_path' => $poPath,
+                            'label' => 'PO profile '.now()->format('M j, Y'),
+                            'company_name' => $user->businessProfile?->company_name
+                                ?? $user->distributor?->company_name
+                                ?? $validated['customer_name'],
+                            'contact_number' => $validated['contact_number'],
+                            'billing_address' => \Illuminate\Support\Str::limit($validated['delivery_address'], 255, ''),
+                            'tin' => $tin ?: null,
                         ]);
                     }
                 }
@@ -447,6 +427,16 @@ class OrderController extends Controller
                 $itemSubtotal = 0;
                 $vatableItemsTotal = 0;
                 $exemptItemsTotal = 0;
+
+                // Wholesale is decided per product on total pieces across all of its lines (loose
+                // pieces and boxes add up); RFQ lines are priced by negotiation and don't count.
+                $canBuyWholesale = (bool) $user?->canAccessWholesale();
+                $piecesByProduct = CartService::piecesByProduct(array_map(fn ($i) => [
+                    'product' => $i['product'],
+                    'variation' => $i['variation'] ?? null,
+                    'quantity' => $i['quantity'],
+                    'rfqPrice' => ! empty($i['rfq_price']) ? (float) $i['rfq_price'] : null,
+                ], $distributorData['items']));
 
                 foreach ($distributorData['items'] as $item) {
                     $product = $item['product'];
@@ -458,11 +448,8 @@ class OrderController extends Controller
                     if (!empty($item['rfq_price'])) {
                         $unitPrice = round((float) $item['rfq_price'], 2);
                     } else {
-                        $isApprovedBusiness = $user?->businessProfile?->status === 'approved';
-                        $isWholesale = $isApprovedBusiness && $product->wholesale_price && $product->wholesale_min_qty && $quantity >= $product->wholesale_min_qty;
-                        $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
-                        $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
-                        $unitPrice = round($base + $adjustment, 2);
+                        $isWholesale = $canBuyWholesale && $product->wholesaleQualifies($piecesByProduct[$product->id] ?? 0);
+                        $unitPrice = $product->priceForLine($variation, $isWholesale);
                     }
 
                     // Reserve inventory
@@ -496,6 +483,8 @@ class OrderController extends Controller
                         'total_price' => $lineTotal,
                         'subtotal' => $lineTotal,
                         'is_wholesale' => $isWholesale,
+                        'units_per_pack' => $product->linePackSize($variation),
+                        'unit_label' => $product->lineUnitLabel($variation),
                     ]);
 
                     $itemSubtotal += $lineTotal;

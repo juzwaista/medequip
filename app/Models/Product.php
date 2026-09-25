@@ -25,6 +25,8 @@ class Product extends Model
         'base_price',
         'wholesale_price',
         'wholesale_min_qty',
+        'units_per_pack',
+        'unit_label',
         'product_type',
         'has_expiry',
         'has_warranty',
@@ -155,6 +157,56 @@ class Product extends Model
     }
 
     /**
+     * Pieces contained in one selling unit of this product (1 = sold by the piece).
+     */
+    public function packSize(): int
+    {
+        return max(1, (int) ($this->units_per_pack ?? 1));
+    }
+
+    /**
+     * Pieces in one selling unit of the given variation. A variation may override the product's
+     * pack size (e.g. a "Box of 10" option); otherwise it inherits the product's.
+     */
+    public function linePackSize(?ProductVariation $variation = null): int
+    {
+        return max(1, (int) ($variation?->units_per_pack ?: $this->packSize()));
+    }
+
+    /**
+     * What one selling unit of the given variation is called ("piece", "box", ...).
+     */
+    public function lineUnitLabel(?ProductVariation $variation = null): string
+    {
+        return $variation?->unit_label ?: ($this->unit_label ?: 'piece');
+    }
+
+    /**
+     * Whether an order totalling $totalPieces pieces of this product earns the wholesale price.
+     * The threshold (wholesale_min_qty) is expressed in pieces regardless of how they are packed.
+     */
+    public function wholesaleQualifies(int $totalPieces): bool
+    {
+        return $this->hasWholesalePricing() && $totalPieces >= (int) $this->wholesale_min_qty;
+    }
+
+    /**
+     * Price of ONE selling unit of the given variation.
+     *
+     * The product's retail/wholesale price is per its own selling unit, so the per-piece price is
+     * that price divided by the product's pack size; a line selling N pieces per unit costs
+     * (per-piece price × N) plus the variation's price adjustment. With no pack override this is
+     * exactly price + adjustment, the behaviour before pack sizes existed.
+     */
+    public function priceForLine(?ProductVariation $variation, bool $wholesale): float
+    {
+        $price = (float) ($wholesale ? $this->wholesale_price : $this->base_price);
+        $scaled = $price * $this->linePackSize($variation) / $this->packSize();
+
+        return round($scaled + (float) ($variation?->price_adjustment ?? 0), 2);
+    }
+
+    /**
      * Quantity + reserved totals for list views (no variations = base inventory rows only;
      * active variations = sum of inventory rows for those variations only).
      *
@@ -191,6 +243,54 @@ class Product extends Model
             'quantity' => (int) $this->inventory()->whereNull('product_variation_id')->sum('quantity'),
             'reserved' => (int) $this->inventory()->whereNull('product_variation_id')->sum('reserved_quantity'),
         ];
+    }
+
+    /**
+     * True when this product is sold in more than one pack size (e.g. loose pieces AND boxes of
+     * 10). Stock counts per option are then in different units and must not be added together.
+     */
+    public function hasMixedPacks(): bool
+    {
+        $variations = $this->relationLoaded('variations')
+            ? $this->variations->where('is_active', true)
+            : $this->activeVariations()->get();
+
+        return $variations->map(fn ($v) => $this->linePackSize($v))->unique()->count() > 1;
+    }
+
+    /**
+     * Total stock expressed in pieces, so options with different pack sizes can be summed.
+     * Mirrors stockTotals(): active variations' rows when the product has variations, otherwise
+     * the base rows.
+     *
+     * @return array{quantity: int, reserved: int}
+     */
+    public function stockInPieces(): array
+    {
+        $variations = $this->relationLoaded('variations') ? $this->variations : $this->variations()->get();
+        $active = $variations->where('is_active', true)->keyBy('id');
+        $rows = $this->relationLoaded('inventory') ? $this->inventory : $this->inventory()->get();
+
+        $quantity = 0;
+        $reserved = 0;
+        foreach ($rows as $row) {
+            if ($active->isNotEmpty()) {
+                if (! $active->has($row->product_variation_id)) {
+                    continue;
+                }
+                $pack = $this->linePackSize($active->get($row->product_variation_id));
+            } else {
+                if ($row->product_variation_id !== null) {
+                    continue;
+                }
+                $pack = $this->packSize();
+            }
+
+            $quantity += (int) $row->quantity * $pack;
+            $reserved += (int) $row->reserved_quantity * $pack;
+        }
+
+        return ['quantity' => $quantity, 'reserved' => $reserved];
     }
 
     public function aggregateStockQuantity(): int

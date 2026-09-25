@@ -90,6 +90,7 @@ class CartService
     {
         $cart = self::normalizeCart($cart);
         $items = [];
+        $prepared = [];
 
         foreach ($cart as $lineKey => $cartItem) {
             [$productId, $variationId] = self::parseLineKey($lineKey);
@@ -124,43 +125,90 @@ class CartService
 
             $quantity = min($quantity, $availableStock);
 
-            $adjustment = $variation ? (float) $variation->price_adjustment : 0.0;
+            $rfqPrice = isset($cartItem['rfq_price']) ? (float) $cartItem['rfq_price'] : null;
 
-            // Wholesale pricing is ONLY available to approved B2B business buyers
-            $isApprovedBusiness = $user
-                && $user->businessProfile
-                && $user->businessProfile->status === 'approved';
+            $prepared[] = [
+                'lineKey' => $lineKey,
+                'product' => $product,
+                'variation' => $variation,
+                'variationId' => $variationId,
+                'quantity' => $quantity,
+                'rfqPrice' => $rfqPrice,
+                'rfqMessageId' => $cartItem['rfq_message_id'] ?? null,
+            ];
+        }
 
-            $isWholesale = $isApprovedBusiness
-                && $product->hasWholesalePricing()
-                && $quantity >= (int) $product->wholesale_min_qty;
+        // Wholesale pricing is ONLY available to B2B buyers (verified distributors, their staff,
+        // and customers with an approved business profile).
+        $canBuyWholesale = $user && $user->canAccessWholesale();
+
+        // The wholesale threshold is in pieces and counts every line of the same product, so a
+        // mix of loose pieces and boxes adds up. RFQ lines carry their own negotiated price and
+        // don't count toward it.
+        $piecesByProduct = self::piecesByProduct($prepared);
+
+        foreach ($prepared as $line) {
+            /** @var Product $product */
+            $product = $line['product'];
+            $variation = $line['variation'];
+            $quantity = $line['quantity'];
+            $rfqPrice = $line['rfqPrice'];
+
+            $isWholesale = $canBuyWholesale
+                && $rfqPrice === null
+                && $product->wholesaleQualifies($piecesByProduct[$product->id] ?? 0);
 
             // RFQ negotiated price overrides everything else (no variation adjustment applies to custom quotes)
-            $rfqPrice = isset($cartItem['rfq_price']) ? (float) $cartItem['rfq_price'] : null;
-            if ($rfqPrice !== null) {
-                $unitPrice = round($rfqPrice, 2);
-                $isWholesale = false; // RFQ has its own price negotiation
-            } else {
-                $base = $isWholesale ? (float) $product->wholesale_price : (float) $product->base_price;
-                $unitPrice = round($base + $adjustment, 2);
-            }
+            $unitPrice = $rfqPrice !== null
+                ? round($rfqPrice, 2)
+                : $product->priceForLine($variation, $isWholesale);
+
+            $packSize = $product->linePackSize($variation);
 
             $items[] = [
-                'line_key'             => $lineKey,
+                'line_key'             => $line['lineKey'],
                 'product'              => $product,
                 'quantity'             => $quantity,
                 'unit_price'           => $unitPrice,
                 'is_wholesale'         => $isWholesale,
                 'is_rfq'               => $rfqPrice !== null,
-                'rfq_message_id'       => $cartItem['rfq_message_id'] ?? null,
+                'rfq_message_id'       => $line['rfqMessageId'],
                 'subtotal'             => $unitPrice * $quantity,
-                'product_variation_id' => $variationId,
+                'product_variation_id' => $line['variationId'],
                 'variation'            => $variation,
                 'variation_label'      => $variation ? $variation->display_label : null,
+                'retail_unit_price'    => $rfqPrice !== null ? $unitPrice : $product->priceForLine($variation, false),
+                'units_per_pack'       => $packSize,
+                'unit_label'           => $product->lineUnitLabel($variation),
+                'pieces'               => $quantity * $packSize,
             ];
         }
 
         return $items;
+    }
+
+    /**
+     * Total pieces per product across the given lines (quantity × pieces per selling unit).
+     * RFQ lines are skipped: they are priced by negotiation, not by quantity thresholds.
+     *
+     * @param  iterable<array{product: Product, variation: ProductVariation|null, quantity: int, rfqPrice?: float|null}>  $lines
+     * @return array<int, int>  product id => total pieces
+     */
+    public static function piecesByProduct(iterable $lines): array
+    {
+        $totals = [];
+
+        foreach ($lines as $line) {
+            if (($line['rfqPrice'] ?? null) !== null) {
+                continue;
+            }
+
+            $product = $line['product'];
+            $totals[$product->id] = ($totals[$product->id] ?? 0)
+                + (int) $line['quantity'] * $product->linePackSize($line['variation'] ?? null);
+        }
+
+        return $totals;
     }
 
     public static function availableStockForLine(Product $product, ?int $variationId): int

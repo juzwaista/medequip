@@ -17,11 +17,21 @@ class PayMongoService
 
     public function __construct()
     {
-        $this->secretKey     = config('services.paymongo.secret_key', '');
-        $this->publicKey     = config('services.paymongo.public_key', '');
-        $this->webhookSecret = config('services.paymongo.webhook_secret', '');
+        // Cast rather than trust the default: config() returns null (not the '' default) when the
+        // env var is unset, and this class is injected into controllers whose routes never call
+        // PayMongo. Missing credentials are reported by assertConfigured() only when an API call
+        // is actually attempted.
+        $this->secretKey     = (string) config('services.paymongo.secret_key', '');
+        $this->publicKey     = (string) config('services.paymongo.public_key', '');
+        $this->webhookSecret = (string) config('services.paymongo.webhook_secret', '');
+    }
 
-        if (empty($this->secretKey)) {
+    /**
+     * Fail with a clear message when an API call is attempted without credentials.
+     */
+    private function assertConfigured(): void
+    {
+        if ($this->secretKey === '') {
             throw new \RuntimeException(
                 'PayMongo is not configured. Please set PAYMONGO_SECRET_KEY in your .env file. ' .
                 'Get your keys at https://dashboard.paymongo.com → Developers → API Keys.'
@@ -116,6 +126,8 @@ class PayMongoService
             ],
         ];
 
+        $this->assertConfigured();
+
         $response = Http::withBasicAuth($this->secretKey, '')
             ->post(self::BASE_URL . '/checkout_sessions', $payload);
 
@@ -148,7 +160,7 @@ class PayMongoService
     public function verifyWebhookSignature(Request $request): bool
     {
         $header = $request->header('paymongo-signature');
-        if (!$header) {
+        if (!$header || $this->webhookSecret === '') {
             return false;
         }
 
@@ -177,6 +189,8 @@ class PayMongoService
      */
     public function getCheckoutSession(string $sessionId): array
     {
+        $this->assertConfigured();
+
         $response = Http::withBasicAuth($this->secretKey, '')
             ->get(self::BASE_URL . '/checkout_sessions/' . $sessionId);
 
@@ -228,6 +242,8 @@ class PayMongoService
                 ],
             ],
         ];
+
+        $this->assertConfigured();
 
         $response = Http::withBasicAuth($this->secretKey, '')
             ->post(self::BASE_URL . '/checkout_sessions', $payload);
@@ -291,6 +307,8 @@ class PayMongoService
                 ],
             ],
         ];
+
+        $this->assertConfigured();
 
         $response = Http::withBasicAuth($this->secretKey, '')
             ->post(self::BASE_URL . '/refunds', $payload);

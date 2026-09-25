@@ -93,6 +93,7 @@
                                             {{ item.product.name }}
                                         </Link>
                                         <p v-if="item.variation_label" class="text-sm text-blue-700 font-medium mt-0.5">{{ item.variation_label }}</p>
+                                        <p v-if="item.units_per_pack > 1" class="text-xs text-gray-500 mt-0.5">Sold per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each ({{ item.pieces }} pcs in this line)</p>
                                         <p class="text-sm text-gray-600">{{ item.product.brand || 'Generic' }}</p>
                                         <p class="text-sm text-gray-500">
                                             by 
@@ -158,7 +159,7 @@
                                             <!-- Price / Total -->
                                             <div class="flex flex-col items-end gap-1 shrink-0">
                                                 <!-- Original Total -->
-                                                <span v-if="item.is_wholesale" class="text-xs text-gray-300 line-through font-medium">₱{{ Number(item.product.base_price * item.quantity).toLocaleString() }}</span>
+                                                <span v-if="item.is_wholesale" class="text-xs text-gray-300 line-through font-medium">₱{{ Number(item.retail_unit_price * item.quantity).toLocaleString() }}</span>
                                                 <span v-else class="text-xs text-gray-400 font-medium mt-0.5">₱{{ Number(item.quantity * item.unit_price).toLocaleString() }}</span>
                                                 
                                                 <!-- Final Price (Black) -->
@@ -190,7 +191,7 @@
                             </div>
 
                             <div class="flex justify-between items-center text-sm font-medium text-gray-500 px-1">
-                                <span>Shipping Fee</span>
+                                <span>Estimated Shipping</span>
                                 <span class="text-gray-900">₱{{ Number(selectedShippingFee).toLocaleString() }}</span>
                             </div>
 
@@ -332,7 +333,7 @@ const selectedSubtotal = computed(() => {
 const selectedOriginalSubtotal = computed(() => {
     return props.cartItems
         .filter(item => selectedItems.value[item.line_key])
-        .reduce((sum, item) => sum + (Number(item.product.base_price) * item.quantity), 0);
+        .reduce((sum, item) => sum + (Number(item.retail_unit_price) * item.quantity), 0);
 });
 
 const selectedTotalSavings = computed(() => {

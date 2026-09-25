@@ -123,6 +123,9 @@ class ProductCatalogSyncService
                 'combination' => $combination,
                 'price_adjustment' => $row['price_adjustment'] ?? 0,
                 'sku' => $row['sku'] ?? null,
+                // Blank = inherit the product's pack size / unit label.
+                'units_per_pack' => ! empty($row['units_per_pack']) ? (int) $row['units_per_pack'] : null,
+                'unit_label' => ! empty($row['unit_label']) ? trim((string) $row['unit_label']) : null,
                 'sort_order' => $i,
                 'is_active' => array_key_exists('is_active', $row) ? (bool) $row['is_active'] : true,
             ];

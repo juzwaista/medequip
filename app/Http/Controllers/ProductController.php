@@ -185,6 +185,9 @@ class ProductController extends Controller
                 'combination' => $v->combination,
                 'display_label' => $v->display_label,
                 'price_adjustment' => (float) $v->price_adjustment,
+                // Effective pieces per unit / unit name for this option (inherits the product's).
+                'units_per_pack' => $product->linePackSize($v),
+                'unit_label' => $product->lineUnitLabel($v),
                 'available' => $available,
             ];
         })->values();
@@ -246,6 +249,8 @@ class ProductController extends Controller
             'relatedProducts' => $relatedProducts,
             'totalStock' => $totalStock,
             'availableStock' => $availableStock,
+            'hasMixedPacks' => $product->hasMixedPacks(),
+            'availablePieces' => max(0, $product->stockInPieces()['quantity'] - $product->stockInPieces()['reserved']),
             'hasVariations' => $hasVariations,
             'variationGroups' => $variationGroups,
             'variationStocks' => $variationStocks,
