@@ -154,8 +154,18 @@ class DashboardController extends Controller
     {
         $distributor = Distributor::with('owner')->findOrFail($id);
 
+        // Warn / suspend / ban / lift need admin.distributors.moderate (same gate as their
+        // routes); the page only offers them to admins who hold it.
+        $viewer = request()->user();
+        try {
+            $canModerate = $viewer->role === 'super_admin' || $viewer->hasPermissionTo('admin.distributors.moderate');
+        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+            $canModerate = false;
+        }
+
         return Inertia::render('Admin/Distributors/Show', [
             'distributor' => $distributor,
+            'canModerate' => $canModerate,
         ]);
     }
 

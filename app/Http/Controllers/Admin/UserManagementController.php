@@ -72,6 +72,64 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Read-only detail view for a platform user. Moderation actions (ban / unban) live on this
+     * page so an admin looks at the account before acting on it.
+     */
+    public function show(User $user)
+    {
+        // The list only offers non-admin accounts; keep the detail page consistent with it.
+        abort_if(in_array($user->role, ['admin', 'super_admin'], true), 404);
+
+        $orders = $user->orders();
+
+        return Inertia::render('Admin/UserManagement/Show', [
+            'account' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'role' => $user->role,
+                'company_name' => $user->company_name,
+                'created_at' => $user->created_at?->toIso8601String(),
+                'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+                'last_seen_at' => $user->last_seen_at?->toIso8601String(),
+                // banned_at is a plain string column on User (no date cast), so parse it here.
+                'banned_at' => $user->banned_at ? \Illuminate\Support\Carbon::parse($user->banned_at)->toIso8601String() : null,
+                'ban_reason' => $user->ban_reason,
+            ],
+            'addresses' => $user->addresses()
+                ->orderByDesc('is_default')
+                ->get(['id', 'label', 'address_line', 'barangay', 'city', 'province', 'contact_number', 'is_default']),
+            'businessProfile' => $user->businessProfile?->only(['company_name', 'business_type', 'status', 'rejection_reason']),
+            'shop' => $user->distributor?->only(['id', 'company_name', 'status']),
+            'orderStats' => [
+                'total' => (clone $orders)->count(),
+                'completed' => (clone $orders)->where('status', 'completed')->count(),
+                'cancelled' => (clone $orders)->whereIn('status', ['cancelled', 'rejected'])->count(),
+                'spent' => (float) (clone $orders)->where('status', 'completed')->sum('total_amount'),
+            ],
+            'recentOrders' => (clone $orders)->latest()
+                ->limit(5)
+                ->get(['id', 'order_number', 'status', 'total_amount', 'created_at']),
+            'moderationHistory' => AuditLog::with('user:id,name')
+                ->where('target_type', User::class)
+                ->where('target_id', $user->id)
+                ->whereIn('action', ['user_banned', 'user_unbanned', 'user_role_updated'])
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(fn ($log) => [
+                    'id' => $log->id,
+                    'action' => $log->action,
+                    'reason' => $log->metadata['reason'] ?? null,
+                    'by' => $log->user?->name,
+                    'at' => $log->created_at?->toIso8601String(),
+                ]),
+        ]);
+    }
+
+    /**
      * Update user role (super admin only).
      */
     public function updateRole(Request $request, User $user)

@@ -1,10 +1,10 @@
 <template>
-    <Head :title="`Review Application - ${distributor.company_name}`" />
-    <AdminLayout title="Review Distributor Application">
+    <Head :title="`${isPending ? 'Review Application' : 'Distributor'} - ${distributor.company_name}`" />
+    <AdminLayout :title="isPending ? 'Review Distributor Application' : 'Distributor Details'">
         <template #actions>
-            <Link :href="route('admin.dashboard', { tab: 'shops', shop_status: 'pending' })" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <Link :href="isPending ? route('admin.dashboard', { tab: 'shops', shop_status: 'pending' }) : route('admin.users.index')" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Back to Pending
+                {{ isPending ? 'Back to Pending' : 'Back to Users' }}
             </Link>
         </template>
 
@@ -48,8 +48,8 @@
                 <!-- Details -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <div class="mb-4">
-                        <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-yellow-100 text-yellow-800">
-                            {{ distributor.status }}
+                        <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider" :class="statusClasses">
+                            {{ distributor.is_suspended ? 'suspended' : distributor.status }}
                         </span>
                         <h2 class="text-xl font-bold text-gray-900 mt-2">{{ distributor.company_name }}</h2>
                         <p class="text-sm text-gray-500">Applied on {{ new Date(distributor.created_at).toLocaleDateString() }}</p>
@@ -76,15 +76,31 @@
                     </div>
                 </div>
 
-                <!-- Decision Panel -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Application Decision</h3>
-                    
-                    <div v-if="distributor.status !== 'pending'" class="text-sm text-gray-500 text-center py-4">
-                        This application is no longer pending.
+                <!-- Moderation: look through the details above first, then act -->
+                <div v-if="canModerate && distributor.status !== 'pending' && distributor.status !== 'rejected'" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Moderation</h3>
+
+                    <p v-if="distributor.status === 'banned'" class="text-sm text-gray-500">This shop is permanently banned.</p>
+
+                    <template v-else-if="distributor.is_suspended">
+                        <p class="text-sm text-orange-700 bg-orange-50 border border-orange-100 rounded-lg p-3 mb-4">
+                            Suspended until {{ new Date(distributor.suspended_until).toLocaleString() }}.
+                        </p>
+                        <button type="button" @click="openAction('lift')" class="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-700 transition">Lift Suspension</button>
+                    </template>
+
+                    <div v-else class="space-y-2">
+                        <button type="button" @click="openAction('warn')" class="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition">Warn</button>
+                        <button type="button" @click="openAction('suspend')" class="w-full bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-orange-700 transition">Suspend</button>
+                        <button type="button" @click="openAction('ban')" class="w-full bg-rose-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-rose-800 transition">Ban</button>
                     </div>
-                    
-                    <div v-else class="space-y-4">
+                </div>
+
+                <!-- Decision Panel -->
+                <div v-if="isPending" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Application Decision</h3>
+
+                    <div class="space-y-4">
                         <!-- Approve -->
                         <button @click="approve" :disabled="isProcessing" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-sm disabled:opacity-50">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -125,19 +141,47 @@
 
             </div>
         </div>
+
+        <ModerationActionModal
+            :open="modal.open"
+            :action="modal.action"
+            :target-id="distributor.id"
+            :target-name="distributor.company_name"
+            @close="modal.open = false"
+        />
     </AdminLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import ModerationActionModal from '@/Components/Admin/ModerationActionModal.vue';
 
 const props = defineProps({
     distributor: Object,
+    canModerate: { type: Boolean, default: false },
 });
 
 const isProcessing = ref(false);
+
+const isPending = computed(() => props.distributor.status === 'pending');
+
+const statusClasses = computed(() => {
+    if (props.distributor.is_suspended) return 'bg-orange-100 text-orange-800';
+    return {
+        pending: 'bg-yellow-100 text-yellow-800',
+        approved: 'bg-emerald-100 text-emerald-800',
+        rejected: 'bg-red-100 text-red-800',
+        banned: 'bg-gray-800 text-white',
+    }[props.distributor.status] || 'bg-gray-100 text-gray-700';
+});
+
+const modal = reactive({ open: false, action: '' });
+const openAction = (action) => {
+    modal.action = action;
+    modal.open = true;
+};
 
 const allDocTypes = [
     { key: 'dti_sec_path', label: 'DTI/SEC Registration' },

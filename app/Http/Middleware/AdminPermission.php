@@ -15,6 +15,8 @@ class AdminPermission
      * named permission assigned via a Spatie role.
      *
      * Usage in routes: ->middleware('admin.permission:admin.applications.approve')
+     * Several permissions may be joined with "|" to allow any one of them:
+     *   ->middleware('admin.permission:admin.applications.review|admin.users.manage')
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
@@ -34,10 +36,16 @@ class AdminPermission
         // middleware references a name that hasn't been run through the permissions seeder
         // yet) — treat that the same as "not granted" (403) rather than letting it surface
         // as an unhandled 500.
-        try {
-            $hasPermission = $user->hasPermissionTo($permission);
-        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
-            $hasPermission = false;
+        $hasPermission = false;
+        foreach (explode('|', $permission) as $candidate) {
+            try {
+                if ($user->hasPermissionTo($candidate)) {
+                    $hasPermission = true;
+                    break;
+                }
+            } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+                // Unseeded permission name: same as "not granted" for this candidate.
+            }
         }
 
         if (! $hasPermission) {

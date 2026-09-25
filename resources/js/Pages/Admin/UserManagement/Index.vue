@@ -79,21 +79,11 @@
 
                             </div>
 
-                            <!-- Actions -->
+                            <!-- Actions: look at the shop first; warn / suspend / ban live on its detail page -->
                             <div class="flex flex-wrap gap-2 lg:flex-col lg:w-36 shrink-0">
-                                <template v-if="d.status === 'pending'">
-                                    <Link :href="route('admin.distributors.show', d.id)" class="flex-1 lg:w-full bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition text-center">
-                                        Review Application
-                                    </Link>
-                                </template>
-                                <template v-if="d.status === 'approved' && !d.is_suspended">
-                                    <button @click="openAction('warn', d)" class="flex-1 lg:w-full bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition">Warn</button>
-                                    <button @click="openAction('suspend', d)" class="flex-1 lg:w-full bg-orange-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-orange-700 transition">Suspend</button>
-                                    <button @click="openAction('ban', d)" class="flex-1 lg:w-full bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-rose-800 transition">Ban</button>
-                                </template>
-                                <template v-if="d.is_suspended">
-                                    <button @click="openAction('lift', d)" class="flex-1 lg:w-full bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition">Lift Suspension</button>
-                                </template>
+                                <Link :href="route('admin.distributors.show', d.id)" class="flex-1 lg:w-full bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition text-center">
+                                    {{ d.status === 'pending' ? 'Review Application' : 'View Details' }}
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -129,9 +119,8 @@
                                     <span v-if="u.banned_at" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-800">Banned</span>
                                     <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">Active</span>
                                 </td>
-                                <td class="px-6 py-3">
-                                    <button v-if="!u.banned_at" @click="openAction('ban_user', u)" class="text-xs text-red-600 font-semibold hover:text-red-800">Ban</button>
-                                    <button v-else @click="unbanUser(u.id)" class="text-xs text-emerald-600 font-semibold hover:text-emerald-800">Unban</button>
+                                <td class="px-6 py-3 text-right">
+                                    <Link :href="route('admin.users.show', u.id)" class="text-xs text-blue-600 font-semibold hover:text-blue-800">View</Link>
                                 </td>
                             </tr>
                         </tbody>
@@ -140,94 +129,12 @@
                 </div>
             </template>
         </div>
-
-        <!-- Action Modal -->
-        <Teleport to="body">
-            <div v-if="modal.open" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm" @click.self="modal.open = false">
-                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
-                    <div class="px-6 py-5 border-b border-gray-100" :class="modalHeaderBg">
-                        <h3 class="text-lg font-bold text-gray-900">{{ modalTitle }}</h3>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <!-- Approve -->
-                        <p v-if="modal.action === 'approve'" class="text-sm text-gray-600">
-                            Approve <strong>{{ modal.target?.company_name }}</strong>? They will be able to list products immediately.
-                        </p>
-
-                        <!-- Reject -->
-                        <template v-if="modal.action === 'reject'">
-                            <p class="text-sm text-gray-600">Provide a reason for rejecting <strong>{{ modal.target?.company_name }}</strong> (optional).</p>
-                            <textarea v-model="modal.reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Reason..."></textarea>
-                        </template>
-
-                        <!-- Warn -->
-                        <template v-if="modal.action === 'warn'">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
-                                <select v-model="modal.preset_reason" class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm">
-                                    <option value="" disabled>Select a reason...</option>
-                                    <option value="High Cancellation Rate">High Cancellation Rate</option>
-                                    <option value="Fulfillment Delays (>48 hours)">Fulfillment Delays (>48 hours)</option>
-                                    <option value="Zero Active Inventory">Zero Active Inventory</option>
-                                    <option value="Reported via moderation">Reported via moderation</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <textarea v-model="modal.reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Optional message..."></textarea>
-                        </template>
-
-                        <!-- Suspend -->
-                        <template v-if="modal.action === 'suspend'">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
-                                <select v-model="modal.reason" class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm">
-                                    <option value="" disabled>Select a reason...</option>
-                                    <option value="Sustained High Cancellation Rate">Repeated Cancellations</option>
-                                    <option value="Severe Fulfillment Delays">Fulfillment Delays</option>
-                                    <option value="Policy Violation">Policy Violation</option>
-                                    <option value="Customer Complaints">Customer Complaints</option>
-                                    <option value="Regulatory Action (FDA)">Regulatory Verification</option>
-                                    <option value="Other/Administrative">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Duration (days)</label>
-                                <input type="number" min="1" max="365" v-model="modal.days" class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm" />
-                            </div>
-                        </template>
-
-                        <!-- Ban -->
-                        <template v-if="modal.action === 'ban'">
-                            <p class="text-sm text-gray-600">Permanently ban <strong>{{ modal.target?.company_name }}</strong>? All products will be hidden.</p>
-                            <textarea v-model="modal.reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Reason for ban (required)..." required></textarea>
-                        </template>
-
-                        <!-- Lift -->
-                        <p v-if="modal.action === 'lift'" class="text-sm text-gray-600">
-                            Lift suspension for <strong>{{ modal.target?.company_name }}</strong>? They will be able to accept orders immediately.
-                        </p>
-
-                        <!-- Ban User -->
-                        <template v-if="modal.action === 'ban_user'">
-                            <p class="text-sm text-gray-600">Ban user <strong>{{ modal.target?.name }}</strong>?</p>
-                            <textarea v-model="modal.reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Reason for ban (required)..." required></textarea>
-                        </template>
-                    </div>
-                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-                        <button @click="modal.open = false" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
-                        <button @click="submitAction" :disabled="!canSubmit" :class="modalConfirmClass" class="px-4 py-2 text-sm font-bold text-white rounded-lg transition disabled:opacity-50">
-                            {{ modalConfirmLabel }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
     </AdminLayout>
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch } from 'vue';
-import { router, Link, useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { router, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
@@ -239,7 +146,7 @@ const props = defineProps({
 });
 
 const searchInput = ref(props.filters?.search || '');
-const activeTab = ref('shops');
+const activeTab = ref(new URLSearchParams(window.location.search).get('tab') === 'users' ? 'users' : 'shops');
 
 const tabs = computed(() => [
     { key: 'shops', label: 'Shops', count: props.shopCounts?.all || 0 },
@@ -260,102 +167,6 @@ const applySearch = () => {
         shop_status: props.filters?.shop_status || 'all',
     }, { preserveState: true, replace: true });
 };
-
-const modal = reactive({
-    open: false,
-    action: '',
-    target: null,
-    reason: '',
-    preset_reason: '',
-    days: 7,
-});
-
-const openAction = (action, target) => {
-    modal.action = action;
-    modal.target = target;
-    modal.reason = '';
-    modal.preset_reason = '';
-    modal.days = 7;
-    modal.open = true;
-};
-
-const modalTitle = computed(() => ({
-    approve: 'Approve Distributor',
-    reject: 'Reject Distributor',
-    warn: 'Issue Warning',
-    suspend: 'Suspend Distributor',
-    ban: 'Permanently Ban Distributor',
-    lift: 'Lift Suspension',
-    ban_user: 'Ban User',
-}[modal.action] || ''));
-
-const modalHeaderBg = computed(() => ({
-    approve: 'bg-emerald-50',
-    reject: 'bg-red-50',
-    warn: 'bg-blue-50',
-    suspend: 'bg-orange-50',
-    ban: 'bg-rose-50',
-    lift: 'bg-emerald-50',
-    ban_user: 'bg-red-50',
-}[modal.action] || ''));
-
-const modalConfirmClass = computed(() => ({
-    approve: 'bg-emerald-600 hover:bg-emerald-700',
-    reject: 'bg-red-600 hover:bg-red-700',
-    warn: 'bg-blue-600 hover:bg-blue-700',
-    suspend: 'bg-orange-600 hover:bg-orange-700',
-    ban: 'bg-rose-700 hover:bg-rose-800',
-    lift: 'bg-emerald-600 hover:bg-emerald-700',
-    ban_user: 'bg-red-600 hover:bg-red-700',
-}[modal.action] || 'bg-blue-600'));
-
-const modalConfirmLabel = computed(() => ({
-    approve: 'Approve',
-    reject: 'Reject',
-    warn: 'Send Warning',
-    suspend: 'Suspend',
-    ban: 'Confirm Ban',
-    lift: 'Lift Suspension',
-    ban_user: 'Confirm Ban',
-}[modal.action] || 'Confirm'));
-
-const canSubmit = computed(() => {
-    if (modal.action === 'ban' || modal.action === 'ban_user') return modal.reason.trim().length > 0;
-    if (modal.action === 'warn') return !!modal.preset_reason;
-    if (modal.action === 'suspend') return !!modal.reason && modal.days >= 1;
-    return true;
-});
-
-const submitAction = () => {
-    const id = modal.target?.id;
-    const close = () => { modal.open = false; };
-
-    switch (modal.action) {
-        case 'approve':
-            router.post(`/admin/distributors/${id}/approve`, {}, { onSuccess: close });
-            break;
-        case 'reject':
-            router.post(`/admin/distributors/${id}/reject`, { reason: modal.reason }, { onSuccess: close });
-            break;
-        case 'warn':
-            router.post(`/admin/distributors/${id}/warn`, { preset_reason: modal.preset_reason, custom_message: modal.reason }, { onSuccess: close });
-            break;
-        case 'suspend':
-            router.post(`/admin/distributors/${id}/suspend`, { reason: modal.reason, days: modal.days }, { onSuccess: close });
-            break;
-        case 'ban':
-            router.post(`/admin/distributors/${id}/ban`, { reason: modal.reason }, { onSuccess: close });
-            break;
-        case 'lift':
-            router.post(`/admin/distributors/${id}/lift-suspension`, {}, { onSuccess: close });
-            break;
-        case 'ban_user':
-            router.post(`/admin/users/${id}/ban`, { reason: modal.reason }, { onSuccess: close });
-            break;
-    }
-};
-
-const unbanUser = (id) => router.post(`/admin/users/${id}/unban`);
 
 const shopStatusClasses = (status) => ({
     'bg-yellow-100 text-yellow-800': status === 'pending',
