@@ -10,15 +10,29 @@ use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class ReportHubClosedEnforcementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_dismissed_message_report_show_has_no_available_actions(): void
+    /**
+     * reports.show/reports.enforce now require admin.permission:X (see
+     * PROJECT_CONTEXT.md §11 problem #11) — previously gated only by role:admin,super_admin.
+     */
+    protected function makeAdminWithPermission(string $permission): User
     {
         $admin = User::factory()->admin()->create();
+        Permission::firstOrCreate(['name' => $permission]);
+        $admin->givePermissionTo($permission);
+
+        return $admin;
+    }
+
+    public function test_dismissed_message_report_show_has_no_available_actions(): void
+    {
+        $admin = $this->makeAdminWithPermission('admin.reports.review');
         [$buyer, $seller, , $distributor] = $this->createMinimalShopThread();
 
         $conv = Conversation::query()->firstOrCreate(
@@ -56,7 +70,7 @@ class ReportHubClosedEnforcementTest extends TestCase
 
     public function test_enforce_on_dismissed_message_report_returns_422(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = $this->makeAdminWithPermission('admin.reports.moderate');
         [$buyer, $seller, , $distributor] = $this->createMinimalShopThread();
 
         $conv = Conversation::query()->firstOrCreate(

@@ -4,14 +4,14 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
@@ -23,43 +23,20 @@ class RoleMiddleware
             return $next($request);
         }
 
-        // 2. The "Distributor Validation" Logic
-        if ($user->role === 'distributor') {
-            $distributor = $user->distributor; 
-
-            // If no profile exists OR it is still pending/rejected
-            if (!$distributor || $distributor->status !== 'approved') {
-                
-                // EXACT route names from web.php that are safe to visit
-                $safeRoutes = [
-                    'owner.distributors.create', 
-                    'owner.distributors.store', 
-                    'owner.distributors.pending'
-                ];
-
-                // If they are on a safe route, LET THEM THROUGH
-                if ($request->routeIs($safeRoutes)) {
-                    return $next($request);
-                }
-
-                // If they are NOT on a safe route, route them based on status
-                if ($distributor && $distributor->status === 'pending') {
-                    return redirect()->route('owner.distributors.pending');
-                }
-
-                // Default fallback: send to application form
-                return redirect()->route('owner.distributors.create')
-                    ->with('info', 'Please complete your business application to continue.');
-            }
-        }
-
-        // 3. Standard Role Check
+        // 2. Standard Role Check
+        //
+        // Distributor/staff application, approval, suspension, and ban status are handled by
+        // EnsureDistributorVerified, which always runs alongside this middleware on every route
+        // gated by role:distributor (see routes/web.php) — this used to also be checked here,
+        // but that duplicate, simpler check could short-circuit the request before
+        // EnsureDistributorVerified's more complete logic (e.g. the banned-account logout) ever
+        // ran, so it was removed in favor of a single source of truth.
         $allowedRoles = $roles;
-        if (in_array('admin', $roles) && !in_array('super_admin', $roles)) {
+        if (in_array('admin', $roles) && ! in_array('super_admin', $roles)) {
             $allowedRoles[] = 'super_admin';
         }
 
-        if (!in_array($user->role, $allowedRoles)) {
+        if (! in_array($user->role, $allowedRoles)) {
             return redirect('/')->with('error', 'You do not have permission to access that page.');
         }
 

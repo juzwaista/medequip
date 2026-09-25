@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -67,6 +67,29 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Review & dispute resolution
             'admin.disputes.review',
+
+            // B2B business-account verification
+            'admin.business-profiles.review',
+
+            // Platform user management (role changes, ban/unban)
+            'admin.users.manage',
+
+            // Managing platform-level admin roles/permissions themselves
+            'admin.roles.manage',
+
+            // Moderation reports hub
+            'admin.reports.review',   // view reports/cases
+            'admin.reports.moderate', // update case status, enforce action, resolve message reports
+
+            // Distributor risk actions (suspend/lift-suspension/ban/warn)
+            'admin.distributors.moderate',
+
+            // Secure distributor document viewing
+            'admin.documents.view',
+
+            'admin.audit-logs.view',
+            'admin.announcements.broadcast',
+            'admin.storage.repair',
         ];
 
         foreach ($adminPermissions as $permission) {

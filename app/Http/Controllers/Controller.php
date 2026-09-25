@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 abstract class Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Get the active distributor for the current user.
      * Works for both 'distributor' owners and 'staff' employees.

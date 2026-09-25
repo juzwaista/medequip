@@ -6,19 +6,12 @@ use App\Models\Order;
 
 trait AuthorizesOrderChat
 {
+    /**
+     * Chatting about an order requires the same standing as viewing it — delegates to
+     * OrderPolicy::view() rather than duplicating the customer/shop-member check here.
+     */
     protected function authorizeOrderChatParticipant(Order $order): void
     {
-        $user = auth()->user();
-
-        if ($order->customer_id === $user->id) {
-            return;
-        }
-
-        $distributor = $this->getDistributor();
-        if ($distributor && (int) $order->distributor_id === (int) $distributor->id) {
-            return;
-        }
-
-        abort(403);
+        $this->authorize('view', $order);
     }
 }

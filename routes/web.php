@@ -425,30 +425,57 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
             ->name('distributors.reject');
 
         // B2B Account Management
-        Route::get('/business-profiles', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'index'])->name('business-profiles.index');
-        Route::get('/business-profiles/{profile}', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'show'])->name('business-profiles.show');
-        Route::post('/business-profiles/{profile}/approve', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'approve'])->name('business-profiles.approve');
-        Route::post('/business-profiles/{profile}/reject', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'reject'])->name('business-profiles.reject');
+        Route::get('/business-profiles', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'index'])
+            ->middleware('admin.permission:admin.business-profiles.review')
+            ->name('business-profiles.index');
+        Route::get('/business-profiles/{profile}', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'show'])
+            ->middleware('admin.permission:admin.business-profiles.review')
+            ->name('business-profiles.show');
+        Route::post('/business-profiles/{profile}/approve', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'approve'])
+            ->middleware('admin.permission:admin.business-profiles.review')
+            ->name('business-profiles.approve');
+        Route::post('/business-profiles/{profile}/reject', [\App\Http\Controllers\Admin\BusinessProfileController::class, 'reject'])
+            ->middleware('admin.permission:admin.business-profiles.review')
+            ->name('business-profiles.reject');
 
         // DSS Risk Actions
-        Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])->name('distributors.suspend');
-        Route::post('/distributors/{id}/lift-suspension', [\App\Http\Controllers\Admin\DashboardController::class, 'liftSuspension'])->name('distributors.lift-suspension');
-        Route::post('/distributors/{id}/ban', [\App\Http\Controllers\Admin\DashboardController::class, 'banDistributor'])->name('distributors.ban');
-        Route::post('/distributors/{id}/warn', [\App\Http\Controllers\Admin\DashboardController::class, 'warnDistributor'])->name('distributors.warn');
+        Route::post('/distributors/{id}/suspend', [\App\Http\Controllers\Admin\DashboardController::class, 'suspendDistributor'])
+            ->middleware('admin.permission:admin.distributors.moderate')
+            ->name('distributors.suspend');
+        Route::post('/distributors/{id}/lift-suspension', [\App\Http\Controllers\Admin\DashboardController::class, 'liftSuspension'])
+            ->middleware('admin.permission:admin.distributors.moderate')
+            ->name('distributors.lift-suspension');
+        Route::post('/distributors/{id}/ban', [\App\Http\Controllers\Admin\DashboardController::class, 'banDistributor'])
+            ->middleware('admin.permission:admin.distributors.moderate')
+            ->name('distributors.ban');
+        Route::post('/distributors/{id}/warn', [\App\Http\Controllers\Admin\DashboardController::class, 'warnDistributor'])
+            ->middleware('admin.permission:admin.distributors.moderate')
+            ->name('distributors.warn');
 
         // Secure Document Viewing
         Route::get('/documents/{path}', [\App\Http\Controllers\Admin\DashboardController::class, 'viewDocument'])
             ->where('path', '.*')
+            ->middleware('admin.permission:admin.documents.view')
             ->name('documents.view');
 
         // Users Management
-        Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users.index');
-        Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])->name('users.updateRole');
-        Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])->name('users.ban');
-        Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])->name('users.unban');
+        Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])
+            ->middleware('admin.permission:admin.users.manage')
+            ->name('users.index');
+        Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])
+            ->middleware('admin.permission:admin.users.manage')
+            ->name('users.updateRole');
+        Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserManagementController::class, 'ban'])
+            ->middleware('admin.permission:admin.users.manage')
+            ->name('users.ban');
+        Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserManagementController::class, 'unban'])
+            ->middleware('admin.permission:admin.users.manage')
+            ->name('users.unban');
 
         // Roles Management
-        Route::resource('/roles', \App\Http\Controllers\Admin\RoleController::class)->except(['create', 'edit', 'show']);
+        Route::resource('/roles', \App\Http\Controllers\Admin\RoleController::class)
+            ->except(['create', 'edit', 'show'])
+            ->middleware('admin.permission:admin.roles.manage');
 
         // Courier Management
         Route::get('/couriers', [CourierController::class, 'index'])->name('couriers.index');
@@ -468,15 +495,20 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
             ->name('products.soft-delete');
 
         // Moderation reports hub (chat, user, courier, low delivery ratings)
-        Route::get('/reports', [ReportHubController::class, 'index'])->name('reports.index');
+        Route::get('/reports', [ReportHubController::class, 'index'])
+            ->middleware('admin.permission:admin.reports.review')
+            ->name('reports.index');
         Route::get('/reports/{bucket}/{id}', [ReportHubController::class, 'show'])
             ->where(['bucket' => 'message|user|courier|delivery|product', 'id' => '[0-9]+'])
+            ->middleware('admin.permission:admin.reports.review')
             ->name('reports.show');
         Route::patch('/reports/{bucket}/{id}', [ReportHubController::class, 'updateCase'])
             ->where(['bucket' => 'message|user|courier|product', 'id' => '[0-9]+'])
+            ->middleware('admin.permission:admin.reports.moderate')
             ->name('reports.update');
         Route::post('/reports/{bucket}/{id}/enforce', [ReportHubController::class, 'enforce'])
             ->where(['bucket' => 'message|user|courier|delivery', 'id' => '[0-9]+'])
+            ->middleware('admin.permission:admin.reports.moderate')
             ->name('reports.enforce');
 
         Route::get('/message-reports', function () {
@@ -484,8 +516,10 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
             $q['tab'] = 'messages';
 
             return redirect()->route('admin.reports.index', $q);
-        })->name('message-reports.index');
-        Route::patch('/message-reports/{report}', [AdminMessageReportController::class, 'update'])->name('message-reports.update');
+        })->middleware('admin.permission:admin.reports.review')->name('message-reports.index');
+        Route::patch('/message-reports/{report}', [AdminMessageReportController::class, 'update'])
+            ->middleware('admin.permission:admin.reports.moderate')
+            ->name('message-reports.update');
 
         // Orders overview
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderOverviewController::class, 'index'])
@@ -504,13 +538,19 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
             ->name('reviews.disputes.resolve');
 
         // Audit Logs
-        Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])
+            ->middleware('admin.permission:admin.audit-logs.view')
+            ->name('audit-logs.index');
 
         // System-wide Announcements
-        Route::post('/broadcast-announcement', [\App\Http\Controllers\Admin\DashboardController::class, 'broadcastAnnouncement'])->name('broadcast-announcement');
+        Route::post('/broadcast-announcement', [\App\Http\Controllers\Admin\DashboardController::class, 'broadcastAnnouncement'])
+            ->middleware('admin.permission:admin.announcements.broadcast')
+            ->name('broadcast-announcement');
 
         // Storage Repair
-        Route::post('/repair-storage', [\App\Http\Controllers\Admin\StorageFixController::class, 'repair'])->name('repair-storage');
+        Route::post('/repair-storage', [\App\Http\Controllers\Admin\StorageFixController::class, 'repair'])
+            ->middleware('admin.permission:admin.storage.repair')
+            ->name('repair-storage');
     });
 
 /*

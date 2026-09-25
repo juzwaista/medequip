@@ -39,6 +39,11 @@ class OrderPolicy
         return $this->isCustomer($user, $order);
     }
 
+    public function pay(User $user, Order $order): bool
+    {
+        return $this->isCustomer($user, $order);
+    }
+
     private function isCustomer(User $user, Order $order): bool
     {
         return $user->id === $order->customer_id;

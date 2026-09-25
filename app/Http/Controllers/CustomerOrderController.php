@@ -103,16 +103,7 @@ class CustomerOrderController extends Controller
      */
     public function show(Order $order)
     {
-        $user = auth()->user();
-
-        // Ensure user owns this order
-        if ($order->customer_id !== $user->id) {
-            Log::warning('[CustomerOrderController] Unauthorized order access attempt', [
-                'user_id' => $user->id,
-                'order_id' => $order->id,
-            ]);
-            abort(403, 'You do not have permission to view this order.');
-        }
+        $this->authorize('view', $order);
 
         $order->load([
             'items.product',
@@ -341,16 +332,7 @@ class CustomerOrderController extends Controller
      */
     public function cancel(Order $order, \App\Services\OrderPrescriptionRefundService $refundService)
     {
-        $user = auth()->user();
-
-        // Ensure user owns this order
-        if ($order->customer_id !== $user->id) {
-            Log::warning('[CustomerOrderController] Unauthorized cancel attempt', [
-                'user_id' => $user->id,
-                'order_id' => $order->id,
-            ]);
-            abort(403, 'You do not have permission to cancel this order.');
-        }
+        $this->authorize('cancel', $order);
 
         if (! in_array($order->status, ['pending', 'approved'])) {
             return back()->with('error', 'Cannot cancel order in current status: '.$order->status);
