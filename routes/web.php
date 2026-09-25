@@ -194,9 +194,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])
         ->name('profile.update');
 
-    Route::put('/password', [ProfileController::class, 'updatePassword'])
-        ->name('password.update');
-
     Route::post('/profile/deactivate', [ProfileController::class, 'deactivate'])
         ->name('profile.deactivate');
 
@@ -258,26 +255,30 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
         Route::get('/dashboard/pulse', [\App\Http\Controllers\Owner\DashboardController::class, 'pulse'])
             ->name('dashboard.pulse');
 
-        // Point of Sale (POS)
-        Route::get('/pos', [\App\Http\Controllers\Owner\POSController::class, 'index'])
-            ->name('pos.index');
+        // POS, suppliers and purchase orders: staff need the shop.manage-inventory role permission (owners always pass)
+        Route::middleware('shop.permission:shop.manage-inventory')->group(function () {
+            // Point of Sale (POS)
+            Route::get('/pos', [\App\Http\Controllers\Owner\POSController::class, 'index'])
+                ->name('pos.index');
         
-        // Suppliers (Internal Procurement)
-        Route::resource('suppliers', \App\Http\Controllers\Owner\SupplierController::class)
-            ->except(['show', 'edit']);
+            // Suppliers (Internal Procurement)
+            Route::resource('suppliers', \App\Http\Controllers\Owner\SupplierController::class)
+                ->except(['create', 'show', 'edit']);
             
-        // Purchase Orders (Internal Procurement)
-        Route::get('/purchase-orders', [\App\Http\Controllers\Owner\ProcurementController::class, 'index'])->name('procurement.index');
-        Route::get('/purchase-orders/create', [\App\Http\Controllers\Owner\ProcurementController::class, 'create'])->name('procurement.create');
-        Route::post('/purchase-orders', [\App\Http\Controllers\Owner\ProcurementController::class, 'store'])->name('procurement.store');
-        Route::get('/purchase-orders/{purchase_order}', [\App\Http\Controllers\Owner\ProcurementController::class, 'show'])->name('procurement.show');
-        Route::post('/purchase-orders/{purchase_order}/status', [\App\Http\Controllers\Owner\ProcurementController::class, 'updateStatus'])->name('procurement.status');
-        Route::post('/pos/checkout', [\App\Http\Controllers\Owner\POSController::class, 'checkout'])
-            ->name('pos.checkout');
-        Route::get('/pos/invoices/{invoice}/success', [\App\Http\Controllers\Owner\POSController::class, 'paymentSuccess'])
-            ->name('pos.success');
-        Route::get('/pos/invoices/{invoice}/cancel', [\App\Http\Controllers\Owner\POSController::class, 'paymentCancel'])
-            ->name('pos.cancel');
+            // Purchase Orders (Internal Procurement)
+            Route::get('/purchase-orders', [\App\Http\Controllers\Owner\ProcurementController::class, 'index'])->name('procurement.index');
+            Route::get('/purchase-orders/create', [\App\Http\Controllers\Owner\ProcurementController::class, 'create'])->name('procurement.create');
+            Route::post('/purchase-orders', [\App\Http\Controllers\Owner\ProcurementController::class, 'store'])->name('procurement.store');
+            Route::get('/purchase-orders/{purchase_order}', [\App\Http\Controllers\Owner\ProcurementController::class, 'show'])->name('procurement.show');
+            Route::post('/purchase-orders/{purchase_order}/status', [\App\Http\Controllers\Owner\ProcurementController::class, 'updateStatus'])->name('procurement.status');
+            Route::post('/purchase-orders/{purchase_order}/receive', [\App\Http\Controllers\Owner\ProcurementController::class, 'receive'])->name('procurement.receive');
+            Route::post('/pos/checkout', [\App\Http\Controllers\Owner\POSController::class, 'checkout'])
+                ->name('pos.checkout');
+            Route::get('/pos/invoices/{invoice}/success', [\App\Http\Controllers\Owner\POSController::class, 'paymentSuccess'])
+                ->name('pos.success');
+            Route::get('/pos/invoices/{invoice}/cancel', [\App\Http\Controllers\Owner\POSController::class, 'paymentCancel'])
+                ->name('pos.cancel');
+        });
 
         Route::get('/messages', [OwnerShopConversationController::class, 'index'])->name('messages.index');
         Route::get('/messages/{conversation}', [OwnerShopConversationController::class, 'show'])->name('messages.show');
@@ -286,45 +287,51 @@ Route::middleware(['auth', 'verified', 'role:distributor,staff', \App\Http\Middl
         Route::post('/messages/{conversation}/mark-read', [ConversationMarkReadController::class, 'store'])->name('messages.mark-read');
         Route::post('/messages/{conversation}/messages/{conversation_message}/report', [ShopConversationMessageReportController::class, 'store'])->name('messages.messages.report');
 
-        // Orders
-        Route::get('/orders', [\App\Http\Controllers\Owner\OrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{order}/messages', [OrderMessageController::class, 'index'])->name('orders.messages.index');
-        Route::post('/orders/{order}/messages', [OrderMessageController::class, 'store'])->middleware('throttle:60,1')->name('orders.messages.store');
-        Route::post('/orders/{order}/messages/{conversation_message}/report', [OrderMessageReportController::class, 'store'])->name('orders.messages.report');
-        Route::post('/orders/{order}/messages/mark-read', [OrderConversationMarkReadController::class, 'store'])->name('orders.messages.markRead');
-        Route::get('/orders/{order}', [\App\Http\Controllers\Owner\OrderController::class, 'show'])->name('orders.show');
-        Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Owner\OrderController::class, 'receipt'])->name('orders.receipt');
-        Route::post('/orders/{order}/prescription/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approvePrescription'])->name('orders.prescription.approve');
-        Route::post('/orders/{order}/prescription/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectPrescription'])->name('orders.prescription.reject');
-        Route::post('/orders/{order}/discount/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approveDiscount'])->name('orders.discount.approve');
-        Route::post('/orders/{order}/discount/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectDiscount'])->name('orders.discount.reject');
-        Route::patch('/orders/{order}/status', [\App\Http\Controllers\Owner\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
-        Route::post('/orders/{order}/note', [\App\Http\Controllers\Owner\OrderController::class, 'addNote'])->name('orders.addNote');
-        Route::post('/orders/{order}/confirm-cod-remittance', [\App\Http\Controllers\Owner\OrderController::class, 'confirmCodRemittance'])->name('orders.confirmCodRemittance');
+        // Orders: staff need the shop.manage-orders role permission (owners always pass)
+        Route::middleware('shop.permission:shop.manage-orders')->group(function () {
+            // Orders
+            Route::get('/orders', [\App\Http\Controllers\Owner\OrderController::class, 'index'])->name('orders.index');
+            Route::get('/orders/{order}/messages', [OrderMessageController::class, 'index'])->name('orders.messages.index');
+            Route::post('/orders/{order}/messages', [OrderMessageController::class, 'store'])->middleware('throttle:60,1')->name('orders.messages.store');
+            Route::post('/orders/{order}/messages/{conversation_message}/report', [OrderMessageReportController::class, 'store'])->name('orders.messages.report');
+            Route::post('/orders/{order}/messages/mark-read', [OrderConversationMarkReadController::class, 'store'])->name('orders.messages.markRead');
+            Route::get('/orders/{order}', [\App\Http\Controllers\Owner\OrderController::class, 'show'])->name('orders.show');
+            Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Owner\OrderController::class, 'receipt'])->name('orders.receipt');
+            Route::post('/orders/{order}/prescription/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approvePrescription'])->name('orders.prescription.approve');
+            Route::post('/orders/{order}/prescription/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectPrescription'])->name('orders.prescription.reject');
+            Route::post('/orders/{order}/discount/approve', [\App\Http\Controllers\Owner\OrderController::class, 'approveDiscount'])->name('orders.discount.approve');
+            Route::post('/orders/{order}/discount/reject', [\App\Http\Controllers\Owner\OrderController::class, 'rejectDiscount'])->name('orders.discount.reject');
+            Route::patch('/orders/{order}/status', [\App\Http\Controllers\Owner\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+            Route::post('/orders/{order}/note', [\App\Http\Controllers\Owner\OrderController::class, 'addNote'])->name('orders.addNote');
+            Route::post('/orders/{order}/confirm-cod-remittance', [\App\Http\Controllers\Owner\OrderController::class, 'confirmCodRemittance'])->name('orders.confirmCodRemittance');
+        });
 
         // Review Disputes
         Route::post('/reviews/{productReview}/dispute', [\App\Http\Controllers\Owner\ReviewDisputeController::class, 'store'])->name('reviews.dispute');
 
-        // Inventory Management (Unified Product + Stock)
-        Route::resource('inventory', \App\Http\Controllers\Owner\InventoryController::class, [
-            'names' => [
-                'index' => 'inventory.index',
-                'create' => 'inventory.create',
-                'store' => 'inventory.store',
-                'edit' => 'inventory.edit',
-                'update' => 'inventory.update',
-                'destroy' => 'inventory.destroy',
-            ],
-        ]);
-        Route::post('/inventory/{id}/quick-edit', [\App\Http\Controllers\Owner\InventoryController::class, 'quickEdit'])
-            ->name('inventory.quickEdit');
+        // Inventory: staff need the shop.manage-inventory role permission (owners always pass)
+        Route::middleware('shop.permission:shop.manage-inventory')->group(function () {
+            // Inventory Management (Unified Product + Stock)
+            Route::resource('inventory', \App\Http\Controllers\Owner\InventoryController::class, [
+                'names' => [
+                    'index' => 'inventory.index',
+                    'create' => 'inventory.create',
+                    'store' => 'inventory.store',
+                    'edit' => 'inventory.edit',
+                    'update' => 'inventory.update',
+                    'destroy' => 'inventory.destroy',
+                ],
+            ]);
+            Route::post('/inventory/{id}/quick-edit', [\App\Http\Controllers\Owner\InventoryController::class, 'quickEdit'])
+                ->name('inventory.quickEdit');
 
-        // Legacy /products/* URLs → unified inventory (single add/edit flow)
-        Route::get('/products', fn () => redirect()->route('owner.inventory.index'))->name('products.index');
-        Route::get('/products/create', fn () => redirect()->route('owner.inventory.create'))->name('products.create');
-        Route::get('/products/{product}/edit', function (\App\Models\Product $product) {
-            return redirect()->route('owner.inventory.edit', $product);
-        })->name('products.edit');
+            // Legacy /products/* URLs → unified inventory (single add/edit flow)
+            Route::get('/products', fn () => redirect()->route('owner.inventory.index'))->name('products.index');
+            Route::get('/products/create', fn () => redirect()->route('owner.inventory.create'))->name('products.create');
+            Route::get('/products/{product}/edit', function (\App\Models\Product $product) {
+                return redirect()->route('owner.inventory.edit', $product);
+            })->name('products.edit');
+        });
 
         // ==========================================
         // OWNER-ONLY MANAGEMENT
@@ -415,7 +422,7 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
 
         // Distributors Management
         Route::get('/distributors/{id}', [\App\Http\Controllers\Admin\DashboardController::class, 'showDistributor'])
-            ->middleware('admin.permission:admin.applications.review')
+            ->middleware('admin.permission:admin.applications.review|admin.users.manage')
             ->name('distributors.show');
         Route::post('/distributors/{id}/approve', [\App\Http\Controllers\Admin\DashboardController::class, 'approveDistributor'])
             ->middleware('admin.permission:admin.applications.approve')
@@ -462,6 +469,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin', 'otp'])
         Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])
             ->middleware('admin.permission:admin.users.manage')
             ->name('users.index');
+        Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'show'])
+            ->middleware('admin.permission:admin.users.manage')
+            ->name('users.show');
         Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])
             ->middleware('admin.permission:admin.users.manage')
             ->name('users.updateRole');
@@ -616,5 +626,3 @@ Route::middleware(['auth', 'verified'])->group(function () {
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';
-Route::get('/corporate', [\App\Http\Controllers\CorporateController::class, 'index'])->name('corporate');
-Route::post('/corporate/register', [\App\Http\Controllers\CorporateController::class, 'register'])->name('corporate.register');
