@@ -908,7 +908,7 @@ const syncWaybillQrSize = () => {
 const confirmRemittance = () => {
     if (!confirm('Confirm that you have received the cash from the courier?\n\nThis will release the courier\'s shipping fee payout and mark the order as complete.')) return;
     confirmingRemittance.value = true;
-    router.post(`/owner/orders/${props.order.id}/confirm-cod-remittance`, {}, {
+    router.post(`/owner/orders/${props.order.order_number}/confirm-cod-remittance`, {}, {
         preserveScroll: true,
         onFinish: () => { confirmingRemittance.value = false; },
     });
@@ -917,7 +917,7 @@ const confirmRemittance = () => {
 const approvePrescription = () => {
     if (!confirm('Approve this prescription and allow the customer to pay for this order?')) return;
     rxProcessing.value = true;
-    router.post(`/owner/orders/${props.order.id}/prescription/approve`, {}, {
+    router.post(`/owner/orders/${props.order.order_number}/prescription/approve`, {}, {
         preserveScroll: true,
         onFinish: () => { rxProcessing.value = false; },
     });
@@ -926,7 +926,7 @@ const approvePrescription = () => {
 const rejectPrescription = () => {
     if (!confirm('Reject this prescription? The order will be cancelled and stock reservations released.')) return;
     rxProcessing.value = true;
-    router.post(`/owner/orders/${props.order.id}/prescription/reject`, { reason: rejectReason.value }, {
+    router.post(`/owner/orders/${props.order.order_number}/prescription/reject`, { reason: rejectReason.value }, {
         preserveScroll: true,
         onFinish: () => { rxProcessing.value = false; },
     });
@@ -935,7 +935,7 @@ const rejectPrescription = () => {
 const approveDiscount = () => {
     if (!confirm('Approve this SC/PWD discount request?')) return;
     discountProcessing.value = true;
-    router.post(`/owner/orders/${props.order.id}/discount/approve`, {}, {
+    router.post(`/owner/orders/${props.order.order_number}/discount/approve`, {}, {
         preserveScroll: true,
         onFinish: () => { discountProcessing.value = false; },
     });
@@ -944,7 +944,7 @@ const approveDiscount = () => {
 const rejectDiscount = () => {
     if (!confirm('Reject this discount? This will cancel the order as per system requirements.')) return;
     discountProcessing.value = true;
-    router.post(`/owner/orders/${props.order.id}/discount/reject`, { reason: discountRejectReason.value }, {
+    router.post(`/owner/orders/${props.order.order_number}/discount/reject`, { reason: discountRejectReason.value }, {
         preserveScroll: true,
         onFinish: () => { discountProcessing.value = false; },
     });
@@ -1027,7 +1027,7 @@ const updateStatus = () => {
 
     updating.value = true;
     
-    router.post(`/owner/orders/${props.order.id}/status`, {
+    router.post(`/owner/orders/${props.order.order_number}/status`, {
         _method: 'patch',
         ...statusForm
     }, {
