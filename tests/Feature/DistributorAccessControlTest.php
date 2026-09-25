@@ -79,14 +79,12 @@ class DistributorAccessControlTest extends TestCase
 
     public function test_staff_of_suspended_distributor_can_still_reach_a_non_restricted_route(): void
     {
-        // Uses orders.index rather than dashboard: the dashboard route hits an unrelated,
-        // pre-existing bug (a MySQL-only FIELD() call with no SQLite guard in a DSS query)
-        // when actually rendering in the test DB — irrelevant to what this test verifies,
-        // which is only that the middleware itself doesn't block this route.
+        // Uses the messages page: it needs no shop role permission (orders/inventory now do), so
+        // this only verifies that the distributor-status middleware doesn't block the route.
         $distributor = $this->makeDistributor(['suspended_until' => now()->addDays(7)]);
         $staff = $this->makeStaffFor($distributor);
 
-        $response = $this->actingAs($staff)->get(route('owner.orders.index'));
+        $response = $this->actingAs($staff)->get(route('owner.messages.index'));
 
         $response->assertOk();
     }
@@ -120,7 +118,7 @@ class DistributorAccessControlTest extends TestCase
         $distributor = $this->makeDistributor();
         $staff = $this->makeStaffFor($distributor);
 
-        $response = $this->actingAs($staff)->get(route('owner.orders.index'));
+        $response = $this->actingAs($staff)->get(route('owner.messages.index'));
 
         $response->assertOk();
     }

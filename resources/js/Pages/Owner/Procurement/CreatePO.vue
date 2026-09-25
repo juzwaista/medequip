@@ -56,17 +56,29 @@
                         
                         <div class="w-full md:w-1/2">
                             <label class="block text-xs font-medium text-gray-700">Product <span class="text-red-500">*</span></label>
-                            <select v-model="item.product_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" required>
+                            <select v-model="item.product_id" @change="item.product_variation_id = ''" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" required>
                                 <option value="" disabled>Select Product</option>
                                 <option v-for="product in products" :key="product.id" :value="product.id">
-                                    {{ product.name }} (Current Stock: {{ product.inventory?.quantity || 0 }})
+                                    {{ product.name }}<template v-if="product.stock !== null"> (In stock: {{ product.stock }})</template>
                                 </option>
                             </select>
                             <div v-if="form.errors[`items.${index}.product_id`]" class="mt-1 text-xs text-rose-600">Required</div>
+
+                            <!-- Products with options (piece / box of 10, sizes...) must say which one is ordered -->
+                            <div v-if="productFor(item)?.variations.length" class="mt-2">
+                                <label class="block text-xs font-medium text-gray-700">Option <span class="text-red-500">*</span></label>
+                                <select v-model="item.product_variation_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" required>
+                                    <option value="" disabled>Choose which option you are restocking</option>
+                                    <option v-for="v in productFor(item).variations" :key="v.id" :value="v.id">
+                                        {{ v.label }} (In stock: {{ v.stock }}<template v-if="v.units_per_pack > 1"> · {{ v.units_per_pack }} pcs each</template>)
+                                    </option>
+                                </select>
+                                <div v-if="form.errors[`items.${index}.product_variation_id`]" class="mt-1 text-xs text-rose-600">{{ form.errors[`items.${index}.product_variation_id`] }}</div>
+                            </div>
                         </div>
 
                         <div class="w-full md:w-1/4">
-                            <label class="block text-xs font-medium text-gray-700">Quantity <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-medium text-gray-700">Quantity<template v-if="unitLabelFor(item)"> (in {{ unitLabelFor(item) }}s)</template> <span class="text-red-500">*</span></label>
                             <input v-model.number="item.quantity_ordered" type="number" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" required>
                         </div>
                         
@@ -124,7 +136,7 @@ const form = useForm({
     notes: '',
     items: [
         { 
-            product_id: props.prefill?.product_id || '', 
+            product_id: props.prefill?.product_id || '', product_variation_id: '', 
             quantity_ordered: props.prefill?.qty ? Number(props.prefill.qty) : 1, 
             unit_cost: 0 
         }
@@ -132,8 +144,18 @@ const form = useForm({
 });
 
 function addItem() {
-    form.items.push({ product_id: '', quantity_ordered: 1, unit_cost: 0 });
+    form.items.push({ product_id: '', product_variation_id: '', quantity_ordered: 1, unit_cost: 0 });
 }
+
+const productFor = (item) => props.products.find((p) => p.id === item.product_id) || null;
+
+// What one ordered unit is called: the chosen option's unit (box, piece...) or the product's own.
+const unitLabelFor = (item) => {
+    const product = productFor(item);
+    if (!product) return '';
+    const variation = product.variations.find((v) => v.id === item.product_variation_id);
+    return variation?.unit_label || product.unit_label || '';
+};
 
 function removeItem(index) {
     form.items.splice(index, 1);

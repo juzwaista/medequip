@@ -30,10 +30,10 @@
                     
                     <button v-if="['sent', 'partially_received'].includes(po.status)" @click="updateStatus('completed')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Mark Completed & Restock
+                        Receive All Remaining
                     </button>
 
-                    <button v-if="po.status === 'draft' || po.status === 'sent'" @click="updateStatus('cancelled')" class="bg-white border border-gray-300 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors">
+                    <button v-if="['draft', 'sent', 'partially_received'].includes(po.status)" @click="updateStatus('cancelled')" class="bg-white border border-gray-300 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors">
                         Cancel PO
                     </button>
                 </div>
@@ -56,13 +56,16 @@
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Unit Cost</th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty Ordered</th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty Received</th>
+                                    <th v-if="canReceive" scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Receive now</th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <tr v-for="item in po.items" :key="item.id">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
                                         {{ item.product.name }}
+                                        <p v-if="item.product_variation" class="text-xs font-normal text-blue-700">{{ item.product_variation.display_label }}</p>
+                                        <p v-if="item.units_per_pack > 1" class="text-xs font-normal text-gray-500">Ordered per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each</p>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                                         ₱{{ Number(item.unit_cost).toLocaleString(undefined, {minimumFractionDigits: 2}) }}
@@ -74,6 +77,17 @@
                                         <span v-if="po.status === 'completed'" class="text-green-600 font-bold">{{ item.quantity_received }}</span>
                                         <span v-else>{{ item.quantity_received }}</span>
                                     </td>
+                                    <td v-if="canReceive" class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                        <input
+                                            v-model.number="receiveQty[item.id]"
+                                            type="number"
+                                            min="0"
+                                            :max="remaining(item)"
+                                            :disabled="remaining(item) === 0"
+                                            class="w-24 rounded-md border-gray-300 text-sm text-right disabled:bg-gray-100"
+                                        />
+                                        <p class="text-[10px] text-gray-400 mt-0.5">{{ remaining(item) }} {{ plural(item.unit_label, remaining(item)) }} outstanding</p>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         ₱{{ (item.unit_cost * item.quantity_ordered).toLocaleString(undefined, {minimumFractionDigits: 2}) }}
                                     </td>
@@ -81,7 +95,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-right text-sm font-bold text-gray-900 uppercase">Grand Total</td>
+                                    <td :colspan="canReceive ? 5 : 4" class="px-6 py-4 text-right text-sm font-bold text-gray-900 uppercase">Grand Total</td>
                                     <td class="px-6 py-4 text-right text-lg font-bold text-blue-600">
                                         ₱{{ Number(po.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) }}
                                     </td>
@@ -89,6 +103,12 @@
                             </tfoot>
                         </table>
                     </div>
+                </div>
+
+                <div v-if="canReceive" class="flex justify-end -mt-2">
+                    <button @click="receiveDelivery" :disabled="!hasDelivery" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        Record delivery
+                    </button>
                 </div>
 
                 <!-- Notes -->
@@ -147,6 +167,7 @@
 </template>
 
 <script setup>
+import { computed, reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import OwnerLayout from '@/Layouts/OwnerLayout.vue';
 
@@ -154,12 +175,32 @@ const props = defineProps({
     po: Object,
 });
 
+const canReceive = computed(() => ['sent', 'partially_received'].includes(props.po.status));
+
+// Units arriving in this delivery, per item id.
+const receiveQty = reactive({});
+props.po.items.forEach((item) => { receiveQty[item.id] = 0; });
+
+const remaining = (item) => Math.max(0, item.quantity_ordered - item.quantity_received);
+const hasDelivery = computed(() => props.po.items.some((item) => Number(receiveQty[item.id]) > 0));
+
+const plural = (word, n) => (n === 1 ? word : (/(s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`));
+
+function receiveDelivery() {
+    if (!confirm('Record this delivery and add the received units to your live inventory?')) return;
+
+    router.post(route('owner.procurement.receive', props.po.id), { quantities: { ...receiveQty } }, {
+        preserveScroll: true,
+        onSuccess: () => props.po.items.forEach((item) => { receiveQty[item.id] = 0; }),
+    });
+}
+
 function updateStatus(newStatus) {
     let msg = `Are you sure you want to change the status to ${newStatus}?`;
     if (newStatus === 'sent') {
         msg = "This will formally send the Purchase Order. An automated email will be sent to the supplier if an email is provided. Proceed?";
     } else if (newStatus === 'completed') {
-        msg = "WARNING: Marking this PO as completed will automatically increment your live inventory by the ordered quantities. Are you sure you have received the stock?";
+        msg = "WARNING: This will add every unit still outstanding on this PO to your live inventory and close it. Only do this if the whole delivery has arrived. Use \"Record delivery\" for a partial delivery. Proceed?";
     }
 
     if (confirm(msg)) {

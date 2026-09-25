@@ -14,7 +14,7 @@ class SupplierController extends Controller
      */
     public function index(Request $request)
     {
-        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->distributorStaff : null);
+        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->employer : null);
         
         if (!$distributor) {
             abort(403);
@@ -34,7 +34,7 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->distributorStaff : null);
+        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->employer : null);
         
         if (!$distributor) {
             abort(403);
@@ -61,7 +61,7 @@ class SupplierController extends Controller
      */
     public function update(Request $request, Supplier $supplier)
     {
-        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->distributorStaff : null);
+        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->employer : null);
         
         if (!$distributor || $supplier->distributor_id !== $distributor->id) {
             abort(403);
@@ -86,7 +86,7 @@ class SupplierController extends Controller
      */
     public function destroy(Request $request, Supplier $supplier)
     {
-        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->distributorStaff : null);
+        $distributor = $request->user()->distributor ?? ($request->user()->role === 'staff' ? $request->user()->employer : null);
         
         if (!$distributor || $supplier->distributor_id !== $distributor->id) {
             abort(403);
