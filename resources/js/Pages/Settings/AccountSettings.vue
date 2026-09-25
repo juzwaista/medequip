@@ -179,44 +179,76 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Current Password</label>
-                                    <input 
-                                        v-model="passwordForm.current_password"
-                                        type="password"
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        required
-                                    />
+                                    <div class="relative">
+                                        <input 
+                                            v-model="passwordForm.current_password"
+                                            :type="showPw.current ? 'text' : 'password'"
+                                            autocomplete="current-password"
+                                            class="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            :class="passwordForm.errors.current_password ? 'border-red-400' : 'border-gray-200'"
+                                            required
+                                        />
+                                        <button type="button" @click="showPw.current = !showPw.current" :aria-label="showPw.current ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                            <svg v-if="!showPw.current" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                        </button>
+                                    </div>
+                                    <p v-if="passwordForm.errors.current_password" class="text-red-600 text-xs mt-1.5">{{ passwordForm.errors.current_password }}</p>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">New Password</label>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">New Password</label>
+                                    <div class="relative">
                                         <input 
                                             v-model="passwordForm.password"
-                                            type="password"
-                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            :type="showPw.new ? 'text' : 'password'"
+                                            autocomplete="new-password"
+                                            class="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            :class="passwordForm.errors.password ? 'border-red-400' : 'border-gray-200'"
                                             required
                                         />
+                                        <button type="button" @click="showPw.new = !showPw.new" :aria-label="showPw.new ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                            <svg v-if="!showPw.new" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                        </button>
                                     </div>
+                                    <p v-if="passwordForm.errors.password" class="text-red-600 text-xs mt-1.5">{{ passwordForm.errors.password }}</p>
+                                </div>
 
                                     <div>
-                                        <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Confirm New Password</label>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Confirm New Password</label>
+                                    <div class="relative">
                                         <input 
                                             v-model="passwordForm.password_confirmation"
-                                            type="password"
-                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            :type="showPw.confirm ? 'text' : 'password'"
+                                            autocomplete="new-password"
+                                            class="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            :class="passwordForm.errors.password_confirmation ? 'border-red-400' : 'border-gray-200'"
                                             required
                                         />
+                                        <button type="button" @click="showPw.confirm = !showPw.confirm" :aria-label="showPw.confirm ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                            <svg v-if="!showPw.confirm" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                        </button>
                                     </div>
+                                    <p v-if="passwordForm.errors.password_confirmation" class="text-red-600 text-xs mt-1.5">{{ passwordForm.errors.password_confirmation }}</p>
                                 </div>
+                                </div>
+                            </div>
+
+                            <div v-if="passwordSaved" role="status" class="mt-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center text-green-800 text-sm font-medium">
+                                <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Your password has been updated.
                             </div>
 
                             <div class="mt-8 flex justify-end">
                                 <button 
                                     type="submit"
-                                    :disabled="updatingPassword"
+                                    :disabled="passwordForm.processing"
                                     class="bg-slate-100 text-slate-700 border border-slate-200 px-8 py-3 rounded-xl hover:bg-slate-200 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center active:scale-95"
                                 >
-                                    {{ updatingPassword ? 'Updating...' : 'Update Password' }}
+                                    {{ passwordForm.processing ? 'Updating...' : 'Update Password' }}
                                 </button>
                             </div>
                         </form>
@@ -378,7 +410,7 @@ const profileForm = reactive({
     tin: props.user.tin || '',
 });
 
-const passwordForm = reactive({
+const passwordForm = useForm({
     current_password: '',
     password: '',
     password_confirmation: ''
@@ -389,7 +421,9 @@ const verificationForm = useForm({
 });
 
 const updatingProfile = ref(false);
-const updatingPassword = ref(false);
+const passwordSaved = ref(false);
+const showPw = reactive({ current: false, new: false, confirm: false });
+let passwordSavedTimer = null;
 const deactivating = ref(false);
 const verifyingEmail = ref(false);
 const showDeactivateConfirmation = ref(false);
@@ -436,21 +470,24 @@ const updatePassword = () => {
         return;
     }
 
-    updatingPassword.value = true;
+    passwordSaved.value = false;
 
-    router.put('/password', passwordForm, {
+    // The live PUT /password handler is Auth\PasswordController (routes/auth.php overrides the
+    // same URI in web.php), which validates into the named `updatePassword` error bag and sets
+    // no `success` flash — so read that bag and show the success message inline.
+    passwordForm.put('/password', {
         preserveScroll: true,
+        errorBag: 'updatePassword',
         onSuccess: () => {
-            passwordForm.current_password = '';
-            passwordForm.password = '';
-            passwordForm.password_confirmation = '';
+            passwordForm.reset();
+            showPw.current = showPw.new = showPw.confirm = false;
+            passwordSaved.value = true;
+            clearTimeout(passwordSavedTimer);
+            passwordSavedTimer = setTimeout(() => { passwordSaved.value = false; }, 8000);
         },
-        onError: (errors) => {
-            console.error('[AccountSettings] Password update failed', errors);
+        onError: () => {
+            passwordForm.reset('password', 'password_confirmation');
         },
-        onFinish: () => {
-            updatingPassword.value = false;
-        }
     });
 };
 

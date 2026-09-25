@@ -49,7 +49,7 @@ class ProfileController extends Controller
 
             // Notify the NEW email address specifically
             \Illuminate\Support\Facades\Notification::route('mail', $newEmail)
-                ->notify(new \App\Notifications\LoginOTP($otp));
+                ->notify(new \App\Notifications\LoginOTP($otp, 'email_change'));
 
             // Don't update the primary email yet
             unset($validated['email']);
@@ -63,25 +63,6 @@ class ProfileController extends Controller
         }
 
         return Redirect::route('profile.edit')->with('success', 'Profile updated successfully');
-    }
-
-    /**
-     * Update the user's password.
-     */
-    public function updatePassword(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed'],
-        ]);
-
-        $user = $request->user();
-
-        $user->update([
-            'password' => $validated['password'],
-        ]);
-
-        return Redirect::back()->with('success', 'Password updated successfully');
     }
 
     /**

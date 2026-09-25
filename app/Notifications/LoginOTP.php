@@ -14,9 +14,11 @@ class LoginOTP extends Notification
     protected $otp;
 
     /**
-     * Create a new notification instance.
+     * @param  string  $purpose  'login' (admin login code) or 'email_change' (confirming a new
+     *                           email address; sent to an anonymous mail route, so it has no
+     *                           user name and no database channel).
      */
-    public function __construct($otp)
+    public function __construct($otp, protected string $purpose = 'login')
     {
         $this->otp = $otp;
     }
@@ -28,7 +30,7 @@ class LoginOTP extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return $this->purpose === 'email_change' ? ['mail'] : ['mail', 'database'];
     }
 
     /**
@@ -36,6 +38,17 @@ class LoginOTP extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        if ($this->purpose === 'email_change') {
+            return (new MailMessage)
+                ->subject('MedEquip: Confirm Your New Email Address')
+                ->greeting('Hello!')
+                ->line('You asked to change the email address on your MedEquip account to this one.')
+                ->line('Please use the following verification code to confirm the change:')
+                ->line('**' . $this->otp . '**')
+                ->line('This code is valid for **15 minutes**. If you did not request this change, you can ignore this email.')
+                ->salutation('Stay secure, The MedEquip Security Team');
+        }
+
         return (new MailMessage)
             ->subject('MedEquip Security: Your Login Verification Code')
             ->greeting('Hello, ' . $notifiable->name . '!')
