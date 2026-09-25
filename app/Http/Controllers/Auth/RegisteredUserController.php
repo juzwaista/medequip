@@ -132,7 +132,10 @@ class RegisteredUserController extends Controller
 
         $user->forceFill(['role' => $request->input('role', 'customer')])->save();
 
-        if ($user->role === 'customer') {
+        // Customers always have an address (validated as required). Distributors fill in the same
+        // wizard step but it isn't required for them, so only save what was actually provided.
+        // Their distributor application prefills from this instead of asking again.
+        if ($user->role === 'customer' || ($request->filled('address_line') && $request->filled('city'))) {
             $zipCode = data_get(config('cavite.cities'), $request->city.'.zip', '');
 
             $user->addresses()->create([
@@ -148,7 +151,16 @@ class RegisteredUserController extends Controller
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
             ]);
+        }
 
+        if ($user->role === 'distributor') {
+            $user->forceFill([
+                'company_name' => $request->input('company_name'),
+                'tin' => $request->input('tin_number'),
+            ])->save();
+        }
+
+        if ($user->role === 'customer') {
             // Create business profile if registering as a business buyer
             if ($request->boolean('is_business') && $request->filled('company_name')) {
                 \App\Models\BusinessProfile::create([

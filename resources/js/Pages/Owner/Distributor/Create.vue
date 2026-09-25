@@ -338,7 +338,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted, reactive } from 'vue';
+import { computed, ref, watch, onMounted, reactive, nextTick } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import OnboardingLayout from '@/Layouts/OnboardingLayout.vue';
 import MapPicker from '@/Components/MapPicker.vue';
@@ -440,9 +440,20 @@ const replaceDoc = (key) => {
     serverHasDocs[key] = false;
 };;
 
+// A rejected application always carries a `rejection_reason` key; a first-time applicant only
+// gets prefilled registration details (company name, saved address).
+const isReapplication = !!ex && 'rejection_reason' in ex;
+
 onMounted(() => {
-    // Pre-sync address fields if re-applying with existing data
-    if (ex?.city) {
+    // A first-time applicant's in-progress draft beats the registration prefill.
+    const hasDraft = !isReapplication && !!localStorage.getItem(STORAGE_KEY);
+
+    // Pre-sync address fields if re-applying with existing data (or prefilling from registration)
+    if (ex?.city && !hasDraft) {
+        // Setting the city/barangay below would otherwise trigger the geocoder, which replaces the
+        // exact pin from registration (or the rejected application) with the barangay's centre.
+        isProgrammaticChange = true;
+        nextTick(() => { isProgrammaticChange = false; });
         selectedCity.value = ex.city;
         _applyCityChange(ex.city);
         if (props.barangays?.[ex.city]) {

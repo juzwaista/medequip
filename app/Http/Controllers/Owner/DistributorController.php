@@ -77,10 +77,24 @@ class DistributorController extends Controller
             return redirect()->route('owner.dashboard');
         }
 
-        if ($businessProfile && $businessProfile->status === 'approved') {
-            $props['existingDistributor'] = [
-                'company_name' => $businessProfile->company_name,
-            ];
+        // Prefill from what the applicant already gave us at registration (company name, saved
+        // delivery address and map pin) so they aren't asked for the same details twice. The
+        // form shows these as editable defaults; nothing here is treated as already submitted.
+        $user = Auth::user();
+        $address = $user->addresses()->orderByDesc('is_default')->latest()->first();
+
+        $prefill = array_filter([
+            'company_name' => $user->company_name
+                ?: ($businessProfile && $businessProfile->status === 'approved' ? $businessProfile->company_name : null),
+            'address_line' => $address?->address_line,
+            'city' => $address?->city,
+            'barangay' => $address?->barangay,
+            'latitude' => $address?->latitude,
+            'longitude' => $address?->longitude,
+        ], fn ($value) => filled($value));
+
+        if ($prefill) {
+            $props['existingDistributor'] = $prefill;
         }
 
         return \Inertia\Inertia::render('Owner/Distributor/Create', $props);

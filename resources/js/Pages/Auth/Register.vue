@@ -239,7 +239,7 @@
 
                             <!-- ─── STEP 3: Location & Finalize ────────────────────────── -->
                             <div v-show="currentStep === 3" class="space-y-4">
-                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Delivery Address</h3>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ form.role === 'distributor' ? 'Business Address' : 'Delivery Address' }}</h3>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -294,7 +294,7 @@
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2">
                                         Pin Exact Location <span class="text-red-500">*</span>
-                                        <span class="text-xs font-normal text-gray-400 italic">(Required for delivery)</span>
+                                        <span class="text-xs font-normal text-gray-400 italic">{{ form.role === 'distributor' ? '(Your shop or warehouse location)' : '(Required for delivery)' }}</span>
                                     </label>
                                     <MapPicker
                                         v-model:lat="form.latitude"

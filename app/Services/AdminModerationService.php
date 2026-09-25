@@ -44,8 +44,11 @@ class AdminModerationService
     public function approveDistributor(User $actor, Distributor $distributor): void
     {
         $this->assertStaff($actor);
+        // is_verified is what unlocks branches, distributor wholesale buying and the public shop
+        // list; an approved application is a verified one (a resubmission resets it to 0).
         $distributor->update([
             'status' => 'approved',
+            'is_verified' => true,
             'rejection_count' => 0,
         ]);
         $distributor->refresh();
@@ -67,6 +70,7 @@ class AdminModerationService
 
         $updates = [
             'status' => 'rejected',
+            'is_verified' => false,
             'rejection_reason' => $reason,
         ];
 
@@ -168,6 +172,7 @@ class AdminModerationService
         $this->assertStaff($actor);
         $distributor->update([
             'status' => 'banned',
+            'is_verified' => false,
             'rejection_reason' => $reason,
         ]);
         $distributor->refresh();

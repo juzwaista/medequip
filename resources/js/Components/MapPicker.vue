@@ -88,15 +88,34 @@ const isLocating = ref(false);
 const isGeocoding = ref(false);
 const locationError = ref('');
 
+let resizeObserver = null;
+
 onMounted(() => {
     initMap();
+
+    // The picker is often mounted inside a hidden wizard step (v-show), where the container has
+    // no size. Leaflet then caches a 0x0 map and computes NaN coordinates / partial tiles. Re-measure
+    // whenever the container is resized, which includes the moment its step becomes visible.
+    if (typeof ResizeObserver !== 'undefined' && mapContainer.value) {
+        resizeObserver = new ResizeObserver(() => {
+            if (map && mapContainer.value?.offsetWidth > 0) map.invalidateSize();
+        });
+        resizeObserver.observe(mapContainer.value);
+    }
 });
 
 onBeforeUnmount(() => {
+    if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+    }
     if (map) {
         map.remove();
     }
 });
+
+// Animated moves (flyTo) break on a container that has no size yet; jump instead.
+const isMapVisible = () => !!mapContainer.value && mapContainer.value.offsetWidth > 0;
 
 const initMap = () => {
     const initialLat = props.lat ? parseFloat(props.lat) : props.defaultLat;
@@ -258,7 +277,11 @@ const forwardGeocode = async (query) => {
         const data = await res.json();
         if (data.length > 0) {
             const { lat, lon } = data[0];
-            map.flyTo([parseFloat(lat), parseFloat(lon)], 14, { duration: 0.8 });
+            if (isMapVisible()) {
+                map.flyTo([parseFloat(lat), parseFloat(lon)], 14, { duration: 0.8 });
+            } else {
+                map.setView([parseFloat(lat), parseFloat(lon)], 14, { animate: false });
+            }
         }
     } catch {
         // Silent fail
@@ -330,7 +353,7 @@ watch(() => props.lat, (newVal) => {
              currentMarkerPos.lng.toFixed(6) !== parsedLng.toFixed(6))) 
         {
             setMarker(parsedLat, parsedLng);
-            map.setView([parsedLat, parsedLng], 16);
+            map.setView([parsedLat, parsedLng], 16, { animate: isMapVisible() });
         }
     }
 });
