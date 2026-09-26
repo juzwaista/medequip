@@ -1,13 +1,16 @@
 <template>
     <Head title="Sign in · MedEquip" />
-    <AuthLayout headline="Welcome back to MedEquip." blurb="Sign in to reorder supplies, track deliveries and manage your clinic's purchases.">
+    <AuthLayout
+        headline="Welcome back."
+        blurb="Pick up where you left off: reorder supplies, follow your deliveries or manage your shop."
+        :points="[]"
+    >
         <h1 class="text-2xl font-semibold tracking-tight text-ink">Sign in</h1>
-        <p class="mt-1 text-ink-soft">Use your email or username.</p>
+        <p class="mt-1 text-ink-soft">Buyers, sellers and couriers all sign in here with an email or username.</p>
 
         <AlertBanner v-if="status" variant="success" class="mt-5">{{ status }}</AlertBanner>
         <AlertBanner v-if="error || form.errors.login" variant="error" class="mt-5">
-            {{ form.errors.login || error || 'These credentials do not match our records.' }}
-        </AlertBanner>
+            {{ form.errors.login || error || 'These credentials do not match our records.' }}        </AlertBanner>
 
         <form @submit.prevent="submit" class="mt-6 space-y-4">
             <TextInput
@@ -28,6 +31,10 @@
                 autocomplete="current-password"
                 input-class="pr-11"
                 :error="form.errors.password"
+                :hint="capsLock ? 'Caps Lock is on.' : ''"
+                @keydown="checkCapsLock"
+                @keyup="checkCapsLock"
+                @blur="capsLock = false"
             >
                 <template #end>
                     <button
@@ -57,10 +64,16 @@
             </BaseButton>
         </form>
 
-        <p class="mt-6 text-center text-ink-soft">
-            New to MedEquip?
-            <Link href="/register" class="ml-1 font-medium text-brand hover:text-brand-dark hover:underline underline-offset-2">Create an account</Link>
-        </p>
+        <div class="mt-6 space-y-2 border-t border-line pt-5 text-center text-ink-soft">
+            <p>
+                New to MedEquip?
+                <Link href="/register" class="ml-1 font-medium text-brand hover:text-brand-dark hover:underline underline-offset-2">Create an account</Link>
+            </p>
+            <p>
+                Just looking?
+                <Link href="/products" class="ml-1 font-medium text-brand hover:text-brand-dark hover:underline underline-offset-2">Browse products without signing in</Link>
+            </p>
+        </div>
     </AuthLayout>
 </template>
 
@@ -78,6 +91,11 @@ const props = defineProps({
 });
 
 const showPassword = ref(false);
+const capsLock = ref(false);
+
+const checkCapsLock = (e) => {
+    capsLock.value = !!e.getModifierState?.('CapsLock');
+};
 
 const form = useForm({
     login: '',

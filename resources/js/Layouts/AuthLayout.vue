@@ -12,7 +12,7 @@
                 <p class="text-4xl xl:text-[42px] font-semibold leading-[1.1] tracking-tight">{{ headline }}</p>
                 <p class="mt-4 text-lg leading-relaxed text-white/70">{{ blurb }}</p>
 
-                <dl class="mt-10 divide-y divide-white/10 border-y border-white/10">
+                <dl v-if="points.length" class="mt-10 divide-y divide-white/10 border-y border-white/10">
                     <div v-for="point in points" :key="point.title" class="py-4">
                         <dt class="font-semibold">{{ point.title }}</dt>
                         <dd class="mt-0.5 text-white/60">{{ point.text }}</dd>
@@ -51,16 +51,19 @@ import BrandLogo from '@/Components/ui/BrandLogo.vue';
 defineProps({
     headline: { type: String, default: 'Stock your clinic from licensed distributors.' },
     blurb: { type: String, default: 'Medical equipment and pharmaceuticals from sellers in Cavite, all in one marketplace.' },
+    // Plain statements of how the platform works today. Pass `:points="[]"` on pages where the
+    // visitor already has an account and doesn't need the pitch (e.g. sign in).
+    points: {
+        type: Array,
+        default: () => [
+            { title: 'Sellers are reviewed', text: 'Distributors submit their FDA and business documents, and our team approves them before they can list.' },
+            { title: 'Payment held until you confirm', text: 'For online payments, your money stays with the platform until you confirm you received your order.' },
+            { title: 'Follow every order', text: 'See each order move from packing to courier pickup to delivery.' },
+        ],
+    },
     // Wider column for longer forms (e.g. registration).
     wide: { type: Boolean, default: false },
     // Skip the white card and render the slot directly on the page.
     bare: { type: Boolean, default: false },
 });
-
-// Plain statements of how the platform works today.
-const points = [
-    { title: 'Sellers are reviewed', text: 'Distributors submit their FDA and business documents, and our team approves them before they can list.' },
-    { title: 'Payment held until you confirm', text: 'For online payments, your money stays with the platform until you confirm you received your order.' },
-    { title: 'Follow every order', text: 'See each order move from packing to courier pickup to delivery.' },
-];
 </script>

@@ -4,42 +4,36 @@
 
     <AuthLayout
         wide
-        headline="Set up your account in three short steps."
+        headline="Set up your account in a few short steps."
         blurb="Buy medical supplies for yourself or your business, or start selling as a distributor."
     >
-        <!-- Progress -->
+        <!-- Progress. Business buyers and sellers get an extra "Your business" step. -->
         <ol class="mb-6 flex items-center gap-3 text-sm" aria-label="Registration progress">
             <li
-                v-for="(label, i) in ['Who you are', 'Your account', 'Location']"
-                :key="label"
+                v-for="(s, i) in steps"
+                :key="s.key"
                 class="flex items-center gap-2"
-                :class="i < 2 ? 'flex-1' : ''"
-                :aria-current="currentStep === i + 1 ? 'step' : undefined"
+                :class="i < steps.length - 1 ? 'flex-1' : ''"
+                :aria-current="stepIndex === i ? 'step' : undefined"
             >
                 <span
                     class="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold tabular-nums"
-                    :class="currentStep > i + 1 ? 'bg-brand text-white' : currentStep === i + 1 ? 'bg-ink text-white' : 'bg-mist text-ink-faint'"
+                    :class="stepIndex > i ? 'bg-brand text-white' : stepIndex === i ? 'bg-ink text-white' : 'bg-mist text-ink-faint'"
                 >{{ i + 1 }}</span>
-                <span class="whitespace-nowrap" :class="currentStep === i + 1 ? 'font-medium text-ink' : 'text-ink-soft max-sm:hidden'">{{ label }}</span>
-                <span v-if="i < 2" class="h-px flex-1 bg-line max-sm:hidden"></span>
+                <span class="whitespace-nowrap" :class="stepIndex === i ? 'font-medium text-ink' : 'text-ink-soft max-sm:hidden'">{{ s.label }}</span>
+                <span v-if="i < steps.length - 1" class="h-px flex-1 bg-line max-sm:hidden"></span>
             </li>
         </ol>
 
-        <div class="mb-6 flex items-start justify-between gap-3">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight text-ink">Create your account</h1>
-                <p class="mt-1 text-ink-soft">Step {{ currentStep }} of 3</p>
-            </div>
-            <p v-if="lastSaved" class="flex items-center gap-1.5 whitespace-nowrap pt-1.5 text-sm text-ink-soft">
-                <span class="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true"></span>
-                Draft saved {{ lastSaved }}
-            </p>
+        <div class="mb-6">
+            <h1 class="text-2xl font-semibold tracking-tight text-ink">Create your account</h1>
+            <p class="mt-1 text-ink-soft">Step {{ stepIndex + 1 }} of {{ steps.length }}</p>
         </div>
 
         <form @submit.prevent="submit" class="space-y-5">
 
-            <!-- Step 1: who you are -->
-            <div v-show="currentStep === 1" class="space-y-6">
+            <!-- Step: who you are -->
+            <div v-show="stepKey === 'who'" class="space-y-6">
                 <fieldset>
                     <legend class="mb-2 text-sm font-medium text-ink">I want to</legend>
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -55,9 +49,19 @@
                         <ChoiceCard v-model="form.is_business" :value="true" name="buyer-type" title="Business" description="Clinic, hospital, pharmacy" />
                     </div>
                 </fieldset>
+            </div>
 
-                <div v-if="needsBusinessDetails" class="space-y-4 rounded-card border border-line bg-mist/60 p-4">
-                    <p class="text-sm font-semibold text-ink">Business details</p>
+            <!-- Step: business details (business buyers and distributors only) -->
+            <div v-show="stepKey === 'business'" class="space-y-4">
+                <div>
+                    <p class="text-sm font-semibold text-ink">Tell us about your business</p>
+                    <p class="mt-0.5 text-sm text-ink-soft">
+                        {{ form.role === 'distributor'
+                            ? 'You can upload your FDA and business documents after you sign up.'
+                            : 'Business buyers get wholesale pricing once our team approves the account.' }}
+                    </p>
+                </div>
+                <div class="space-y-4">
                     <TextInput
                         v-model="form.company_name"
                         label="Company name"
@@ -90,8 +94,8 @@
                 </div>
             </div>
 
-            <!-- Step 2: account credentials -->
-            <div v-show="currentStep === 2" class="space-y-4">
+            <!-- Step: account credentials -->
+            <div v-show="stepKey === 'account'" class="space-y-4">
                 <div>
                     <TextInput
                         v-model="form.username"
@@ -115,6 +119,7 @@
                     type="email"
                     autocomplete="email"
                     placeholder="you@example.com"
+                    hint="We'll email a verification link to this address after you sign up."
                     :error="step2Errors.email || form.errors.email"
                 />
 
@@ -140,7 +145,8 @@
                                 </button>
                             </template>
                         </TextInput>
-                        <ul v-if="form.password.length > 0" class="mt-2 space-y-0.5 text-sm text-ink-soft" aria-label="Password requirements">
+                        <!-- Always visible so the rules are known before the first keystroke. -->
+                        <ul class="mt-2 space-y-0.5 text-sm text-ink-soft" aria-label="Password requirements">
                             <li :class="pwdRules.len ? 'text-brand' : ''">{{ pwdRules.len ? '✓' : '○' }} 10 or more characters</li>
                             <li :class="pwdRules.upper ? 'text-brand' : ''">{{ pwdRules.upper ? '✓' : '○' }} An uppercase letter</li>
                             <li :class="pwdRules.lower ? 'text-brand' : ''">{{ pwdRules.lower ? '✓' : '○' }} A lowercase letter</li>
@@ -171,8 +177,8 @@
                 />
             </div>
 
-            <!-- Step 3: location and terms -->
-            <div v-show="currentStep === 3" class="space-y-4">
+            <!-- Step: location and terms -->
+            <div v-show="stepKey === 'location'" class="space-y-4">
                 <p class="text-sm font-semibold text-ink">{{ form.role === 'distributor' ? 'Business address' : 'Delivery address' }}</p>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -237,6 +243,7 @@
                         Pin your exact location
                         <span class="font-normal text-ink-soft">{{ form.role === 'distributor' ? '(your shop or warehouse)' : '(required for delivery)' }}</span>
                     </p>
+                    <p class="mb-2 text-sm text-ink-soft">Pick your city and barangay above and the map moves there. Then tap it to drop your pin, or use My Location.</p>
                     <MapPicker
                         v-model:lat="form.latitude"
                         v-model:lng="form.longitude"
@@ -250,6 +257,18 @@
                     </p>
                     <p v-if="step3Errors.location" class="mt-1 text-sm text-danger">{{ step3Errors.location }}</p>
                     <p v-if="form.errors.latitude" class="mt-1 text-sm text-danger">{{ form.errors.latitude }}</p>
+                </div>
+
+                <!-- Recap of what they entered on the earlier steps -->
+                <div class="rounded-card border border-line p-4">
+                    <p class="text-sm font-semibold text-ink">Check your details</p>
+                    <dl class="mt-2 divide-y divide-line text-sm">
+                        <div v-for="row in recap" :key="row.label" class="flex justify-between gap-4 py-1.5">
+                            <dt class="flex-none text-ink-soft">{{ row.label }}</dt>
+                            <dd class="min-w-0 break-words text-right text-ink">{{ row.value }}</dd>
+                        </div>
+                    </dl>
+                    <p class="mt-2 text-sm text-ink-soft">Something wrong? Use Back to fix it.</p>
                 </div>
 
                 <!-- Terms -->
@@ -271,16 +290,20 @@
 
             <!-- Navigation -->
             <div class="flex items-center justify-between gap-3 pt-2">
-                <BaseButton v-if="currentStep > 1" variant="ghost" @click="currentStep--">Back</BaseButton>
+                <BaseButton v-if="stepIndex > 0" variant="ghost" @click="stepIndex--">Back</BaseButton>
                 <div v-else></div>
 
-                <!-- Steps 1 and 2. Stays clickable when incomplete so the step's validation messages can appear. -->
-                <BaseButton v-if="currentStep < 3" :variant="canAdvance ? 'primary' : 'secondary'" class="min-w-32" @click="tryAdvance">Next</BaseButton>
+                <!-- Every step but the last. Stays clickable when incomplete so the step's validation messages can appear. -->
+                <BaseButton v-if="!isLastStep" :variant="canAdvance ? 'primary' : 'secondary'" class="min-w-32" @click="tryAdvance">Next</BaseButton>
 
-                <BaseButton v-if="currentStep === 3" type="submit" :disabled="form.processing" class="min-w-40">
+                <BaseButton v-else type="submit" :disabled="form.processing" class="min-w-40">
                     {{ form.processing ? 'Creating account…' : 'Create account' }}
                 </BaseButton>
             </div>
+
+            <p v-if="lastSaved" class="text-center text-sm text-ink-soft">
+                Draft saved at {{ lastSaved }} on this device. Passwords aren't saved.
+            </p>
         </form>
 
         <p class="mt-6 text-center text-ink-soft">
@@ -309,7 +332,7 @@ const props = defineProps({
 // ─── UI state ────────────────────────────────────────────────────────────────
 const showPassword = ref(false);
 const showTermsModal = ref(false);
-const currentStep = ref(1);
+const stepIndex = ref(0);
 const touchedContact = ref(false);
 
 // ─── Address refs ─────────────────────────────────────────────────────────────
@@ -396,6 +419,20 @@ const needsBusinessDetails = computed(() =>
     (form.role === 'customer' && form.is_business) || form.role === 'distributor'
 );
 
+// Business buyers and distributors get an extra step for company details.
+const steps = computed(() => [
+    { key: 'who', label: 'Who you are' },
+    ...(needsBusinessDetails.value ? [{ key: 'business', label: 'Your business' }] : []),
+    { key: 'account', label: 'Your account' },
+    { key: 'location', label: 'Location' },
+]);
+const stepKey = computed(() => steps.value[stepIndex.value]?.key);
+const isLastStep = computed(() => stepIndex.value === steps.value.length - 1);
+const goToStep = (key) => {
+    const i = steps.value.findIndex(s => s.key === key);
+    if (i !== -1) stepIndex.value = i;
+};
+
 const availableBarangays = computed(() => {
     if (!selectedCity.value || !props.barangays) return [];
     return props.barangays[selectedCity.value] || [];
@@ -423,7 +460,7 @@ const step1Errors = reactive({ company_name: '', business_type: '' });
 const step2Errors = reactive({ username: '', email: '', password: '', password_confirmation: '' });
 const step3Errors = reactive({ city: '', barangay: '', address_line: '', location: '', terms: '' });
 
-const validateStep1 = () => {
+const validateBusinessStep = () => {
     step1Errors.company_name = '';
     step1Errors.business_type = '';
     let valid = true;
@@ -440,7 +477,7 @@ const validateStep1 = () => {
     return valid;
 };
 
-const validateStep2 = () => {
+const validateAccountStep = () => {
     step2Errors.username = '';
     step2Errors.email = '';
     step2Errors.password = '';
@@ -481,7 +518,7 @@ const validateStep2 = () => {
     return valid;
 };
 
-const validateStep3 = () => {
+const validateLocationStep = () => {
     step3Errors.city = '';
     step3Errors.barangay = '';
     step3Errors.address_line = '';
@@ -497,14 +534,13 @@ const validateStep3 = () => {
 };
 
 const canAdvance = computed(() => {
-    if (currentStep.value === 1) {
-        if (needsBusinessDetails.value) {
-            if (!form.company_name.trim()) return false;
-            if (form.role === 'customer' && form.is_business && !form.business_type) return false;
-        }
+    if (stepKey.value === 'who') return true;
+    if (stepKey.value === 'business') {
+        if (!form.company_name.trim()) return false;
+        if (form.role === 'customer' && form.is_business && !form.business_type) return false;
         return true;
     }
-    if (currentStep.value === 2) {
+    if (stepKey.value === 'account') {
         return form.username.trim() &&
             usernameHint.state === 'available' &&
             form.email.trim() &&
@@ -518,10 +554,25 @@ const canAdvance = computed(() => {
 
 const tryAdvance = () => {
     let valid = false;
-    if (currentStep.value === 1) valid = validateStep1();
-    if (currentStep.value === 2) valid = validateStep2();
-    if (valid) currentStep.value++;
+    if (stepKey.value === 'who') valid = true;
+    if (stepKey.value === 'business') valid = validateBusinessStep();
+    if (stepKey.value === 'account') valid = validateAccountStep();
+    if (valid) stepIndex.value++;
 };
+
+// Read-only summary shown on the last step, before the terms checkbox.
+const recap = computed(() => {
+    const accountType = form.role === 'distributor' ? 'Seller (distributor)' : form.is_business ? 'Business buyer' : 'Personal buyer';
+    const address = [form.address_line, form.barangay, form.city].filter(Boolean).join(', ');
+    return [
+        { label: 'Account type', value: accountType },
+        needsBusinessDetails.value && form.company_name ? { label: 'Company', value: form.company_name } : null,
+        { label: 'Username', value: form.username || '—' },
+        { label: 'Email', value: form.email || '—' },
+        { label: 'Contact number', value: form.contact_number || '—' },
+        { label: form.role === 'distributor' ? 'Business address' : 'Delivery address', value: address || '—' },
+    ].filter(Boolean);
+});
 
 // ─── Contact number sanitizer ─────────────────────────────────────────────────
 const sanitizeContactNumber = (e) => {
@@ -633,10 +684,22 @@ watch(() => form.username, (val) => {
 });
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
+// Which step each server-side error belongs to, so a rejected submit can send the user back to it
+// instead of leaving the message on a step they can't see.
+const errorStep = {
+    company_name: 'business', business_type: 'business', tin_number: 'business',
+    username: 'account', email: 'account', password: 'account', contact_number: 'account',
+};
+
 const submit = () => {
-    if (!validateStep3()) return;
+    if (!validateLocationStep()) return;
     form.post('/register', {
         onSuccess: () => localStorage.removeItem(STORAGE_KEY),
+        onError: (errors) => {
+            const fields = Object.keys(errors);
+            const target = steps.value.find(s => fields.some(f => errorStep[f] === s.key));
+            if (target) goToStep(target.key);
+        },
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
