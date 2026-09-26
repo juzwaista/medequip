@@ -78,7 +78,7 @@
                         </div>
 
                         <div class="w-full md:w-1/4">
-                            <label class="block text-xs font-medium text-gray-700">Quantity<template v-if="unitLabelFor(item)"> (in {{ unitLabelFor(item) }}s)</template> <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-medium text-gray-700">Quantity<template v-if="unitLabelFor(item)"> (in {{ pluralize(unitLabelFor(item)) }})</template> <span class="text-red-500">*</span></label>
                             <input v-model.number="item.quantity_ordered" type="number" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" required>
                         </div>
                         
@@ -146,6 +146,9 @@ const form = useForm({
 function addItem() {
     form.items.push({ product_id: '', product_variation_id: '', quantity_ordered: 1, unit_cost: 0 });
 }
+
+// "box" -> "boxes", "piece" -> "pieces"
+const pluralize = (word) => (/(s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`);
 
 const productFor = (item) => props.products.find((p) => p.id === item.product_id) || null;
 
