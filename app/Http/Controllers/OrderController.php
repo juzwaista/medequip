@@ -168,7 +168,7 @@ class OrderController extends Controller
             'delivery_latitude' => 'required|numeric|between:14.00,14.60',
             'delivery_longitude' => 'required|numeric|between:120.50,121.20',
             'notes' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:card,gcash,paymaya,wallet,purchase_order', // 'cod' removed from allowed list
+            'payment_method' => 'required|in:card,gcash,paymaya,purchase_order', // 'cod' removed from allowed list
             'fulfillment_method' => 'required|in:delivery,pickup',
             'buy_now' => 'nullable',
             'product_id' => 'required_if:buy_now,1,true|nullable|exists:products,id',

@@ -186,7 +186,7 @@ class RegisteredUserController extends Controller
             ->to(route('products.index', [], false))
             ->with(
                 'info',
-                'We sent a verification link to '.$user->email.'. Confirm your email to use checkout and your wallet — you can keep browsing meanwhile.'
+                'We sent a verification link to '.$user->email.'. Confirm your email to use checkout — you can keep browsing meanwhile.'
             );
     }
 }

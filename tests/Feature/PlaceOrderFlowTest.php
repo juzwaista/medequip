@@ -128,6 +128,17 @@ class PlaceOrderFlowTest extends TestCase
             ->assertOk();
     }
 
+    public function test_the_removed_wallet_payment_method_is_rejected(): void
+    {
+        $this->fakePayMongo();
+
+        $this->actingAs($this->customer)
+            ->post(route('orders.place'), $this->payload(['payment_method' => 'wallet']))
+            ->assertSessionHasErrors('payment_method');
+
+        $this->assertSame(0, Order::where('customer_id', $this->customer->id)->count());
+    }
+
     public function test_online_payment_order_is_created_and_redirects_to_paymongo(): void
     {
         $this->fakePayMongo();

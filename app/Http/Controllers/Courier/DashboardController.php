@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Courier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Delivery;
-use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

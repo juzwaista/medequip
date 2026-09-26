@@ -138,7 +138,7 @@ class OrderNotification extends Notification
             ],
             'order_completed' => [
                 'Order completed',
-                "Customer confirmed receipt of order {$num}. Payment held by the platform has been released to your wallet.",
+                "Customer confirmed receipt of order {$num}. Payment held by the platform has been released to you for payout.",
             ],
             'ready_for_pickup' => [
                 'Order ready for pickup',

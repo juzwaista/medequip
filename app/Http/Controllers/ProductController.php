@@ -305,48 +305,14 @@ class ProductController extends Controller
     }
 
     /**
-     * Get products by category
+     * Category landing URL (/category/{slug}). The catalog already filters by category, including its
+     * subcategories, so send visitors there instead of rendering a separate page.
      */
     public function byCategory(Category $category, Request $request)
     {
-        $categoryIds = Category::descendantIdsIncludingSelf((int) $category->id);
-
-        $query = Product::with(['images', 'distributor', 'inventory'])
-            ->withAvg(['reviews' => fn ($q) => $q->where('is_hidden', false)], 'stars')
-            ->withCount(['reviews' => fn ($q) => $q->where('is_hidden', false)])
-            ->whereHas('distributor', function ($q) {
-                $q->where('status', '!=', 'banned');
-            })
-            ->where('is_active', true)
-            ->whereIn('category_id', $categoryIds);
-
-        // Apply same filters and sorting as index
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        $sort = $request->get('sort', 'newest');
-        switch ($sort) {
-            case 'price_low':
-                $query->orderBy('base_price', 'asc');
-                break;
-            case 'price_high':
-                $query->orderBy('base_price', 'desc');
-                break;
-            case 'name':
-                $query->orderBy('name', 'asc');
-                break;
-            default:
-                $query->orderBy('created_at', 'desc');
-        }
-
-        $products = $query->paginate(24)->withQueryString();
-
-        return Inertia::render('Products/Category', [
-            'category' => $category->load('children'),
-            'products' => $products,
-            'filters' => $request->only(['search', 'sort']),
-        ]);
+        return redirect()->route('products.index', array_merge(
+            ['category' => $category->id],
+            $request->only(['search', 'sort'])
+        ));
     }
 }
