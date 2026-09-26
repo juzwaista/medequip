@@ -3,12 +3,12 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex justify-between items-center mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Saved Discount IDs</h1>
-                    <p class="text-gray-600 mt-2">Manage your SC/PWD IDs for faster checkout</p>
+                    <h1 class="text-3xl font-bold text-ink">Saved Discount IDs</h1>
+                    <p class="text-ink-soft mt-2">Manage your SC/PWD IDs for faster checkout</p>
                 </div>
                 <button 
                     @click="showAddForm = true"
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2"
+                    class="px-6 py-3 bg-brand text-white rounded-control hover:bg-brand-dark transition font-medium flex items-center gap-2"
                 >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -19,20 +19,20 @@
 
             <!-- Add/Edit Form Modal -->
             <div v-if="showAddForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">{{ editingDiscountId ? 'Edit ID' : 'Add New ID' }}</h2>
-                    <div v-if="Object.keys(errors).length" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <div class="bg-white rounded-card shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                    <h2 class="text-2xl font-bold text-ink mb-6">{{ editingDiscountId ? 'Edit ID' : 'Add New ID' }}</h2>
+                    <div v-if="Object.keys(errors).length" class="mb-4 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                         {{ Object.values(errors)[0] }}
                     </div>
                     
                     <form @submit.prevent="saveDiscountId" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Label (Optional)</label>
+                            <label class="block text-sm font-semibold text-ink mb-2">Label (Optional)</label>
                             <input 
                                 v-model="form.label"
                                 type="text"
                                 placeholder="e.g., My SC ID"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                             />
                             <p v-if="errors.label" class="text-red-500 text-sm mt-1">{{ errors.label }}</p>
                         </div>
@@ -40,10 +40,10 @@
                         <div class="grid grid-cols-2 gap-3">
                             <label
                                 :class="[
-                                    'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
+                                    'flex items-center justify-center gap-2 p-3 rounded-control border-2 cursor-pointer transition',
                                     form.discount_type === 'senior'
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-200 bg-white',
+                                        ? 'border-brand bg-brand-tint'
+                                        : 'border-line bg-white',
                                 ]"
                             >
                                 <input
@@ -56,10 +56,10 @@
                             </label>
                             <label
                                 :class="[
-                                    'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
+                                    'flex items-center justify-center gap-2 p-3 rounded-control border-2 cursor-pointer transition',
                                     form.discount_type === 'pwd'
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-200 bg-white',
+                                        ? 'border-brand bg-brand-tint'
+                                        : 'border-line bg-white',
                                 ]"
                             >
                                 <input
@@ -74,37 +74,37 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Full Name (must match ID) *</label>
+                                <label class="block text-xs font-bold text-ink-soft   mb-1.5">Full Name (must match ID) *</label>
                                 <input 
                                     v-model="form.id_name"
                                     type="text"
                                     required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                 />
                                 <p v-if="errors.id_name" class="text-red-500 text-sm mt-1">{{ errors.id_name }}</p>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">ID Number *</label>
+                                <label class="block text-xs font-bold text-ink-soft   mb-1.5">ID Number *</label>
                                 <input 
                                     v-model="form.id_number"
                                     type="text"
                                     required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                 />
                                 <p v-if="errors.id_number" class="text-red-500 text-sm mt-1">{{ errors.id_number }}</p>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">ID Photo *</label>
+                            <label class="block text-xs font-bold text-ink-soft   mb-1.5">ID Photo *</label>
                             <input 
                                 type="file"
                                 @change="e => form.id_image = e.target.files[0]"
                                 :required="!editingDiscountId"
                                 accept="image/*"
-                                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                class="w-full text-sm text-ink-soft file:mr-4 file:py-2 file:px-4 file:rounded-control file:border-0 file:text-sm file:font-semibold file:bg-brand-tint file:text-brand-dark hover:file:bg-brand-tint"
                             />
-                            <p v-if="editingDiscountId" class="text-xs text-gray-500 mt-1">Leave empty to keep the existing photo.</p>
+                            <p v-if="editingDiscountId" class="text-xs text-ink-soft mt-1">Leave empty to keep the existing photo.</p>
                             <p v-if="errors.id_image" class="text-red-500 text-sm mt-1">{{ errors.id_image }}</p>
                         </div>
 
@@ -112,22 +112,22 @@
                             <input 
                                 v-model="form.is_default"
                                 type="checkbox"
-                                class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                class="h-5 w-5 text-brand rounded border-line focus:ring-brand"
                             />
-                            <label class="ml-3 text-sm font-medium text-gray-700">Set as default ID</label>
+                            <label class="ml-3 text-sm font-medium text-ink">Set as default ID</label>
                         </div>
 
                         <div class="flex gap-3 pt-4">
                             <button 
                                 type="button"
                                 @click="cancelForm"
-                                class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                                class="flex-1 px-6 py-3 border-2 border-line text-ink rounded-control hover:bg-mist transition font-medium"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit"
-                                class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                                class="flex-1 px-6 py-3 bg-brand text-white rounded-control hover:bg-brand-dark transition font-medium"
                                 :disabled="form.processing"
                             >
                                 {{ editingDiscountId ? 'Update ID' : 'Save ID' }}
@@ -142,34 +142,34 @@
                 <div 
                     v-for="discountId in discountIds" 
                     :key="discountId.id"
-                    class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition"
+                    class="bg-white rounded-card shadow-md p-6 hover:shadow-lg transition"
                 >
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">
-                                <h3 class="text-lg font-bold text-gray-900">{{ discountId.label || 'Discount ID' }}</h3>
-                                <span v-if="discountId.is_default" class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">
+                                <h3 class="text-lg font-bold text-ink">{{ discountId.label || 'Discount ID' }}</h3>
+                                <span v-if="discountId.is_default" class="bg-brand-tint text-brand-dark text-xs px-3 py-1 rounded-full font-semibold">
                                     Default
                                 </span>
-                                <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-semibold uppercase">
+                                <span class="bg-brand-tint text-brand-dark text-xs px-3 py-1 rounded-full font-semibold ">
                                     {{ discountId.discount_type }}
                                 </span>
                             </div>
-                            <p class="font-semibold text-gray-900">{{ discountId.id_name }}</p>
-                            <p class="text-gray-600">ID No: {{ discountId.id_number }}</p>
+                            <p class="font-semibold text-ink">{{ discountId.id_name }}</p>
+                            <p class="text-ink-soft">ID No: {{ discountId.id_number }}</p>
                         </div>
 
                         <div class="flex gap-2">
                             <button 
                                 v-if="!discountId.is_default"
                                 @click="setAsDefault(discountId)"
-                                class="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                class="text-brand hover:text-brand-dark text-sm font-medium"
                             >
                                 Set Default
                             </button>
                             <button 
                                 @click="editDiscountId(discountId)"
-                                class="text-gray-600 hover:text-gray-700"
+                                class="text-ink-soft hover:text-ink"
                             >
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -189,15 +189,15 @@
             </div>
 
             <!-- Empty State -->
-            <div v-else class="bg-white rounded-xl shadow-md p-12 text-center">
-                <svg class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div v-else class="bg-white rounded-card shadow-md p-12 text-center">
+                <svg class="h-20 w-20 mx-auto text-ink-faint mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                 </svg>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">No Saved Discount IDs</h3>
-                <p class="text-gray-600 mb-6">Add your Senior Citizen or PWD ID for faster checkout</p>
+                <h3 class="text-lg font-semibold text-ink mb-2">No Saved Discount IDs</h3>
+                <p class="text-ink-soft mb-6">Add your Senior Citizen or PWD ID for faster checkout</p>
                 <button 
                     @click="showAddForm = true"
-                    class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                    class="inline-block px-6 py-3 bg-brand text-white rounded-control hover:bg-brand-dark transition font-medium"
                 >
                     Add Your First ID
                 </button>

@@ -1,149 +1,127 @@
 <template>
     <MainLayout>
-        <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-16 pb-24 md:pb-16">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mx-auto mb-6">
-                    <svg class="h-12 w-12 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        <div class="max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 pb-24 md:pb-14">
+            <!-- Confirmation -->
+            <div class="mb-8 text-center">
+                <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-brand-tint">
+                    <svg class="h-8 w-8 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h1>
-                <p class="text-gray-600">Your checkout created {{ shopsCount }} order<span v-if="shopsCount > 1">s</span> from {{ shopsCount }} shop<span v-if="shopsCount > 1">s</span>.</p>
+                <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-ink">Your order has been placed</h1>
+                <p class="mt-2 text-ink-soft">
+                    Checkout created {{ shopsCount }} order{{ shopsCount > 1 ? 's' : '' }} from {{ shopsCount }} shop{{ shopsCount > 1 ? 's' : '' }}.
+                </p>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Billing Summary</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <p class="text-xs text-gray-500 mb-1">Shops</p>
-                        <p class="font-bold text-gray-900">{{ shopsCount }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 mb-1">Items</p>
-                        <p class="font-bold text-gray-900">{{ itemsCount }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 mb-1">Shipping Total</p>
-                        <p class="font-bold text-gray-900">₱{{ Number(shippingTotal).toLocaleString() }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 mb-1">Grand Total</p>
-                        <p class="font-bold text-blue-600">₱{{ Number(grandTotal).toLocaleString() }}</p>
-                    </div>
-                </div>
+            <!-- Payment notices -->
+            <div class="mb-6 space-y-3">
+                <AlertBanner v-if="allOrdersCod" variant="warning">
+                    <strong class="font-semibold">Cash on delivery:</strong> Pay <strong class="font-semibold">₱{{ Number(grandTotal).toLocaleString() }}</strong> to your courier when your order arrives. No online payment was taken for these orders.
+                </AlertBanner>
+                <AlertBanner v-else-if="mixedPaymentTypes" variant="info">
+                    <p v-if="onlineOrdersTotal > 0">
+                        For orders paid online, <strong class="font-semibold">₱{{ Number(onlineOrdersTotal).toLocaleString() }}</strong> is held by the platform per order until you confirm delivery.
+                    </p>
+                    <p v-if="codOrdersTotal > 0" :class="onlineOrdersTotal > 0 ? 'mt-1' : ''">
+                        For cash on delivery orders, pay <strong class="font-semibold">₱{{ Number(codOrdersTotal).toLocaleString() }}</strong> to your courier when those orders arrive.
+                    </p>
+                </AlertBanner>
+                <AlertBanner v-else-if="hasPurchaseOrders && !hasOnlinePaidOrders && !hasUnpaidOnlineOrders" variant="info">
+                    <strong class="font-semibold">Purchase order submitted:</strong> the seller will verify your PO document and credit terms before accepting the order. No online payment is needed now. Payment is due on the agreed Net-30 terms.
+                </AlertBanner>
+                <AlertBanner v-else-if="hasOnlinePaidOrders" variant="success">
+                    Your online payments totaling <strong class="font-semibold">₱{{ Number(grandTotal).toLocaleString() }}</strong> were received and are held by the platform per order until you confirm delivery.
+                </AlertBanner>
+                <AlertBanner v-else-if="hasUnpaidOnlineOrders" variant="warning">
+                    <strong class="font-semibold">Payment pending:</strong> Your online payment for <strong class="font-semibold">₱{{ Number(onlineOrdersTotal).toLocaleString() }}</strong> is still pending. You can complete it from the My orders page.
+                </AlertBanner>
             </div>
 
-            <div class="space-y-4 mb-6">
-                <div
+            <!-- Summary -->
+            <section class="mb-6 rounded-card border border-line bg-white p-5 sm:p-6">
+                <h2 class="mb-4 font-semibold text-ink">Summary</h2>
+                <dl class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div>
+                        <dt class="mb-0.5 text-sm text-ink-soft">Shops</dt>
+                        <dd class="font-semibold tabular-nums text-ink">{{ shopsCount }}</dd>
+                    </div>
+                    <div>
+                        <dt class="mb-0.5 text-sm text-ink-soft">Items</dt>
+                        <dd class="font-semibold tabular-nums text-ink">{{ itemsCount }}</dd>
+                    </div>
+                    <div>
+                        <dt class="mb-0.5 text-sm text-ink-soft">Shipping</dt>
+                        <dd class="font-semibold tabular-nums text-ink">₱{{ Number(shippingTotal).toLocaleString() }}</dd>
+                    </div>
+                    <div>
+                        <dt class="mb-0.5 text-sm text-ink-soft">Total</dt>
+                        <dd class="text-lg font-semibold tabular-nums text-ink">₱{{ Number(grandTotal).toLocaleString() }}</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <!-- Orders -->
+            <div class="mb-8 space-y-4">
+                <article
                     v-for="entry in normalizedOrders"
                     :key="entry.id"
-                    class="bg-white rounded-xl shadow-md p-6"
+                    class="rounded-card border border-line bg-white p-5 sm:p-6"
                 >
-                    <div class="flex flex-wrap items-start justify-between gap-2 mb-4">
-                        <div>
-                            <p class="text-xs text-gray-500">Order Number</p>
-                            <p class="font-bold text-blue-600">{{ entry.order_number }}</p>
-                            <p class="text-sm text-gray-700 mt-1">{{ entry.distributor?.company_name || 'Distributor' }}</p>
+                    <div class="mb-4 flex flex-wrap items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-sm text-ink-soft">Order number</p>
+                            <Link :href="`/orders/${entry.order_number}`" class="font-semibold text-brand hover:text-brand-dark hover:underline underline-offset-2">{{ entry.order_number }}</Link>
+                            <p class="mt-1 text-ink-soft">{{ entry.distributor?.company_name || 'Distributor' }}</p>
                         </div>
-                        <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold capitalize">
-                            {{ String(entry.status).replace(/_/g, " ") }}
-                        </span>
+                        <StatusBadge :status="String(entry.status)" type="order" />
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-4 pb-4 border-b">
+                    <dl class="mb-4 grid grid-cols-2 gap-3 border-b border-line pb-4 text-sm md:grid-cols-4">
                         <div>
-                            <p class="text-gray-500">Subtotal</p>
-                            <p class="font-semibold text-gray-900">₱{{ Number(entry.subtotal || 0).toLocaleString() }}</p>
+                            <dt class="text-ink-soft">Subtotal</dt>
+                            <dd class="font-medium tabular-nums text-ink">₱{{ Number(entry.subtotal || 0).toLocaleString() }}</dd>
                         </div>
                         <div>
-                            <p class="text-gray-500">Shipping</p>
-                            <p class="font-semibold text-gray-900">₱{{ Number(entry.shipping_fee || 0).toLocaleString() }}</p>
+                            <dt class="text-ink-soft">Shipping</dt>
+                            <dd class="font-medium tabular-nums text-ink">₱{{ Number(entry.shipping_fee || 0).toLocaleString() }}</dd>
                         </div>
                         <div>
-                            <p class="text-gray-500">Order Total</p>
-                            <p class="font-semibold text-gray-900">₱{{ Number(entry.total_amount || 0).toLocaleString() }}</p>
+                            <dt class="text-ink-soft">Order total</dt>
+                            <dd class="font-medium tabular-nums text-ink">₱{{ Number(entry.total_amount || 0).toLocaleString() }}</dd>
                         </div>
                         <div>
-                            <p class="text-gray-500">Payment</p>
-                            <p class="font-semibold text-gray-900">{{ formatPaymentMethod(entry.payment_method) }}</p>
+                            <dt class="text-ink-soft">Payment</dt>
+                            <dd class="font-medium text-ink">{{ formatPaymentMethod(entry.payment_method) }}</dd>
                         </div>
-                    </div>
+                    </dl>
 
-                    <div class="space-y-2">
-                        <div
-                            v-for="item in (entry.items || [])"
-                            :key="item.id"
-                            class="flex flex-col text-sm border-b last:border-b-0 pb-2 mb-2 last:pb-0 last:mb-0"
-                        >
-                            <div class="flex justify-between">
-                                <span class="text-gray-700 font-medium">{{ item.product?.name }} ({{ item.quantity }}x)</span>
-                                <span class="font-bold text-gray-900">₱{{ Number(item.total_price || 0).toLocaleString() }}</span>
+                    <ul class="divide-y divide-line">
+                        <li v-for="item in (entry.items || [])" :key="item.id" class="py-2 text-sm first:pt-0 last:pb-0">
+                            <div class="flex justify-between gap-3">
+                                <span class="font-medium text-ink">{{ item.product?.name }} <span class="font-normal text-ink-soft">×{{ item.quantity }}</span></span>
+                                <span class="font-semibold tabular-nums text-ink">₱{{ Number(item.total_price || 0).toLocaleString() }}</span>
                             </div>
-                            <p v-if="item.product_variation" class="text-xs text-blue-600 font-medium mt-0.5">
+                            <p v-if="item.product_variation" class="mt-0.5 text-sm text-brand-dark">
                                 {{ item.product_variation.display_label || `${item.product_variation.option_name}: ${item.product_variation.option_value}` }}
                             </p>
-                        </div>
-                    </div>
-                </div>
+                        </li>
+                    </ul>
+                </article>
             </div>
 
-            <div
-                v-if="allOrdersCod"
-                class="bg-orange-50 border border-orange-200 rounded-xl p-4 sm:p-6 mb-6"
-            >
-                <p class="text-sm text-orange-900">
-                    <strong>Cash on delivery:</strong> Pay <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> to your courier when your order arrives. No online payment was taken for these orders.
-                </p>
-            </div>
-            <div
-                v-else-if="mixedPaymentTypes"
-                class="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-6 mb-6 space-y-2"
-            >
-                <p v-if="onlineOrdersTotal > 0" class="text-sm text-gray-700">
-                    For orders paid online, <strong>₱{{ Number(onlineOrdersTotal).toLocaleString() }}</strong> is held by the platform per order until you confirm delivery.
-                </p>
-                <p v-if="codOrdersTotal > 0" class="text-sm text-gray-700">
-                    For cash on delivery orders, pay <strong>₱{{ Number(codOrdersTotal).toLocaleString() }}</strong> to your courier when those orders arrive.
-                </p>
-            </div>
-            <div
-                v-else-if="hasPurchaseOrders && !hasOnlinePaidOrders && !hasUnpaidOnlineOrders"
-                class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 sm:p-6 mb-6"
-            >
-                <p class="text-sm text-indigo-900">
-                    <strong>Purchase order submitted:</strong> the seller will verify your PO document and credit terms before accepting the order. No online payment is needed now. Payment is due on the agreed Net-30 terms.
-                </p>
-            </div>
-            <div
-                v-else-if="hasOnlinePaidOrders"
-                class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 sm:p-6 mb-6"
-            >
-                <p class="text-sm text-gray-700">
-                    Your online payments totaling <strong>₱{{ Number(grandTotal).toLocaleString() }}</strong> were received and are held by the platform per order until you confirm delivery.
-                </p>
-            </div>
-            <div
-                v-else-if="hasUnpaidOnlineOrders"
-                class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 sm:p-6 mb-6"
-            >
-                <p class="text-sm text-yellow-900">
-                    <strong>Payment Pending:</strong> Your online payment for <strong>₱{{ Number(onlineOrdersTotal).toLocaleString() }}</strong> is currently pending. You can complete the payment from the "My Orders" page.
-                </p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link href="/my-orders" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-6 py-3.5 rounded-xl hover:shadow-xl transition font-bold min-h-[44px] flex items-center justify-center touch-manipulation">
-                    View My Orders
-                </Link>
-                <Link href="/products" class="flex-1 border-2 border-gray-300 text-gray-700 text-center px-6 py-3.5 rounded-xl hover:bg-gray-50 transition font-bold min-h-[44px] flex items-center justify-center touch-manipulation">
-                    Continue Shopping
-                </Link>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <BaseButton href="/my-orders" class="flex-1">View my orders</BaseButton>
+                <BaseButton href="/products" variant="secondary" class="flex-1">Continue shopping</BaseButton>
             </div>
         </div>
     </MainLayout>
 </template>
 
 <script setup>
+import BaseButton from '@/Components/ui/BaseButton.vue';
+import AlertBanner from '@/Components/ui/AlertBanner.vue';
+import StatusBadge from '@/Components/StatusBadge.vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';

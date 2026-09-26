@@ -2,28 +2,28 @@
     <MainLayout>
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full min-h-[calc(100dvh-6.5rem)] sm:min-h-[calc(100dvh-5.5rem)] pb-36 sm:pb-10 lg:pb-8">
             <!-- Breadcrumb -->
-            <nav class="flex flex-wrap items-center gap-1.5 mb-6 text-xs sm:text-sm text-gray-600">
-                <Link href="/products" class="hover:text-blue-600 transition">Products</Link>
-                <span class="text-gray-400">/</span>
-                <Link :href="`/category/${product.category.id}`" class="hover:text-blue-600 transition truncate max-w-[10rem] sm:max-w-none">
+            <nav class="flex flex-wrap items-center gap-1.5 mb-6 text-sm text-ink-soft" aria-label="Breadcrumb">
+                <Link href="/products" class="hover:text-brand hover:underline underline-offset-2">Products</Link>
+                <span class="text-ink-faint" aria-hidden="true">/</span>
+                <Link :href="`/products?category=${product.category.id}`" class="hover:text-brand hover:underline underline-offset-2 truncate max-w-[10rem] sm:max-w-none">
                     {{ product.category.name }}
                 </Link>
-                <span class="text-gray-400">/</span>
-                <span class="text-gray-900 font-medium truncate">{{ product.name }}</span>
+                <span class="text-ink-faint" aria-hidden="true">/</span>
+                <span class="text-ink font-medium truncate">{{ product.name }}</span>
             </nav>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 lg:items-stretch lg:min-h-[min(40rem,calc(100dvh-11rem))]">
                 <!-- Gallery -->
                 <div class="lg:col-span-6 space-y-3">
-                    <div class="aspect-square w-full min-h-[18rem] sm:min-h-[20rem] rounded-xl bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                    <div class="aspect-square w-full min-h-[18rem] sm:min-h-[20rem] rounded-card bg-[#F7FAFA] border border-line overflow-hidden flex items-center justify-center">
                         <img
                             v-if="activeImageUrl"
                             :src="activeImageUrl"
                             :alt="product.name"
-                            class="w-full h-full object-contain"
+                            class="w-full h-full object-contain mix-blend-multiply"
                         />
-                        <svg v-else class="h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg v-else class="h-20 w-20 text-ink-faint/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="No image">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                     </div>
                     <div v-if="galleryUrls.length > 1" class="flex gap-2 overflow-x-auto pb-1">
@@ -32,8 +32,10 @@
                             :key="idx"
                             type="button"
                             @click="activeImageIndex = idx"
-                            class="flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition"
-                            :class="activeImageIndex === idx ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'"
+                            :aria-label="`Show image ${idx + 1}`"
+                            :aria-current="activeImageIndex === idx ? 'true' : undefined"
+                            class="flex-shrink-0 w-16 h-16 rounded-control border-2 overflow-hidden bg-[#F7FAFA] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                            :class="activeImageIndex === idx ? 'border-brand' : 'border-line hover:border-ink-faint'"
                         >
                             <img :src="url" alt="" class="w-full h-full object-cover" />
                         </button>
@@ -45,116 +47,111 @@
                     <div class="flex flex-wrap gap-2 mb-3">
                         <span
                             v-if="product.requires_prescription"
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200"
+                            class="inline-flex items-center px-2 py-0.5 rounded-control text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200"
                         >
                             Prescription required
                         </span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-100">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-control text-sm font-medium bg-white text-ink-soft border border-line">
                             {{ product.product_type === 'equipment' ? 'Equipment' : 'Consumable' }}
                         </span>
-                        <span v-if="product.has_warranty" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+                        <span v-if="product.has_warranty" class="inline-flex items-center px-2 py-0.5 rounded-control text-sm font-medium bg-brand-tint text-brand-dark border border-brand-soft">
                             {{ product.warranty_months }} mo warranty
                         </span>
                     </div>
 
                     <div class="flex flex-wrap items-start justify-between gap-3 gap-y-2">
-                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight flex-1 min-w-0">{{ product.name }}</h1>
+                        <h1 class="text-2xl sm:text-[28px] font-semibold tracking-tight text-ink leading-tight flex-1 min-w-0">{{ product.name }}</h1>
                         <button
                             v-if="canReportProduct"
                             type="button"
-                            class="shrink-0 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-full p-2 transition-colors flex items-center justify-center -mt-1 -mr-2"
+                            class="shrink-0 text-ink-faint hover:text-danger hover:bg-red-50 rounded-control p-2 transition-colors flex items-center justify-center -mt-1 -mr-2"
                             @click="reportModalOpen = true"
                             title="Report listing"
+                            aria-label="Report listing"
                         >
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                         </button>
                     </div>
-                    <p class="text-sm text-gray-600 mt-1">
-                        {{ product.brand }} · {{ product.model }}
+                    <p class="text-ink-soft mt-1">
+                        {{ [product.brand, product.model].filter(Boolean).join(', ') }}
                     </p>
                     <p v-if="product_review_summary?.avg" class="text-sm mt-2 flex flex-wrap items-center gap-2">
                         <span class="flex items-center gap-0.5" aria-hidden="true">
                             <template v-for="n in 5" :key="n">
-                                <svg class="w-4 h-4" :class="n <= Math.round(product_review_summary.avg) ? 'text-amber-500' : 'text-gray-200'" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <svg class="w-4 h-4" :class="n <= Math.round(product_review_summary.avg) ? 'text-amber-600' : 'text-line'" fill="currentColor" viewBox="0 0 20 20"><path d="M10 1.8l2.4 5 5.5.7-4 3.8 1 5.4L10 14l-4.9 2.7 1-5.4-4-3.8 5.5-.7z"/></svg>
                             </template>
                         </span>
-                        <span class="text-gray-700 font-semibold">{{ product_review_summary.avg.toFixed(1) }}</span>
-                        <span class="text-gray-500">({{ product_review_summary.count }} review{{ product_review_summary.count === 1 ? '' : 's' }})</span>
+                        <span class="text-ink font-semibold tabular-nums">{{ product_review_summary.avg.toFixed(1) }}</span>
+                        <span class="text-ink-soft">({{ product_review_summary.count }} review{{ product_review_summary.count === 1 ? '' : 's' }})</span>
                     </p>
 
                     <!-- Seller inline info -->
-                    <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-600 bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100">
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-gray-500">Sold by</span>
-                            <Link
-                                v-if="product.distributor.slug"
-                                :href="`/seller/${product.distributor.slug}`"
-                                class="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                                {{ product.distributor.company_name }}
-                            </Link>
-                            <span v-else class="font-semibold text-gray-900">{{ product.distributor.company_name }}</span>
-                            <span v-if="product.distributor.is_suspended" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 uppercase tracking-widest">
+                    <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-soft bg-white px-3 py-2.5 rounded-card border border-line">
+                        <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                            <span>Sold by</span>
+                            <SellerMark
+                                :name="product.distributor.company_name"
+                                :verified="!!product.distributor.is_verified"
+                                :href="product.distributor.slug ? `/seller/${product.distributor.slug}` : null"
+                            />
+                            <span v-if="product.distributor.is_suspended" class="inline-flex items-center px-1.5 py-0.5 rounded-control text-xs font-medium bg-red-50 text-danger border border-red-200">
                                 Suspended
                             </span>
                         </div>
-                        <div v-if="!hide_seller_message_cta" class="flex items-center pl-3 border-l border-gray-200">
+                        <div v-if="!hide_seller_message_cta" class="flex items-center sm:pl-4 sm:border-l border-line">
                             <Link
                                 v-if="messaging?.start_url"
                                 :href="messaging.start_url"
-                                class="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                class="inline-flex items-center gap-1.5 font-medium text-brand hover:text-brand-dark hover:underline underline-offset-2"
                             >
-                                <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
-                                Message
+                                Message seller
                             </Link>
                             <p
                                 v-else-if="page.props.auth?.user && !page.props.auth.user.email_verified_at"
-                                class="text-xs text-gray-600"
+                                class="text-sm text-ink-soft"
                             >
-                                <span class="text-amber-800">Verify your email</span> to message
+                                <span class="text-amber-800">Verify your email</span> to message the seller
                             </p>
                             <Link
                                 v-else-if="!page.props.auth?.user"
                                 href="/login"
-                                class="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                class="inline-flex items-center gap-1.5 font-medium text-brand hover:text-brand-dark hover:underline underline-offset-2"
                             >
                                 Log in to message
                             </Link>
                         </div>
                     </div>
 
-                    <!-- Price block (compact) -->
-                    <div class="mt-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <div class="flex flex-wrap items-baseline gap-2">
-                            <span class="text-2xl font-bold text-gray-900">₱{{ Number(effectiveRetail).toLocaleString() }}</span>
-                            <span class="text-sm text-gray-500">Retail<template v-if="linePack > 1 || lineUnitLabel !== 'piece'"> · per {{ lineUnitLabel }}<template v-if="linePack > 1"> ({{ linePack }} pcs)</template></template></span>
+                    <!-- Price block -->
+                    <div class="mt-5 rounded-card border border-line bg-white p-4">
+                        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <span class="text-3xl font-semibold tracking-tight tabular-nums text-ink">₱{{ Number(effectiveRetail).toLocaleString() }}</span>
+                            <span class="text-sm text-ink-soft">Retail<template v-if="linePack > 1 || lineUnitLabel !== 'piece'">, per {{ lineUnitLabel }}<template v-if="linePack > 1"> ({{ linePack }} pcs)</template></template></span>
                         </div>
-                        <div v-if="product.wholesale_price" class="mt-3 pt-3 border-t border-gray-100">
+                        <div v-if="product.wholesale_price" class="mt-3 pt-3 border-t border-line">
                             <template v-if="isApprovedBusiness">
-                                <div class="flex flex-wrap items-center gap-2 text-sm">
-                                    <span class="font-semibold text-emerald-700">₱{{ Number(effectiveWholesale).toLocaleString() }}</span>
-                                    <span class="text-gray-600">wholesale</span>
-                                    <span class="text-xs text-gray-500">· from {{ product.wholesale_min_qty }} pcs<template v-if="linePack > 1"> ({{ wholesaleMinUnits }} {{ pluralize(lineUnitLabel, wholesaleMinUnits) }})</template>, counted across all pack sizes</span>
+                                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
+                                    <span class="font-semibold text-brand tabular-nums">₱{{ Number(effectiveWholesale).toLocaleString() }}</span>
+                                    <span class="text-ink-soft">wholesale</span>
+                                    <span class="text-ink-soft">from {{ product.wholesale_min_qty }} pcs<template v-if="linePack > 1"> ({{ wholesaleMinUnits }} {{ pluralize(lineUnitLabel, wholesaleMinUnits) }})</template>, counted across all pack sizes</span>
                                 </div>
                             </template>
                             <template v-else>
                                 <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
-                                    <span class="text-gray-500 flex items-center gap-1.5">
-                                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                                        Wholesale pricing available
-                                    </span>
-                                    <Link href="/business-account/apply" class="text-blue-600 font-semibold hover:underline">Upgrade to Business</Link>
+                                    <span class="text-ink-soft">Wholesale pricing is available for verified businesses</span>
+                                    <Link href="/business-account/apply" class="text-brand font-medium hover:underline underline-offset-2">Upgrade to a business account</Link>
                                 </div>
                             </template>
                         </div>
                     </div>
 
-                    <!-- Variations — Multi-group combinatorial -->
+                    <!-- Variations: multi-group combinatorial -->
                     <div v-if="hasVariations && variationGroups.length > 0" class="mt-5 space-y-4">
                         <div v-for="(group, gi) in variationGroups" :key="gi">
-                            <p class="text-sm font-medium text-gray-800 mb-2">{{ group.name }}</p>
+                            <p class="text-sm font-semibold text-ink mb-2">{{ group.name }}</p>
                             <div class="flex flex-wrap gap-2">
                                 <button
                                     v-for="val in group.values"
@@ -162,24 +159,24 @@
                                     type="button"
                                     @click="selectGroupValue(gi, val)"
                                     :disabled="!isGroupValueAvailable(gi, val)"
-                                    class="px-3 py-1.5 rounded-lg border text-sm font-medium transition"
+                                    class="px-3 py-1.5 rounded-control border text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                                     :class="groupSelections[gi] === val
-                                        ? 'border-blue-600 bg-blue-50 text-blue-900'
+                                        ? 'border-brand bg-brand-tint text-ink'
                                         : !isGroupValueAvailable(gi, val)
-                                            ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                                            : 'border-gray-300 text-gray-800 hover:border-blue-400'"
+                                            ? 'border-line text-ink-faint cursor-not-allowed bg-mist'
+                                            : 'border-line bg-white text-ink hover:border-brand'"
                                 >
                                     {{ val }}
                                 </button>
                             </div>
                         </div>
-                        <p v-if="!allGroupsSelected" class="text-xs text-amber-700">Select all options to add to cart.</p>
-                        <p v-else-if="matchedVariation" class="text-xs text-gray-500">{{ matchedVariation.available }} available</p>
+                        <p v-if="!allGroupsSelected" class="text-sm text-amber-800">Select all options to add to cart.</p>
+                        <p v-else-if="matchedVariation" class="text-sm text-ink-soft">{{ matchedVariation.available }} available</p>
                     </div>
 
-                    <!-- Variations — Legacy flat buttons (single group, no variationGroups) -->
+                    <!-- Variations: legacy flat buttons (single group, no variationGroups) -->
                     <div v-else-if="hasVariations" class="mt-5">
-                        <p class="text-sm font-medium text-gray-800 mb-2">{{ variationOptionLabel }}</p>
+                        <p class="text-sm font-semibold text-ink mb-2">{{ variationOptionLabel }}</p>
                         <div class="flex flex-wrap gap-2">
                             <button
                                 v-for="v in variationStocks"
@@ -187,62 +184,56 @@
                                 type="button"
                                 @click="selectedVariationId = v.id"
                                 :disabled="v.available <= 0"
-                                class="px-3 py-1.5 rounded-lg border text-sm font-medium transition"
+                                class="px-3 py-1.5 rounded-control border text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                                 :class="selectedVariationId === v.id
-                                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                                    ? 'border-brand bg-brand-tint text-ink'
                                     : v.available <= 0
-                                        ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                                        : 'border-gray-300 text-gray-800 hover:border-blue-400'"
+                                        ? 'border-line text-ink-faint cursor-not-allowed bg-mist'
+                                        : 'border-line bg-white text-ink hover:border-brand'"
                             >
                                 {{ v.option_value }}
-                                <span class="text-xs font-normal text-gray-500">({{ v.available }})</span>
+                                <span class="text-sm font-normal text-ink-soft tabular-nums">({{ v.available }})</span>
                             </button>
                         </div>
-                        <p v-if="!selectedVariationId" class="text-xs text-amber-700 mt-2">Select an option to add to cart.</p>
+                        <p v-if="!selectedVariationId" class="text-sm text-amber-800 mt-2">Select an option to add to cart.</p>
                     </div>
 
                     <!-- Stock -->
                     <p class="mt-4 text-sm">
-                        <span class="font-medium text-gray-800">{{ hasVariations ? 'Total Stock:' : 'Stock:' }}</span>
-                        <span :class="totalStock > 0 ? 'text-emerald-700' : 'text-red-600'" class="ml-1 font-semibold">
+                        <span class="font-semibold text-ink">{{ hasVariations ? 'Total stock' : 'Stock' }}</span>
+                        <span :class="totalStock > 0 ? 'text-brand' : 'text-danger'" class="ml-1.5 font-medium tabular-nums">
                             <!-- Options in different pack sizes can't be added as "units", so total them in pieces -->
                             {{ totalStock > 0 ? (hasMixedPacks ? `${availablePieces} pcs available in total` : `${totalStock} available`) : 'Out of stock' }}
                         </span>
                     </p>
 
-
-
-                    <!-- Suspension Banner -->
-                    <div v-if="product.distributor.is_suspended" class="mt-4 rounded-xl bg-rose-50 border border-rose-200 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-sm">
-                        <svg class="w-5 h-5 flex-shrink-0 mt-0.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <!-- Suspension banner -->
+                    <div v-if="product.distributor.is_suspended" class="mt-4 rounded-card bg-red-50 border border-red-200 p-4 text-sm text-red-900 flex items-start gap-3">
+                        <svg class="w-5 h-5 flex-shrink-0 mt-0.5 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         <div>
-                            <span class="font-bold">Distributor is currently suspended.</span><br>
-                            This product cannot be purchased at this time.
+                            <span class="font-semibold">This seller is suspended.</span><br>
+                            This product can't be purchased right now.
                         </div>
                     </div>
 
-                        <!-- CTA Actions -->
-                        <div class="space-y-4">
-                            <!-- Wholesale Savings Indicator -->
-                            <div v-if="wholesaleSavings" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
-                                <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-indigo-900 leading-tight">
-                                        Saving <span class="text-indigo-600">₱{{ Number(wholesaleSavings.total).toLocaleString() }}</span> or <span class="text-indigo-600">{{ wholesaleSavings.percentage }}%</span> for this wholesale purchase!
-                                    </p>
-                                </div>
-                            </div>
+                    <!-- Actions -->
+                    <div class="space-y-4">
+                        <!-- Wholesale savings -->
+                        <div v-if="wholesaleSavings" class="mt-4 bg-brand-tint border border-brand-soft rounded-card p-3">
+                            <p class="text-sm font-medium text-ink leading-snug">
+                                You save <span class="font-semibold text-brand-dark tabular-nums">₱{{ Number(wholesaleSavings.total).toLocaleString() }}</span> ({{ wholesaleSavings.percentage }}%) with wholesale pricing on this order.
+                            </p>
+                        </div>
 
-                            <div class="flex gap-2 items-center pt-2">
+                        <div class="flex flex-wrap gap-2 items-center pt-2">
                             <!-- Qty stepper -->
-                            <div class="inline-flex items-center border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm flex-shrink-0">
+                            <div class="inline-flex items-center border border-line rounded-control overflow-hidden bg-white flex-shrink-0" role="group" aria-label="Quantity">
                                 <button
                                     type="button"
                                     @click="bumpQty(-1)"
                                     :disabled="quantity <= 1 || lineAvailable <= 0"
-                                    class="w-8 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 text-base font-bold"
+                                    class="w-10 h-10 flex items-center justify-center text-ink-soft hover:bg-mist disabled:opacity-40 text-lg"
+                                    aria-label="Decrease quantity"
                                 >−</button>
                                 <input
                                     type="number"
@@ -250,49 +241,53 @@
                                     @input="sanitizeQuantityInput"
                                     min="1"
                                     :max="lineAvailable"
-                                    class="w-10 sm:w-12 text-center text-sm font-bold py-1.5 border-x-2 border-gray-200 focus:outline-none focus:ring-0"
+                                    aria-label="Quantity"
+                                    class="w-12 h-10 text-center font-semibold tabular-nums text-ink border-0 border-x border-line focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-tint"
                                 />
                                 <button
                                     type="button"
                                     @click="bumpQty(1)"
                                     :disabled="quantity >= lineAvailable || lineAvailable <= 0"
-                                    class="w-8 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 text-base font-bold"
+                                    class="w-10 h-10 flex items-center justify-center text-ink-soft hover:bg-mist disabled:opacity-40 text-lg"
+                                    aria-label="Increase quantity"
                                 >+</button>
                             </div>
 
-                            <!-- Add to Cart: icon-only on mobile, icon+text on sm+ -->
+                            <!-- Add to cart -->
                             <button
                                 type="button"
                                 @click="addToCart"
                                 :disabled="adding || lineAvailable <= 0 || cartDisabled || product.distributor.is_suspended"
-                                class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all h-10 px-3 sm:px-4"
-                                :title="adding ? 'Adding…' : 'Add to Cart'"
+                                class="flex items-center justify-center gap-1.5 rounded-control border border-brand text-brand font-medium bg-white hover:bg-brand hover:text-white transition-colors h-10 px-3 sm:px-4 disabled:cursor-not-allowed disabled:border-line disabled:bg-mist disabled:text-ink-faint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                                :title="adding ? 'Adding…' : 'Add to cart'"
+                                aria-label="Add to cart"
                             >
                                 <svg v-if="adding" class="animate-spin h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 <svg v-else class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                <span class="hidden sm:inline text-sm">{{ adding ? 'Adding…' : 'Cart' }}</span>
+                                <span class="hidden sm:inline">{{ adding ? 'Adding…' : 'Add to cart' }}</span>
                             </button>
 
-                            <!-- RFQ Request Button -->
+                            <!-- Request a quote -->
                             <button
                                 type="button"
                                 @click="openRfqModal"
                                 :disabled="product.distributor.is_suspended"
-                                class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-indigo-600 text-indigo-600 font-bold hover:bg-indigo-50 transition-all h-10 px-3 sm:px-4 shrink-0 disabled:opacity-50"
-                                title="Request Quote"
+                                class="flex items-center justify-center gap-1.5 rounded-control border border-line text-ink font-medium bg-white hover:bg-mist transition-colors h-10 px-3 sm:px-4 shrink-0 disabled:cursor-not-allowed disabled:text-ink-faint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                                title="Request a quote"
+                                aria-label="Request a quote"
                             >
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                <span class="hidden sm:inline text-sm">Quote</span>
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span class="hidden sm:inline">Request quote</span>
                             </button>
 
-                            <!-- Buy Now: always shows text -->
+                            <!-- Buy now: primary action, full width on phones -->
                             <button
                                 type="button"
                                 @click="buyNow"
                                 :disabled="buyingNow || lineAvailable <= 0 || cartDisabled || product.distributor.is_suspended"
-                                class="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 h-10 px-3 sm:px-5 min-w-[5rem]"
+                                class="flex-1 flex items-center justify-center rounded-control border border-transparent bg-brand hover:bg-brand-dark text-white font-medium h-10 px-5 min-w-[7rem] max-sm:w-full max-sm:basis-full transition-colors disabled:cursor-not-allowed disabled:border-line disabled:bg-mist disabled:text-ink-faint disabled:hover:bg-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                             >
-                                Buy Now
+                                Buy now
                             </button>
                         </div>
                     </div>
@@ -300,48 +295,47 @@
             </div>
 
             <!-- Description -->
-
-            <div class="mt-10 rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-3">About this item</h2>
-                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ product.description }}</p>
+            <div class="mt-10 rounded-card border border-line bg-white p-5 sm:p-6">
+                <h2 class="text-lg font-semibold tracking-tight text-ink mb-3">About this item</h2>
+                <p class="text-ink-soft leading-relaxed whitespace-pre-line max-w-[75ch]">{{ product.description }}</p>
 
                 <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 text-sm">
-                    <div class="rounded-lg bg-gray-50 p-3 border border-gray-100">
-                        <dt class="text-gray-500">Brand</dt>
-                        <dd class="font-semibold text-gray-900 mt-0.5">{{ product.brand }}</dd>
+                    <div class="rounded-control bg-mist p-3">
+                        <dt class="text-ink-soft">Brand</dt>
+                        <dd class="font-semibold text-ink mt-0.5">{{ product.brand }}</dd>
                     </div>
-                    <div class="rounded-lg bg-gray-50 p-3 border border-gray-100">
-                        <dt class="text-gray-500">Model</dt>
-                        <dd class="font-semibold text-gray-900 mt-0.5">{{ product.model }}</dd>
+                    <div class="rounded-control bg-mist p-3">
+                        <dt class="text-ink-soft">Model</dt>
+                        <dd class="font-semibold text-ink mt-0.5">{{ product.model }}</dd>
                     </div>
-                    <div class="rounded-lg bg-gray-50 p-3 border border-gray-100">
-                        <dt class="text-gray-500">Category</dt>
-                        <dd class="font-semibold text-gray-900 mt-0.5">{{ product.category.name }}</dd>
+                    <div class="rounded-control bg-mist p-3">
+                        <dt class="text-ink-soft">Category</dt>
+                        <dd class="font-semibold text-ink mt-0.5">{{ product.category.name }}</dd>
                     </div>
-                    <div v-if="product.has_expiry" class="rounded-lg bg-gray-50 p-3 border border-gray-100">
-                        <dt class="text-gray-500">Expiry</dt>
-                        <dd class="font-semibold text-orange-700 mt-0.5">
+                    <div v-if="product.has_expiry" class="rounded-control bg-mist p-3">
+                        <dt class="text-ink-soft">Expiry</dt>
+                        <dd class="font-semibold text-amber-800 mt-0.5">
                             {{ nearestExpiryDate ? new Date(nearestExpiryDate).toLocaleDateString() : 'Tracked per batch' }}
                         </dd>
-                        <dd v-if="timeBeforeExpiry" class="text-[10px] font-bold text-orange-900 bg-orange-100 px-1.5 py-0.5 rounded mt-1 inline-block uppercase tracking-tighter">
+                        <dd v-if="timeBeforeExpiry" class="text-xs font-medium text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded-control mt-1 inline-block">
                             {{ timeBeforeExpiry }}
                         </dd>
-                        <dd v-if="nearestBatchNumber" class="text-xs text-gray-400 mt-1">Batch {{ nearestBatchNumber }}</dd>
+                        <dd v-if="nearestBatchNumber" class="text-sm text-ink-soft mt-1">Batch {{ nearestBatchNumber }}</dd>
                     </div>
-                    <div v-if="product.has_warranty" class="rounded-lg bg-gray-50 p-3 border border-gray-100">
-                        <dt class="text-gray-500">Warranty</dt>
-                        <dd class="font-semibold text-emerald-700 mt-0.5">{{ product.warranty_months }} months</dd>
+                    <div v-if="product.has_warranty" class="rounded-control bg-mist p-3">
+                        <dt class="text-ink-soft">Warranty</dt>
+                        <dd class="font-semibold text-brand mt-0.5">{{ product.warranty_months }} months</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Ratings and reviews -->
-            <div class="mt-10 rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Ratings and reviews</h2>
-                <div v-if="!product_reviews?.length" class="text-sm text-gray-600 py-4">
-                    No ratings and reviews yet.
+            <div class="mt-6 rounded-card border border-line bg-white p-5 sm:p-6">
+                <h2 class="text-lg font-semibold tracking-tight text-ink mb-4">Ratings and reviews</h2>
+                <div v-if="!product_reviews?.length" class="text-ink-soft py-2">
+                    No ratings or reviews yet.
                 </div>
-                <ul v-else class="space-y-5 divide-y divide-gray-100">
+                <ul v-else class="space-y-5 divide-y divide-line">
                     <li
                         v-for="r in product_reviews"
                         :key="r.id"
@@ -350,72 +344,70 @@
                         <div class="flex flex-wrap items-center gap-2 mb-1">
                             <span class="flex items-center gap-0.5" aria-hidden="true">
                                 <template v-for="n in 5" :key="n">
-                                    <svg class="w-3.5 h-3.5" :class="n <= r.stars ? 'text-amber-500' : 'text-gray-200'" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    <svg class="w-3.5 h-3.5" :class="n <= r.stars ? 'text-amber-600' : 'text-line'" fill="currentColor" viewBox="0 0 20 20"><path d="M10 1.8l2.4 5 5.5.7-4 3.8 1 5.4L10 14l-4.9 2.7 1-5.4-4-3.8 5.5-.7z"/></svg>
                                 </template>
                             </span>
-                            <span class="text-sm font-semibold text-gray-900">{{ r.reviewer_name }}</span>
-                            <span class="text-xs text-gray-400">{{ formatReviewDate(r.created_at) }}</span>
+                            <span class="text-sm font-semibold text-ink">{{ r.reviewer_name }}</span>
+                            <span class="text-sm text-ink-faint">{{ formatReviewDate(r.created_at) }}</span>
                         </div>
-                        <p v-if="r.body" class="text-sm text-gray-700 whitespace-pre-line">{{ r.body }}</p>
+                        <p v-if="r.body" class="text-ink-soft whitespace-pre-line max-w-[75ch]">{{ r.body }}</p>
                     </li>
                 </ul>
             </div>
 
-            <!-- Related / FBT -->
+            <!-- Related / frequently bought together -->
             <div v-if="relatedProducts.length" class="mt-10">
                 <div class="mb-4">
-                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        Frequently bought together
-                    </h2>
-                    <p class="text-xs text-gray-500 mt-0.5">Customers who bought this also purchased these items.</p>
+                    <h2 class="text-lg font-semibold tracking-tight text-ink">Frequently bought together</h2>
+                    <p class="text-sm text-ink-soft mt-0.5">Customers who bought this also purchased these items.</p>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Link
                         v-for="related in relatedProducts"
                         :key="related.id"
                         :href="`/products/${related.slug}`"
-                        class="group relative rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition flex flex-col"
+                        class="group relative rounded-card border border-line bg-white overflow-hidden hover:border-brand hover:shadow-[0_0_0_1px_#0B6E6B] transition-shadow flex flex-col"
                     >
-                        <div v-if="related.is_dss_recommendation" class="absolute top-2 left-2 z-10 bg-indigo-600 shadow-sm text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            System Pick
+                        <div v-if="related.is_dss_recommendation" class="absolute top-2 left-2 z-10 rounded-control border border-[#B9C7DA] bg-white px-2 py-0.5 text-xs font-medium text-seal">
+                            System pick
                         </div>
-                        <div class="aspect-square bg-gray-50 flex items-center justify-center p-4">
+                        <div class="aspect-square bg-[#F7FAFA] border-b border-line flex items-center justify-center p-4">
                             <img
                                 v-if="related.image_url"
                                 :src="related.image_url"
                                 :alt="related.name"
-                                class="w-full h-full object-contain p-2"
+                                class="w-full h-full object-contain p-2 mix-blend-multiply"
                             />
-                            <svg v-else class="h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg v-else class="h-10 w-10 text-ink-faint/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="No image">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
                         <div class="p-3">
-                            <p class="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">{{ related.name }}</p>
-                            <p class="text-sm font-bold text-gray-900 mt-1">₱{{ Number(related.base_price).toLocaleString() }}</p>
+                            <p class="font-medium text-ink line-clamp-2 group-hover:text-brand">{{ related.name }}</p>
+                            <p class="font-semibold text-ink mt-1 tabular-nums">₱{{ Number(related.base_price).toLocaleString() }}</p>
                         </div>
                     </Link>
                 </div>
             </div>
+
             <!-- Report listing modal -->
             <div
                 v-if="reportModalOpen"
-                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/50"
+                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-ink/50"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="report-listing-title"
                 @click.self="reportModalOpen = false"
             >
-                <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto" @click.stop>
-                    <h2 id="report-listing-title" class="text-lg font-bold text-gray-900">Report this listing</h2>
-                    <p class="text-sm text-gray-600 mt-1">Tell us what is wrong. Our moderation team will review it.</p>
+                <div class="bg-white rounded-t-card sm:rounded-card shadow-xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto" @click.stop>
+                    <h2 id="report-listing-title" class="text-lg font-semibold text-ink">Report this listing</h2>
+                    <p class="text-ink-soft mt-1">Tell us what is wrong. Our moderation team will review it.</p>
                     <form class="mt-4 space-y-4" @submit.prevent="submitProductReport">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                            <label class="block text-sm font-medium text-ink mb-1">Reason</label>
                             <select
                                 v-model="reportForm.reason"
-                                class="w-full rounded-lg border-gray-300 text-sm min-h-[44px]"
+                                class="block w-full h-11 rounded-control border border-line bg-white px-3 text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-tint"
                                 required
                             >
                                 <option value="misleading">Misleading or inaccurate</option>
@@ -425,30 +417,24 @@
                                 <option value="wrong_category">Wrong category</option>
                                 <option value="other">Other</option>
                             </select>
-                            <p v-if="reportForm.errors.reason" class="text-xs text-red-600 mt-1">{{ reportForm.errors.reason }}</p>
+                            <p v-if="reportForm.errors.reason" class="text-sm text-danger mt-1">{{ reportForm.errors.reason }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Details (optional)</label>
+                            <label class="block text-sm font-medium text-ink mb-1">Details (optional)</label>
                             <textarea
                                 v-model="reportForm.details"
                                 rows="3"
                                 maxlength="2000"
-                                class="w-full rounded-lg border-gray-300 text-sm"
+                                class="block w-full rounded-control border border-line bg-white px-3 py-2 text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-tint"
                                 placeholder="What should we know?"
                             />
-                            <p v-if="reportForm.errors.details" class="text-xs text-red-600 mt-1">{{ reportForm.errors.details }}</p>
+                            <p v-if="reportForm.errors.details" class="text-sm text-danger mt-1">{{ reportForm.errors.details }}</p>
                         </div>
                         <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
-                            <button
-                                type="button"
-                                class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                                @click="reportModalOpen = false"
-                            >
-                                Cancel
-                            </button>
+                            <BaseButton variant="ghost" @click="reportModalOpen = false">Cancel</BaseButton>
                             <button
                                 type="submit"
-                                class="px-4 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 disabled:opacity-50"
+                                class="inline-flex items-center justify-center h-10 px-4 rounded-control bg-danger text-white font-medium hover:bg-red-800 transition-colors disabled:opacity-50"
                                 :disabled="reportForm.processing"
                             >
                                 {{ reportForm.processing ? 'Sending…' : 'Submit report' }}
@@ -458,122 +444,87 @@
                 </div>
             </div>
 
-            <!-- B2B Upsell Modal -->
+            <!-- Business account upsell modal -->
             <div
                 v-if="b2bUpsellModalOpen"
-                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
+                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-ink/50"
                 role="dialog"
                 aria-modal="true"
+                aria-labelledby="b2b-upsell-title"
                 @click.self="b2bUpsellModalOpen = false"
             >
-                <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 text-center">
-                    <div class="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    </div>
-                    
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Unlock B2B Features</h2>
-                    <p class="text-sm text-gray-600 mb-6">
-                        Requesting quotes and accessing wholesale pricing is reserved for verified business accounts. Upgrade your account today for free!
+                <div class="bg-white rounded-t-card sm:rounded-card shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+                    <h2 id="b2b-upsell-title" class="text-xl font-semibold tracking-tight text-ink mb-2">Quotes and wholesale need a business account</h2>
+                    <p class="text-ink-soft mb-6">
+                        Requesting quotes and wholesale pricing is available to verified business accounts. Applying is free.
                     </p>
-                    
-                    <div class="space-y-3">
-                        <Link 
-                            href="/business-account/apply"
-                            class="block w-full px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-                        >
-                            Apply for B2B Account
-                        </Link>
-                        <button
-                            type="button"
-                            @click="b2bUpsellModalOpen = false"
-                            class="block w-full px-5 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                        >
-                            Maybe Later
-                        </button>
+
+                    <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                        <BaseButton variant="ghost" @click="b2bUpsellModalOpen = false">Maybe later</BaseButton>
+                        <BaseButton href="/business-account/apply">Apply for a business account</BaseButton>
                     </div>
                 </div>
             </div>
-            <!-- End B2B Upsell Modal -->
 
-            <!-- RFQ Modal -->
+            <!-- Request quote modal -->
             <div
                 v-if="rfqModalOpen"
-                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
+                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-ink/50"
                 role="dialog"
                 aria-modal="true"
+                aria-labelledby="rfq-title"
                 @click.self="rfqModalOpen = false"
             >
-                <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
-                    <div class="flex items-center gap-3 mb-5">
-                        <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        </div>
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-900">Request Quotation</h2>
-                            <p class="text-sm text-gray-500">Negotiate bulk pricing with the distributor.</p>
-                        </div>
-                    </div>
+                <div class="bg-white rounded-t-card sm:rounded-card shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+                    <h2 id="rfq-title" class="text-xl font-semibold tracking-tight text-ink">Request a quote</h2>
+                    <p class="text-ink-soft mb-5">Negotiate bulk pricing with the distributor.</p>
 
                     <form @submit.prevent="submitRfq" class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Target Quantity</label>
-                                <input
-                                    type="number"
+                                <label class="block text-sm font-medium text-ink mb-1">Target quantity</label>
+                                <TextInput
                                     v-model="rfqForm.requested_quantity"
+                                    type="number"
                                     min="1"
-                                    class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
                                     required
+                                    :error="rfqForm.errors.requested_quantity"
                                 />
-                                <p v-if="rfqForm.errors.requested_quantity" class="text-xs text-red-600 mt-1">{{ rfqForm.errors.requested_quantity }}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Target Unit Price (₱)</label>
-                                <input
-                                    type="number"
+                                <label class="block text-sm font-medium text-ink mb-1">Target unit price (₱)</label>
+                                <TextInput
                                     v-model="rfqForm.target_price"
+                                    type="number"
                                     step="0.01"
                                     min="0"
-                                    class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
                                     required
                                     placeholder="0.00"
+                                    :error="rfqForm.errors.target_price"
                                 />
-                                <p v-if="rfqForm.errors.target_price" class="text-xs text-red-600 mt-1">{{ rfqForm.errors.target_price }}</p>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Message to Seller</label>
+                            <label class="block text-sm font-medium text-ink mb-1">Message to seller</label>
                             <textarea
                                 v-model="rfqForm.note"
                                 rows="3"
-                                class="w-full rounded-xl border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                                class="block w-full rounded-control border border-line bg-white px-3 py-2 text-ink placeholder:text-ink-faint resize-none focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-tint"
                                 placeholder="Explain your procurement needs, required delivery timeline, etc."
                             ></textarea>
-                            <p v-if="rfqForm.errors.note" class="text-xs text-red-600 mt-1">{{ rfqForm.errors.note }}</p>
+                            <p v-if="rfqForm.errors.note" class="text-sm text-danger mt-1">{{ rfqForm.errors.note }}</p>
                         </div>
 
-                        <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
-                            <button
-                                type="button"
-                                @click="rfqModalOpen = false"
-                                class="px-5 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                :disabled="rfqForm.processing"
-                                class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
-                            >
-                                <svg v-if="rfqForm.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                {{ rfqForm.processing ? 'Sending Request...' : 'Send RFQ' }}
-                            </button>
+                        <div class="pt-4 flex items-center justify-end gap-2 border-t border-line">
+                            <BaseButton variant="ghost" @click="rfqModalOpen = false">Cancel</BaseButton>
+                            <BaseButton type="submit" :disabled="rfqForm.processing">
+                                {{ rfqForm.processing ? 'Sending request…' : 'Send request' }}
+                            </BaseButton>
                         </div>
                     </form>
                 </div>
             </div>
-            <!-- End RFQ Modal -->
         </div>
     </MainLayout>
 </template>
@@ -582,6 +533,9 @@
 import { ref, computed, watch } from 'vue';
 import { router, Link, usePage, useForm } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import BaseButton from '@/Components/ui/BaseButton.vue';
+import TextInput from '@/Components/ui/TextInput.vue';
+import SellerMark from '@/Components/ui/SellerMark.vue';
 
 const page = usePage();
 

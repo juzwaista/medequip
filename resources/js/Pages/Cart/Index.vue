@@ -1,173 +1,157 @@
 <template>
     <MainLayout>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-44 md:pb-8">
             <!-- Header -->
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex justify-between items-center mb-6 gap-4">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-black text-gray-900">Shopping Cart</h1>
-                    <p class="text-gray-500 text-sm mt-1">{{ cartItems.length }} item{{ cartItems.length !== 1 ? 's' : '' }} in your cart</p>
+                    <h1 class="text-2xl sm:text-[28px] font-semibold tracking-tight text-ink">Shopping cart</h1>
+                    <p class="text-ink-soft mt-1">{{ cartItems.length }} item{{ cartItems.length !== 1 ? 's' : '' }} in your cart</p>
                 </div>
-                <button
+                <BaseButton
                     v-if="cartItems.length > 0"
+                    variant="secondary"
+                    size="sm"
                     @click="editMode = !editMode"
-                    :class="[
-                        'px-4 py-2 rounded-xl font-semibold text-sm transition flex items-center gap-2',
-                        editMode ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                    ]"
                 >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    {{ editMode ? 'Done' : 'Edit' }}
-                </button>
+                    {{ editMode ? 'Done' : 'Edit cart' }}
+                </BaseButton>
             </div>
 
             <div v-if="cartItems.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Cart Items -->
-                <div class="lg:col-span-2 space-y-4">
-                    <!-- Select All -->
-                    <div class="bg-white rounded-xl shadow-md p-4 flex items-center justify-between">
+                <!-- Cart items -->
+                <div class="lg:col-span-2 space-y-3">
+                    <!-- Select all -->
+                    <div class="bg-white border border-line rounded-card px-4 py-3 flex items-center justify-between gap-3">
                         <label class="flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 :checked="allSelected"
                                 @change="toggleSelectAll"
-                                class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                class="h-5 w-5 rounded-control border-line accent-brand"
                             />
-                            <span class="ml-3 text-sm font-medium text-gray-700">
-                                Select All ({{ selectedCount }} of {{ cartItems.length }} selected)
+                            <span class="ml-3 font-medium text-ink">
+                                Select all <span class="font-normal text-ink-soft">({{ selectedCount }} of {{ cartItems.length }} selected)</span>
                             </span>
                         </label>
-                        
-                        <button 
+
+                        <button
                             v-if="editMode && selectedCount > 0"
                             @click="removeSelected"
-                            class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1"
+                            class="text-danger hover:text-red-800 text-sm font-medium flex items-center gap-1.5"
                         >
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            Remove Selected
+                            Remove selected
                         </button>
                     </div>
 
-                    <!-- Cart Item Cards -->
-                    <div 
-                        v-for="item in cartItems" 
+                    <!-- Cart item cards -->
+                    <div
+                        v-for="item in cartItems"
                         :key="item.line_key"
                         :class="[
-                            'bg-white rounded-xl shadow-md p-6 transition',
-                            selectedItems[item.line_key] ? 'ring-2 ring-blue-500 hover:shadow-lg' : 'hover:shadow-lg',
-                            editMode ? 'bg-gray-50' : ''
+                            'bg-white rounded-card border p-4 sm:p-5 transition-colors',
+                            selectedItems[item.line_key] ? 'border-brand' : 'border-line',
                         ]"
                     >
-                        <div class="flex gap-4">
+                        <div class="flex gap-3 sm:gap-4">
                             <!-- Checkbox -->
                             <div class="flex items-start pt-1">
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     :checked="selectedItems[item.line_key]"
                                     @change="toggleItem(item.line_key)"
-                                    class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                    :aria-label="`Select ${item.product.name}`"
+                                    class="h-5 w-5 rounded-control border-line accent-brand"
                                 />
                             </div>
 
-                            <!-- Product Image -->
-                            <div class="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                            <!-- Product image -->
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 bg-[#F7FAFA] border border-line rounded-control flex items-center justify-center overflow-hidden">
                                 <img
                                     v-if="item.product.image_url"
                                     :src="item.product.image_url"
                                     :alt="item.product.name"
-                                    class="w-full h-full object-cover"
+                                    class="w-full h-full object-contain p-1 mix-blend-multiply"
                                 />
-                                <svg v-else class="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <svg v-else class="h-8 w-8 text-ink-faint/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="No image">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
 
-                            <!-- Product Details -->
-                            <div class="flex-1">
-                                <div class="flex justify-between">
-                                    <div>
-                                        <Link :href="`/products/${item.product.slug}`" class="text-lg font-semibold text-gray-900 hover:text-blue-600">
+                            <!-- Product details -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <Link :href="`/products/${item.product.slug}`" class="font-semibold text-ink hover:text-brand leading-snug">
                                             {{ item.product.name }}
                                         </Link>
-                                        <p v-if="item.variation_label" class="text-sm text-blue-700 font-medium mt-0.5">{{ item.variation_label }}</p>
-                                        <p v-if="item.units_per_pack > 1" class="text-xs text-gray-500 mt-0.5">Sold per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each ({{ item.pieces }} pcs in this line)</p>
-                                        <p class="text-sm text-gray-600">{{ item.product.brand || 'Generic' }}</p>
-                                        <p class="text-sm text-gray-500">
-                                            by 
-                                            <Link 
+                                        <p v-if="item.variation_label" class="text-sm text-brand-dark font-medium mt-0.5">{{ item.variation_label }}</p>
+                                        <p v-if="item.units_per_pack > 1" class="text-sm text-ink-soft mt-0.5">Sold per {{ item.unit_label }}, {{ item.units_per_pack }} pcs each ({{ item.pieces }} pcs in this line)</p>
+                                        <p class="text-sm text-ink-soft">{{ item.product.brand || 'Generic' }}</p>
+                                        <p class="text-sm text-ink-soft">
+                                            Sold by
+                                            <Link
                                                 v-if="item.product.distributor?.slug"
                                                 :href="`/seller/${item.product.distributor.slug}`"
-                                                class="text-blue-600 hover:underline"
+                                                class="text-brand hover:underline underline-offset-2"
                                             >
-                                                {{ item.product.distributor?.company_name || 'Unknown Seller' }}
+                                                {{ item.product.distributor?.company_name || 'Unknown seller' }}
                                             </Link>
-                                            <span v-else>{{ item.product.distributor?.company_name || 'Unknown Seller' }}</span>
+                                            <span v-else>{{ item.product.distributor?.company_name || 'Unknown seller' }}</span>
                                         </p>
-                                        
-                                        <!-- Wholesale Badge -->
+
+                                        <!-- Wholesale tag -->
                                         <div v-if="item.is_wholesale" class="mt-2">
-                                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold">
-                                                Wholesale Price Applied
+                                            <span class="inline-flex items-center rounded-control border border-brand-soft bg-brand-tint px-2 py-0.5 text-sm font-medium text-brand-dark">
+                                                Wholesale price applied
                                             </span>
                                         </div>
                                     </div>
 
-                                    <!-- Remove Button (Edit Mode) -->
-                                    <button 
+                                    <!-- Remove button (edit mode) -->
+                                    <button
                                         v-if="editMode"
                                         @click="removeItem(item.line_key)"
-                                        class="text-red-500 hover:text-red-700 p-2 h-fit"
+                                        class="text-danger hover:bg-red-50 rounded-control p-2 h-fit"
+                                        :aria-label="`Remove ${item.product.name}`"
                                     >
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                     </button>
                                 </div>
 
-                                <!-- Quantity and Price -->
-                                <div class="flex items-center justify-between mt-4">
-                                    <div class="flex items-center gap-2">
-                                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Qty</label>
-                                        <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
-                                            <button
-                                                @click="updateQuantity(item.line_key, item.quantity - 1)"
-                                                :disabled="item.quantity <= 1"
-                                                class="w-10 h-10 flex items-center justify-center hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-gray-600"
-                                            >−</button>
-                                            <input
-                                                type="number"
-                                                :value="item.quantity"
-                                                @input="handleQuantityInput($event)"
-                                                @change="updateQuantity(item.line_key, $event.target.value)"
-                                                min="1"
-                                                class="w-12 text-center text-sm font-bold border-x-2 border-gray-200 py-2 focus:outline-none"
-                                            />
-                                            <button
-                                                @click="updateQuantity(item.line_key, item.quantity + 1)"
-                                                class="w-10 h-10 flex items-center justify-center hover:bg-gray-100 font-bold text-gray-600"
-                                            >+</button>
-                                        </div>
+                                <!-- Quantity and price -->
+                                <div class="flex items-end justify-between gap-3 mt-4">
+                                    <div class="inline-flex items-center border border-line rounded-control overflow-hidden bg-white" role="group" aria-label="Quantity">
+                                        <button
+                                            @click="updateQuantity(item.line_key, item.quantity - 1)"
+                                            :disabled="item.quantity <= 1"
+                                            class="w-10 h-10 flex items-center justify-center text-ink-soft hover:bg-mist disabled:opacity-40 disabled:cursor-not-allowed text-lg"
+                                            aria-label="Decrease quantity"
+                                        >−</button>
+                                        <input
+                                            type="number"
+                                            :value="item.quantity"
+                                            @input="handleQuantityInput($event)"
+                                            @change="updateQuantity(item.line_key, $event.target.value)"
+                                            min="1"
+                                            aria-label="Quantity"
+                                            class="w-12 h-10 text-center font-semibold tabular-nums text-ink border-0 border-x border-line focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-tint"
+                                        />
+                                        <button
+                                            @click="updateQuantity(item.line_key, item.quantity + 1)"
+                                            class="w-10 h-10 flex items-center justify-center text-ink-soft hover:bg-mist text-lg"
+                                            aria-label="Increase quantity"
+                                        >+</button>
                                     </div>
 
-                                    <div class="text-right">
-                                        <div class="flex flex-col items-end">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ item.quantity }} × ₱{{ Number(item.unit_price).toLocaleString() }}</span>
-                                            
-                                            <!-- Price / Total -->
-                                            <div class="flex flex-col items-end gap-1 shrink-0">
-                                                <!-- Original Total -->
-                                                <span v-if="item.is_wholesale" class="text-xs text-gray-300 line-through font-medium">₱{{ Number(item.retail_unit_price * item.quantity).toLocaleString() }}</span>
-                                                <span v-else class="text-xs text-gray-400 font-medium mt-0.5">₱{{ Number(item.quantity * item.unit_price).toLocaleString() }}</span>
-                                                
-                                                <!-- Final Price (Black) -->
-                                                <span class="text-base sm:text-lg font-black text-gray-900 tabular-nums leading-none mt-0.5">
-                                                    ₱{{ Number(item.subtotal).toLocaleString() }}
-                                                </span>
-                                            </div>
-                                        </div>
+                                    <div class="text-right tabular-nums whitespace-nowrap">
+                                        <p class="text-sm text-ink-soft">{{ item.quantity }} × ₱{{ Number(item.unit_price).toLocaleString() }}</p>
+                                        <p v-if="item.is_wholesale" class="text-sm text-ink-faint line-through">₱{{ Number(item.retail_unit_price * item.quantity).toLocaleString() }}</p>
+                                        <p class="text-lg font-semibold tracking-tight text-ink leading-tight">₱{{ Number(item.subtotal).toLocaleString() }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -175,105 +159,85 @@
                     </div>
                 </div>
 
-                <!-- Order Summary -->
+                <!-- Order summary -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
-                        
-                        <div class="space-y-3 mb-6">
-                            <div class="flex justify-between items-center text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">
-                                <span>Order Summary</span>
-                            </div>
-                            
-                            <div class="flex justify-between items-center text-sm font-medium text-gray-500 px-1 pt-1">
-                                <span>Order Total</span>
-                                <span class="text-gray-900 font-bold">₱{{ Number(selectedOriginalSubtotal).toLocaleString() }}</span>
-                            </div>
+                    <div class="bg-white border border-line rounded-card p-5 lg:sticky lg:top-24">
+                        <h2 class="text-lg font-semibold tracking-tight text-ink mb-4">Order summary</h2>
 
-                            <div class="flex justify-between items-center text-sm font-medium text-gray-500 px-1">
-                                <span>Estimated Shipping</span>
-                                <span class="text-gray-900">₱{{ Number(selectedShippingFee).toLocaleString() }}</span>
+                        <dl class="space-y-2.5 mb-5 text-ink-soft">
+                            <div class="flex justify-between gap-3">
+                                <dt>Subtotal</dt>
+                                <dd class="text-ink tabular-nums">₱{{ Number(selectedOriginalSubtotal).toLocaleString() }}</dd>
                             </div>
-
-                            <div v-if="selectedTotalSavings > 0" class="flex justify-between items-center text-[10px] font-bold text-emerald-600 bg-emerald-50/30 px-2 py-1 rounded-md border border-emerald-100/30">
-                                <span class="uppercase tracking-tight">Wholesale Savings</span>
-                                <span>−₱{{ Number(selectedTotalSavings).toLocaleString() }}</span>
+                            <div v-if="selectedTotalSavings > 0" class="flex justify-between gap-3 text-brand-dark">
+                                <dt>Wholesale savings</dt>
+                                <dd class="tabular-nums">−₱{{ Number(selectedTotalSavings).toLocaleString() }}</dd>
                             </div>
-
-                            <div class="pt-4 border-t border-gray-100 flex flex-col gap-1">
-                                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount to Pay</span>
-                                <div class="flex items-baseline gap-2">
-                                    <span v-if="selectedTotalSavings > 0" class="text-sm text-gray-300 line-through font-medium">₱{{ Number(selectedOriginalSubtotal + selectedShippingFee).toLocaleString() }}</span>
-                                    <span class="text-3xl font-black text-gray-900 tabular-nums leading-none">₱{{ Number(selectedGrandTotal).toLocaleString() }}</span>
-                                </div>
+                            <div class="flex justify-between gap-3">
+                                <dt>Estimated shipping</dt>
+                                <dd class="text-ink tabular-nums">₱{{ Number(selectedShippingFee).toLocaleString() }}</dd>
                             </div>
-                        </div>
+                            <div class="pt-3 border-t border-line flex justify-between items-baseline gap-3">
+                                <dt class="font-semibold text-ink">Total</dt>
+                                <dd class="text-2xl font-semibold tracking-tight text-ink tabular-nums">₱{{ Number(selectedGrandTotal).toLocaleString() }}</dd>
+                            </div>
+                        </dl>
 
-                        <button 
+                        <BaseButton
                             v-if="$page.props.auth.user"
                             @click="proceedToCheckout"
                             :disabled="selectedCount === 0"
-                            class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-6 py-3 rounded-xl hover:shadow-xl transition font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="w-full"
                         >
-                            Checkout ({{ selectedCount }} items)
-                        </button>
-                        <button 
-                            v-else
-                            @click="redirectToLogin"
-                            class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-6 py-3 rounded-xl hover:shadow-xl transition font-bold"
-                        >
-                            Login to Checkout
-                        </button>
+                            Checkout ({{ selectedCount }} {{ selectedCount === 1 ? 'item' : 'items' }})
+                        </BaseButton>
+                        <BaseButton v-else @click="redirectToLogin" class="w-full">
+                            Log in to check out
+                        </BaseButton>
 
-                        <Link 
+                        <Link
                             href="/products"
-                            class="block w-full text-center text-blue-600 hover:text-blue-700 mt-4 font-medium"
+                            class="block w-full text-center text-brand hover:text-brand-dark hover:underline underline-offset-2 mt-4 font-medium"
                         >
-                            ← Continue Shopping
+                            Continue shopping
                         </Link>
                     </div>
                 </div>
             </div>
 
-            <!-- Empty Cart -->
+            <!-- Empty cart -->
             <div v-else class="flex flex-col items-center justify-center py-20 text-center">
-                <div class="w-28 h-28 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-                    <svg class="h-14 w-14 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
-                <h2 class="text-2xl font-black text-gray-900 mb-2">Looks like your cart is empty.</h2>
-                <p class="text-gray-500 mb-8 max-w-xs">Stock up on equipment and daily essentials for your practice.</p>
-                <Link href="/products" class="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-blue-700 transition shadow-sm hover:shadow-md">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                    Go to Shop
-                </Link>
+                <svg class="h-14 w-14 text-ink-faint/60 mb-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h2 class="text-2xl font-semibold tracking-tight text-ink mb-2">Your cart is empty</h2>
+                <p class="text-ink-soft mb-6 max-w-xs">Add equipment and supplies from verified distributors and they will show up here.</p>
+                <BaseButton href="/products">Browse products</BaseButton>
             </div>
 
-            <!-- Mobile sticky checkout bar -->
-            <div v-if="cartItems.length > 0" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-40 px-4 py-3" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom))">
+            <!-- Mobile sticky checkout bar: sits above the bottom navigation (4rem tall) -->
+            <div
+                v-if="cartItems.length > 0"
+                class="md:hidden fixed left-0 right-0 bg-white border-t border-line z-40 px-4 py-3"
+                style="bottom: calc(4rem + env(safe-area-inset-bottom, 0px))"
+            >
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs text-gray-500 font-medium">{{ selectedCount }} item{{ selectedCount !== 1 ? 's' : '' }} selected</span>
-                    <span class="text-sm font-black text-gray-900">₱{{ Number(selectedGrandTotal).toLocaleString() }}</span>
+                    <span class="text-sm text-ink-soft">{{ selectedCount }} item{{ selectedCount !== 1 ? 's' : '' }} selected</span>
+                    <span class="font-semibold text-ink tabular-nums">₱{{ Number(selectedGrandTotal).toLocaleString() }}</span>
                 </div>
-                <button
+                <BaseButton
                     v-if="$page.props.auth.user"
                     @click="proceedToCheckout"
                     :disabled="selectedCount === 0"
-                    class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full"
                 >
-                    Checkout ({{ selectedCount }} items)
-                </button>
-                <button
-                    v-else
-                    @click="redirectToLogin"
-                    class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition"
-                >
-                    Login to Checkout
-                </button>
+                    Checkout ({{ selectedCount }} {{ selectedCount === 1 ? 'item' : 'items' }})
+                </BaseButton>
+                <BaseButton v-else @click="redirectToLogin" class="w-full">
+                    Log in to check out
+                </BaseButton>
             </div>
-            </div>
-
+        </div>
     </MainLayout>
 </template>
 
@@ -281,6 +245,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import BaseButton from '@/Components/ui/BaseButton.vue';
 
 const props = defineProps({
     cartItems: Array,

@@ -18,11 +18,11 @@
         >
             <div 
                 v-if="show" 
-                class="absolute z-[100] px-3 py-2 text-xs font-medium text-white bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-xl pointer-events-none whitespace-normal break-words w-max max-w-[250px]"
+                class="absolute z-[100] px-3 py-2 text-xs font-medium text-white bg-ink/95  rounded-control shadow-xl pointer-events-none whitespace-normal break-words w-max max-w-[250px]"
                 :class="positionClasses"
             >
                 <div 
-                    class="absolute w-2 h-2 bg-gray-900/95 transform rotate-45"
+                    class="absolute w-2 h-2 bg-ink/95 transform rotate-45"
                     :class="arrowClasses"
                 ></div>
                 

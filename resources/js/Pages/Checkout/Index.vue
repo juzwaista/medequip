@@ -5,8 +5,8 @@
         >
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Checkout</h1>
-                <p class="text-gray-600 mt-2">Complete your order</p>
+                <h1 class="text-3xl font-bold text-ink">Checkout</h1>
+                <p class="text-ink-soft mt-2">Complete your order</p>
             </div>
 
             <form
@@ -22,7 +22,7 @@
                         v-if="
                             form.errors && Object.keys(form.errors).length > 0
                         "
-                        class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4"
+                        class="bg-red-50 border-l-4 border-red-500 rounded-control p-4"
                     >
                         <div class="flex">
                             <div class="flex-shrink-0">
@@ -59,50 +59,50 @@
                     </div>
 
                     <!-- Fulfillment Method Selection -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">How would you like to get your order?</h2>
+                    <div class="bg-white rounded-card shadow-md p-6">
+                        <h2 class="text-xl font-bold text-ink mb-4">How would you like to get your order?</h2>
                         <div class="grid grid-cols-2 gap-4">
                             <label
                                 :class="[
-                                    'flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all',
+                                    'flex flex-col items-center justify-center p-4 rounded-card border-2 cursor-pointer transition-all',
                                     form.fulfillment_method === 'delivery'
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                                        ? 'border-brand bg-brand-tint'
+                                        : 'border-line bg-mist hover:border-line'
                                 ]"
                             >
                                 <input type="radio" v-model="form.fulfillment_method" value="delivery" class="sr-only" />
-                                <svg class="w-8 h-8 mb-2" :class="form.fulfillment_method === 'delivery' ? 'text-blue-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 mb-2" :class="form.fulfillment_method === 'delivery' ? 'text-brand' : 'text-ink-faint'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 011 1v2.5a.5.5 0 01-1 0V16zm-1.833 3.333H6.833a1.167 1.167 0 01-1.167-1.167V10H15v8.167a1.167 1.167 0 01-1.167 1.167z" />
                                 </svg>
-                                <span class="text-sm font-bold" :class="form.fulfillment_method === 'delivery' ? 'text-blue-700' : 'text-gray-700'">Courier Delivery</span>
+                                <span class="text-sm font-bold" :class="form.fulfillment_method === 'delivery' ? 'text-brand-dark' : 'text-ink'">Courier Delivery</span>
                             </label>
 
                             <label
                                 :class="[
-                                    'flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all',
+                                    'flex flex-col items-center justify-center p-4 rounded-card border-2 cursor-pointer transition-all',
                                     form.fulfillment_method === 'pickup'
-                                        ? 'border-emerald-500 bg-emerald-50'
-                                        : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                                        ? 'border-brand bg-brand-tint'
+                                        : 'border-line bg-mist hover:border-line'
                                 ]"
                             >
                                 <input type="radio" v-model="form.fulfillment_method" value="pickup" class="sr-only" />
-                                <svg class="w-8 h-8 mb-2" :class="form.fulfillment_method === 'pickup' ? 'text-emerald-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 mb-2" :class="form.fulfillment_method === 'pickup' ? 'text-brand' : 'text-ink-faint'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
-                                <span class="text-sm font-bold" :class="form.fulfillment_method === 'pickup' ? 'text-emerald-700' : 'text-gray-700'">Store Pick-up</span>
+                                <span class="text-sm font-bold" :class="form.fulfillment_method === 'pickup' ? 'text-brand-dark' : 'text-ink'">Store Pick-up</span>
                             </label>
                         </div>
                     </div>
 
                     <!-- Delivery Information -->
-                    <div v-if="form.fulfillment_method === 'delivery'" class="bg-white rounded-xl shadow-md p-6 animate-in fade-in duration-300">
+                    <div v-if="form.fulfillment_method === 'delivery'" class="bg-white rounded-card shadow-md p-6   duration-300">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-xl font-bold text-gray-900">
+                            <h2 class="text-xl font-bold text-ink">
                                 Delivery Information
                             </h2>
                             <Link
                                 href="/addresses"
-                                class="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                                class="text-sm font-semibold text-brand hover:text-brand-dark"
                                 >Manage Addresses</Link
                             >
                         </div>
@@ -111,7 +111,7 @@
                             <!-- No Saved Addresses -->
                             <div
                                 v-if="savedAddresses.length === 0"
-                                class="bg-amber-50 rounded-lg p-6 text-center border border-amber-200"
+                                class="bg-amber-50 rounded-control p-6 text-center border border-amber-200"
                             >
                                 <svg
                                     class="w-12 h-12 text-amber-500 mx-auto mb-3"
@@ -143,7 +143,7 @@
                                 </p>
                                 <a
                                     href="/addresses"
-                                    class="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+                                    class="inline-block bg-brand text-white font-semibold py-2 px-4 rounded-control hover:bg-brand-dark transition"
                                     >Manage Addresses</a
                                 >
                             </div>
@@ -151,16 +151,16 @@
                             <!-- Saved Addresses -->
                             <div
                                 v-if="savedAddresses.length > 0"
-                                class="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50"
+                                class="mb-6 p-4 rounded-control border border-line bg-mist"
                             >
                                 <label
-                                    class="block text-sm font-semibold text-gray-700 mb-2"
+                                    class="block text-sm font-semibold text-ink mb-2"
                                     >Select Delivery Address *</label
                                 >
                                 <select
                                     v-model="selectedSavedAddress"
                                     required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white min-h-[44px] touch-manipulation"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand bg-white min-h-[44px] touch-manipulation"
                                 >
                                     <option value="" disabled hidden>
                                         Select a delivery address
@@ -180,10 +180,10 @@
                             <!-- Selected Address Preview -->
                             <div
                                 v-if="selectedSavedAddress"
-                                class="mt-4 p-5 rounded-xl border-2 border-blue-500 bg-blue-50 relative overflow-hidden"
+                                class="mt-4 p-5 rounded-card border-2 border-brand bg-brand-tint relative overflow-hidden"
                             >
                                 <div
-                                    class="absolute top-0 right-0 pt-4 pr-4 text-blue-500"
+                                    class="absolute top-0 right-0 pt-4 pr-4 text-brand"
                                 >
                                     <svg
                                         class="h-6 w-6"
@@ -204,7 +204,7 @@
                                 >
                                     <div class="flex items-center gap-3 mb-2">
                                         <h3
-                                            class="text-lg font-bold text-gray-900"
+                                            class="text-lg font-bold text-ink"
                                         >
                                             {{
                                                 currentAddressObj.label ||
@@ -213,18 +213,18 @@
                                         </h3>
                                         <span
                                             v-if="currentAddressObj.is_default"
-                                            class="bg-blue-200 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-blue-300"
+                                            class="bg-brand-soft text-brand-dark text-xs px-2.5 py-0.5 rounded-full font-semibold border border-brand-soft"
                                         >
                                             Default
                                         </span>
                                     </div>
-                                    <p class="font-bold text-gray-900">
+                                    <p class="font-bold text-ink">
                                         {{ currentAddressObj.recipient_name }}
                                     </p>
-                                    <p class="text-gray-700 font-medium">
+                                    <p class="text-ink font-medium">
                                         {{ currentAddressObj.contact_number }}
                                     </p>
-                                    <p class="text-gray-600 mt-2">
+                                    <p class="text-ink-soft mt-2">
                                         {{ form.delivery_address }}
                                     </p>
                                 </div>
@@ -233,16 +233,16 @@
                             <!-- Order Notes -->
                             <div
                                 v-if="savedAddresses.length > 0"
-                                class="pt-4 border-t border-gray-100"
+                                class="pt-4 border-t border-line"
                             >
                                 <label
-                                    class="block text-sm font-semibold text-gray-700 mb-2"
+                                    class="block text-sm font-semibold text-ink mb-2"
                                     >Order Notes (Optional)</label
                                 >
                                 <textarea
                                     v-model="form.notes"
                                     rows="2"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                     placeholder="Special instructions for your order"
                                 ></textarea>
                             </div>
@@ -250,32 +250,32 @@
                     </div>
 
                     <!-- Pick-up Information -->
-                    <div v-else class="bg-white rounded-xl shadow-md p-6 animate-in fade-in duration-300">
+                    <div v-else class="bg-white rounded-card shadow-md p-6   duration-300">
                         <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-10 h-10 bg-brand-tint rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 </svg>
                             </div>
-                            <h2 class="text-xl font-bold text-gray-900">Pick-up Location</h2>
+                            <h2 class="text-xl font-bold text-ink">Pick-up Location</h2>
                         </div>
 
                         <div class="space-y-4">
-                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                                <p class="text-sm text-blue-800 leading-relaxed">
+                            <div class="bg-brand-tint border border-brand-soft rounded-card p-4">
+                                <p class="text-sm text-brand-dark leading-relaxed">
                                     <strong>How it works:</strong> Once your order is ready, you'll receive specific pick-up instructions and the store's exact location via notifications. No delivery fee will be charged.
                                 </p>
                             </div>
 
                             <div class="space-y-4">
-                                <div v-for="distributorId in Array.from(new Set(cartItems.map(i => i.product.distributor_id)))" :key="distributorId" class="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Seller</p>
-                                    <p class="font-bold text-gray-900">{{ cartItems.find(i => i.product.distributor_id === distributorId).product.distributor_name }}</p>
+                                <div v-for="distributorId in Array.from(new Set(cartItems.map(i => i.product.distributor_id)))" :key="distributorId" class="p-4 rounded-card border border-line bg-mist/50">
+                                    <p class="text-xs font-semibold text-ink-faint   mb-1">Seller</p>
+                                    <p class="font-bold text-ink">{{ cartItems.find(i => i.product.distributor_id === distributorId).product.distributor_name }}</p>
                                     <div class="mt-3 flex items-start gap-2">
-                                        <svg class="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4 text-brand mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         </svg>
-                                        <p class="text-xs text-gray-700 font-medium">
+                                        <p class="text-xs text-ink font-medium">
                                             {{ cartItems.find(i => i.product.distributor_id === distributorId).product.distributor?.address || 'Address information pending' }}
                                         </p>
                                     </div>
@@ -288,7 +288,7 @@
                                         <a
                                             :href="`https://www.google.com/maps/search/?api=1&query=${cartItems.find(i => i.product.distributor_id === distributorId).product.distributor.latitude},${cartItems.find(i => i.product.distributor_id === distributorId).product.distributor.longitude}`"
                                             target="_blank"
-                                            class="mt-2 inline-flex items-center text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-tighter"
+                                            class="mt-2 inline-flex items-center text-xs font-bold text-brand hover:text-brand-dark  "
                                         >
                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -300,12 +300,12 @@
                             </div>
 
                             <!-- Pick-up Notes -->
-                            <div class="pt-4 border-t border-gray-100">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Pick-up Notes (Optional)</label>
+                            <div class="pt-4 border-t border-line">
+                                <label class="block text-sm font-semibold text-ink mb-2">Pick-up Notes (Optional)</label>
                                 <textarea
                                     v-model="form.notes"
                                     rows="2"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                     placeholder="e.g., Someone else will pick it up for me"
                                 ></textarea>
                             </div>
@@ -313,13 +313,13 @@
                     </div>
 
                     <!-- Order Items -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="bg-white rounded-card shadow-md p-6">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-xl font-bold text-gray-900">
+                            <h2 class="text-xl font-bold text-ink">
                                 Order Items
                             </h2>
                             <span
-                                class="text-xs font-bold text-gray-400 uppercase tracking-widest"
+                                class="text-xs font-bold text-ink-faint  "
                                 >{{ cartItems.length }} Product{{
                                     cartItems.length !== 1 ? "s" : ""
                                 }}</span
@@ -330,29 +330,29 @@
                             <div
                                 v-for="item in cartItems"
                                 :key="item.line_key"
-                                class="flex justify-between items-start gap-4 p-4 rounded-xl border border-gray-50 bg-gray-50/50 hover:bg-gray-50 transition"
+                                class="flex justify-between items-start gap-4 p-4 rounded-card border border-line bg-mist/50 hover:bg-mist transition"
                             >
                                 <div class="flex-1 min-w-0">
                                     <p
-                                        class="font-bold text-gray-900 truncate tracking-tight sm:text-lg"
+                                        class="font-bold text-ink truncate tracking-tight sm:text-lg"
                                     >
                                         {{ item.product.name }}
                                     </p>
                                     <p
                                         v-if="item.variation_label"
-                                        class="text-xs text-blue-700 font-bold uppercase tracking-tighter mt-0.5"
+                                        class="text-xs text-brand-dark font-bold   mt-0.5"
                                     >
                                         {{ item.variation_label }}
                                     </p>
                                     <p
                                         v-if="item.units_per_pack > 1"
-                                        class="text-[11px] text-gray-500 mt-0.5"
+                                        class="text-[11px] text-ink-soft mt-0.5"
                                     >
                                         Sold per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each ({{ item.pieces }} pcs)
                                     </p>
                                     <div class="flex flex-col gap-0.5 mt-1.5">
                                         <span
-                                            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"
+                                            class="text-xs font-bold text-ink-faint  "
                                             >{{ item.quantity }} × ₱{{
                                                 Number(
                                                     item.unit_price,
@@ -364,7 +364,7 @@
                                             class="flex items-center gap-1.5 mt-0.5"
                                         >
                                             <span
-                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-tight"
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-brand-tint text-brand-dark  tracking-tight"
                                             >
                                                 Wholesale Applied
                                             </span>
@@ -376,7 +376,7 @@
                                         <!-- Original Total -->
                                         <span
                                             v-if="item.is_wholesale"
-                                            class="text-xs text-gray-300 line-through font-medium"
+                                            class="text-xs text-ink-faint line-through font-medium"
                                             >₱{{
                                                 Number(
                                                     item.retail_unit_price *
@@ -386,7 +386,7 @@
                                         >
                                         <span
                                             v-else
-                                            class="text-xs text-gray-400 font-medium font-medium mt-0.5"
+                                            class="text-xs text-ink-faint font-medium font-medium mt-0.5"
                                             >₱{{
                                                 Number(
                                                     item.quantity *
@@ -397,7 +397,7 @@
 
                                         <!-- Final Price -->
                                         <span
-                                            class="text-xl font-black text-gray-900 leading-none tabular-nums mt-1"
+                                            class="text-xl font-semibold text-ink leading-none tabular-nums mt-1"
                                         >
                                             ₱{{
                                                 Number(
@@ -409,7 +409,7 @@
                                         <!-- VAT Status -->
                                         <span
                                             v-if="item.product.is_vat_exempt"
-                                            class="text-[9px] font-bold text-amber-600 uppercase tracking-tighter mt-1"
+                                            class="text-xs font-bold text-amber-600   mt-1"
                                         >
                                             VAT Exempt
                                         </span>
@@ -420,33 +420,33 @@
                     </div>
 
                     <!-- Discount / SC / PWD -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="bg-white rounded-card shadow-md p-6">
                         <div class="flex items-center gap-2 mb-4">
-                            <h2 class="text-xl font-bold text-gray-900">
+                            <h2 class="text-xl font-bold text-ink">
                                 Discounts & Exemptions
                             </h2>
                         </div>
 
                         <div class="space-y-4">
                             <div
-                                class="flex items-start gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/50 group hover:border-blue-200 transition-colors"
+                                class="flex items-start gap-4 p-4 rounded-card border border-line bg-mist/50 group hover:border-brand-soft transition-colors"
                             >
                                 <div class="flex-shrink-0 mt-0.5">
                                     <input
                                         v-model="form.apply_discount"
                                         type="checkbox"
                                         id="apply_discount"
-                                        class="h-6 w-6 text-blue-600 rounded-md border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                        class="h-6 w-6 text-brand rounded-control border-line focus:ring-brand cursor-pointer"
                                     />
                                 </div>
                                 <div class="flex-1">
                                     <label
                                         for="apply_discount"
-                                        class="block text-sm font-bold text-gray-900 cursor-pointer"
+                                        class="block text-sm font-bold text-ink cursor-pointer"
                                         >Apply Senior Citizen or PWD
                                         Exemption / Discount</label
                                     >
-                                    <p class="text-xs text-gray-500 mt-1">
+                                    <p class="text-xs text-ink-soft mt-1">
                                         Get 20% discount and VAT exemption on
                                         items for personal use.
                                     </p>
@@ -455,19 +455,19 @@
 
                             <div
                                 v-if="form.apply_discount"
-                                class="mt-4 p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
+                                class="mt-4 p-4 rounded-card bg-brand-tint/50 border border-brand-soft space-y-4    duration-300"
                                                      <!-- Saved IDs Selector -->
                                 <div v-if="savedDiscountIds && savedDiscountIds.length > 0" class="mb-4">
-                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Choose an ID</label>
+                                    <label class="block text-xs font-bold text-ink-soft   mb-2">Choose an ID</label>
                                     <div class="space-y-2">
                                         <label 
                                             v-for="savedId in savedDiscountIds" 
                                             :key="savedId.id"
                                             :class="[
-                                                'flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                'flex items-start gap-3 p-3 rounded-control border-2 cursor-pointer transition',
                                                 form.use_saved_discount && form.saved_discount_id === savedId.id
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                                    ? 'border-brand bg-brand-tint'
+                                                    : 'border-line bg-white hover:border-line'
                                             ]"
                                         >
                                             <input 
@@ -476,23 +476,23 @@
                                                 :value="savedId.id" 
                                                 v-model="form.saved_discount_id" 
                                                 @change="form.use_saved_discount = true"
-                                                class="mt-0.5 text-blue-600 focus:ring-blue-500" 
+                                                class="mt-0.5 text-brand focus:ring-brand" 
                                             />
                                             <div class="flex-1">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="font-bold text-gray-900 text-sm">{{ savedId.label || 'Saved ID' }}</span>
-                                                    <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">{{ savedId.discount_type }}</span>
+                                                    <span class="font-bold text-ink text-sm">{{ savedId.label || 'Saved ID' }}</span>
+                                                    <span class="bg-brand-tint text-brand-dark text-xs px-2 py-0.5 rounded-full font-bold ">{{ savedId.discount_type }}</span>
                                                 </div>
-                                                <p class="text-xs text-gray-600 mt-0.5">{{ savedId.id_name }} • {{ savedId.id_number }}</p>
+                                                <p class="text-xs text-ink-soft mt-0.5">{{ savedId.id_name }} • {{ savedId.id_number }}</p>
                                             </div>
                                         </label>
                                         
                                         <label 
                                             :class="[
-                                                'flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                'flex items-start gap-3 p-3 rounded-control border-2 cursor-pointer transition',
                                                 !form.use_saved_discount
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                                    ? 'border-brand bg-brand-tint'
+                                                    : 'border-line bg-white hover:border-line'
                                             ]"
                                         >
                                             <input 
@@ -501,10 +501,10 @@
                                                 :value="null" 
                                                 v-model="form.saved_discount_id" 
                                                 @change="form.use_saved_discount = false"
-                                                class="mt-0.5 text-blue-600 focus:ring-blue-500" 
+                                                class="mt-0.5 text-brand focus:ring-brand" 
                                             />
                                             <div class="flex-1">
-                                                <span class="font-bold text-gray-900 text-sm">Enter a new ID</span>
+                                                <span class="font-bold text-ink text-sm">Enter a new ID</span>
                                             </div>
                                         </label>
                                     </div>
@@ -515,10 +515,10 @@
                                     <div class="grid grid-cols-2 gap-3">
                                         <label
                                             :class="[
-                                                'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                'flex items-center justify-center gap-2 p-3 rounded-control border-2 cursor-pointer transition',
                                                 form.discount_type === 'senior'
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-200 bg-white',
+                                                    ? 'border-brand bg-brand-tint'
+                                                    : 'border-line bg-white',
                                             ]"
                                         >
                                             <input
@@ -533,10 +533,10 @@
                                         </label>
                                         <label
                                             :class="[
-                                                'flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition',
+                                                'flex items-center justify-center gap-2 p-3 rounded-control border-2 cursor-pointer transition',
                                                 form.discount_type === 'pwd'
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-200 bg-white',
+                                                    ? 'border-brand bg-brand-tint'
+                                                    : 'border-line bg-white',
                                             ]"
                                         >
                                             <input
@@ -556,25 +556,25 @@
                                     >
                                         <div>
                                             <label
-                                                class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                                class="block text-xs font-bold text-ink-soft   mb-1.5"
                                                 >Full Name (must match ID) *</label
                                             >
                                             <input
                                                 v-model="form.discount_id_name"
                                                 type="text"
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                                class="w-full px-4 py-2.5 border border-line rounded-control text-sm focus:ring-2 focus:ring-brand"
                                                 placeholder="e.g. JUAN DELA CRUZ"
                                             />
                                         </div>
                                         <div>
                                             <label
-                                                class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                                class="block text-xs font-bold text-ink-soft   mb-1.5"
                                                 >ID Number *</label
                                             >
                                             <input
                                                 v-model="form.discount_id_number"
                                                 type="text"
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                                class="w-full px-4 py-2.5 border border-line rounded-control text-sm focus:ring-2 focus:ring-brand"
                                                 placeholder="SC/PWD ID Number"
                                             />
                                         </div>
@@ -582,21 +582,21 @@
 
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                            class="block text-xs font-bold text-ink-soft   mb-1.5"
                                             >ID Photo (Front/Back) *</label
                                         >
                                         <div
                                             class="flex items-center justify-center w-full relative"
                                         >
                                             <label
-                                                class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                                class="flex flex-col items-center justify-center w-full h-32 border-2 border-line border-dashed rounded-control cursor-pointer bg-mist hover:bg-mist"
                                             >
                                                 <div
                                                     v-if="!form.discount_id_image"
                                                     class="flex flex-col items-center justify-center pt-5 pb-6"
                                                 >
                                                     <svg
-                                                        class="w-8 h-8 mb-4 text-gray-500"
+                                                        class="w-8 h-8 mb-4 text-ink-soft"
                                                         fill="none"
                                                         stroke="currentColor"
                                                         viewBox="0 0 24 24"
@@ -609,12 +609,12 @@
                                                         ></path>
                                                     </svg>
                                                     <p
-                                                        class="mb-2 text-sm text-gray-500 font-semibold"
+                                                        class="mb-2 text-sm text-ink-soft font-semibold"
                                                     >
                                                         Click to upload ID photo
                                                     </p>
                                                     <p
-                                                        class="text-xs text-gray-400"
+                                                        class="text-xs text-ink-faint"
                                                     >
                                                         PNG, JPG or WEBP (MAX. 8MB)
                                                     </p>
@@ -624,7 +624,7 @@
                                                     class="flex flex-col items-center justify-center p-4"
                                                 >
                                                     <svg
-                                                        class="w-10 h-10 mb-2 text-emerald-500"
+                                                        class="w-10 h-10 mb-2 text-brand"
                                                         fill="currentColor"
                                                         viewBox="0 0 20 20"
                                                     >
@@ -635,7 +635,7 @@
                                                         />
                                                     </svg>
                                                     <p
-                                                        class="text-xs font-bold text-emerald-600 truncate max-w-xs"
+                                                        class="text-xs font-bold text-brand truncate max-w-xs"
                                                     >
                                                         {{
                                                             form.discount_id_image
@@ -648,7 +648,7 @@
                                                             form.discount_id_image =
                                                                 null
                                                         "
-                                                        class="mt-2 text-[10px] text-red-500 font-bold uppercase underline"
+                                                        class="mt-2 text-xs text-red-500 font-bold  underline"
                                                     >
                                                         Remove
                                                     </button>
@@ -660,25 +660,25 @@
                                                     accept="image/*"
                                                 />
                                             </label>
-                                            <div v-if="scanningFields['discount_id_image']" class="absolute inset-0 bg-blue-50/50 flex flex-col items-center justify-center rounded-lg backdrop-blur-[1px]">
-                                                <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" viewBox="0 0 24 24">
+                                            <div v-if="scanningFields['discount_id_image']" class="absolute inset-0 bg-brand-tint/50 flex flex-col items-center justify-center rounded-control ">
+                                                <svg class="animate-spin h-8 w-8 text-brand mb-2" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
-                                                <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest italic animate-pulse">Scanning ID...</p>
+                                                <p class="text-xs font-bold text-brand   italic ">Scanning ID...</p>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                                    <div class="mt-3 p-3 bg-white rounded-control border border-line">
                                         <div class="flex items-center gap-2">
                                             <input 
                                                 type="checkbox" 
                                                 id="save_discount_id" 
                                                 v-model="form.save_discount_id" 
-                                                class="h-4 w-4 text-blue-600 rounded border-gray-300"
+                                                class="h-4 w-4 text-brand rounded border-line"
                                             />
-                                            <label for="save_discount_id" class="text-sm font-semibold text-gray-700 cursor-pointer">
+                                            <label for="save_discount_id" class="text-sm font-semibold text-ink cursor-pointer">
                                                 Save this ID for future orders
                                             </label>
                                         </div>
@@ -687,7 +687,7 @@
                                                 type="text" 
                                                 v-model="form.discount_id_label" 
                                                 placeholder="Label (e.g. My SC ID)" 
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                class="w-full px-3 py-2 border border-line rounded-control text-sm focus:ring-brand focus:border-brand"
                                             />
                                         </div>
                                     </div>
@@ -699,11 +699,11 @@
                                         v-model="form.discount_terms"
                                         id="discount_terms"
                                         required
-                                        class="h-5 w-5 text-blue-600 rounded border-gray-300 mt-1 cursor-pointer"
+                                        class="h-5 w-5 text-brand rounded border-line mt-1 cursor-pointer"
                                     />
                                     <label
                                         for="discount_terms"
-                                        class="text-xs text-gray-600 leading-snug cursor-pointer"
+                                        class="text-xs text-ink-soft leading-snug cursor-pointer"
                                     >
                                         I certify that this purchase is for my
                                         personal use and that the ID provided is
@@ -717,17 +717,17 @@
                     <!-- Prescription Verification Details -->
                     <div
                         v-if="cart_has_prescription_items"
-                        class="bg-white rounded-xl shadow-md p-6"
+                        class="bg-white rounded-card shadow-md p-6"
                     >
                         <div class="flex items-center gap-2 mb-4">
-                            <h2 class="text-xl font-bold text-gray-900">
+                            <h2 class="text-xl font-bold text-ink">
                                 Prescription Verification
                             </h2>
                         </div>
 
                         <div class="space-y-4">
                             <div
-                                class="bg-amber-50 border border-amber-100 rounded-lg p-3"
+                                class="bg-amber-50 border border-amber-100 rounded-control p-3"
                             >
                                 <p class="text-xs text-amber-900 font-bold mb-1">
                                     This order includes prescription medicine
@@ -740,13 +740,13 @@
                             <div class="space-y-4">
                                 <div>
                                     <label
-                                        class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                        class="block text-xs font-bold text-ink-soft   mb-1.5"
                                         >Patient Name (as per ID) *</label
                                     >
                                     <input
                                         v-model="form.prescription_patient_name"
                                         type="text"
-                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                        class="w-full px-4 py-2.5 border border-line rounded-control text-sm focus:ring-2 focus:ring-brand"
                                         placeholder="Full name of the patient"
                                     />
                                 </div>
@@ -754,40 +754,40 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                            class="block text-xs font-bold text-ink-soft   mb-1.5"
                                             >Patient's Valid ID *</label
                                         >
                                         <div
                                             class="flex items-center justify-center w-full"
                                         >
                                             <label
-                                                class="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50/50 hover:bg-gray-100 hover:border-blue-300 transition-all group"
+                                                class="flex flex-col items-center justify-center w-full h-36 border-2 border-line border-dashed rounded-card cursor-pointer bg-mist/50 hover:bg-mist hover:border-brand-soft transition-all group"
                                             >
                                                 <div
                                                     v-if="!form.prescription_id_image"
                                                     class="flex flex-col items-center justify-center p-4 text-center"
                                                 >
-                                                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                                    <div class="w-10 h-10 bg-mist rounded-full flex items-center justify-center mb-2 group-hover:bg-brand-tint group-hover:text-brand transition-colors">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                                         </svg>
                                                     </div>
-                                                    <p class="text-[11px] text-gray-600 font-bold mb-0.5">Upload ID Photo</p>
-                                                    <p class="text-[9px] text-gray-400">PNG, JPG or WEBP</p>
+                                                    <p class="text-[11px] text-ink-soft font-bold mb-0.5">Upload ID Photo</p>
+                                                    <p class="text-xs text-ink-faint">PNG, JPG or WEBP</p>
                                                 </div>
                                                 <div
                                                     v-else
                                                     class="flex flex-col items-center justify-center p-4 text-center"
                                                 >
-                                                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-2">
+                                                    <div class="w-10 h-10 bg-brand-tint text-brand rounded-full flex items-center justify-center mb-2">
                                                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                                         </svg>
                                                     </div>
-                                                    <p class="text-[10px] font-bold text-emerald-600 line-clamp-1 px-2">
+                                                    <p class="text-xs font-bold text-brand line-clamp-1 px-2">
                                                         {{ form.prescription_id_image.name }}
                                                     </p>
-                                                    <button type="button" @click.prevent="form.prescription_id_image = null" class="mt-1 text-[9px] text-red-500 font-bold uppercase hover:underline">Change</button>
+                                                    <button type="button" @click.prevent="form.prescription_id_image = null" class="mt-1 text-xs text-red-500 font-bold  hover:underline">Change</button>
                                                 </div>
                                                 <input
                                                     type="file"
@@ -796,52 +796,52 @@
                                                     accept="image/*"
                                                 />
                                             </label>
-                                            <div v-if="scanningFields['prescription_id_image']" class="absolute inset-0 bg-blue-50/50 flex flex-col items-center justify-center rounded-xl backdrop-blur-[1px]">
-                                                <svg class="animate-spin h-6 w-6 text-blue-600 mb-1" viewBox="0 0 24 24">
+                                            <div v-if="scanningFields['prescription_id_image']" class="absolute inset-0 bg-brand-tint/50 flex flex-col items-center justify-center rounded-card ">
+                                                <svg class="animate-spin h-6 w-6 text-brand mb-1" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
-                                                <p class="text-[8px] font-bold text-blue-600 uppercase tracking-widest italic animate-pulse">Scanning...</p>
+                                                <p class="text-xs font-bold text-brand   italic ">Scanning...</p>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+                                            class="block text-xs font-bold text-ink-soft   mb-1.5"
                                             >Prescription Photo *</label
                                         >
                                         <div
                                             class="flex items-center justify-center w-full"
                                         >
                                             <label
-                                                class="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50/50 hover:bg-gray-100 hover:border-blue-300 transition-all group"
+                                                class="flex flex-col items-center justify-center w-full h-36 border-2 border-line border-dashed rounded-card cursor-pointer bg-mist/50 hover:bg-mist hover:border-brand-soft transition-all group"
                                             >
                                                 <div
                                                     v-if="!form.prescription_image"
                                                     class="flex flex-col items-center justify-center p-4 text-center"
                                                 >
-                                                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                                    <div class="w-10 h-10 bg-mist rounded-full flex items-center justify-center mb-2 group-hover:bg-brand-tint group-hover:text-brand transition-colors">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                         </svg>
                                                     </div>
-                                                    <p class="text-[11px] text-gray-600 font-bold mb-0.5">Upload Prescription</p>
-                                                    <p class="text-[9px] text-gray-400">PNG, JPG or WEBP</p>
+                                                    <p class="text-[11px] text-ink-soft font-bold mb-0.5">Upload Prescription</p>
+                                                    <p class="text-xs text-ink-faint">PNG, JPG or WEBP</p>
                                                 </div>
                                                 <div
                                                     v-else
                                                     class="flex flex-col items-center justify-center p-4 text-center"
                                                 >
-                                                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-2">
+                                                    <div class="w-10 h-10 bg-brand-tint text-brand rounded-full flex items-center justify-center mb-2">
                                                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                                         </svg>
                                                     </div>
-                                                    <p class="text-[10px] font-bold text-emerald-600 line-clamp-1 px-2">
+                                                    <p class="text-xs font-bold text-brand line-clamp-1 px-2">
                                                         {{ form.prescription_image.name }}
                                                     </p>
-                                                    <button type="button" @click.prevent="form.prescription_image = null" class="mt-1 text-[9px] text-red-500 font-bold uppercase hover:underline">Change</button>
+                                                    <button type="button" @click.prevent="form.prescription_image = null" class="mt-1 text-xs text-red-500 font-bold  hover:underline">Change</button>
                                                 </div>
                                                 <input
                                                     type="file"
@@ -850,12 +850,12 @@
                                                     accept="image/*"
                                                 />
                                             </label>
-                                            <div v-if="scanningFields['prescription_image']" class="absolute inset-0 bg-blue-50/50 flex flex-col items-center justify-center rounded-xl backdrop-blur-[1px]">
-                                                <svg class="animate-spin h-6 w-6 text-blue-600 mb-1" viewBox="0 0 24 24">
+                                            <div v-if="scanningFields['prescription_image']" class="absolute inset-0 bg-brand-tint/50 flex flex-col items-center justify-center rounded-card ">
+                                                <svg class="animate-spin h-6 w-6 text-brand mb-1" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
-                                                <p class="text-[8px] font-bold text-blue-600 uppercase tracking-widest italic animate-pulse">Scanning...</p>
+                                                <p class="text-xs font-bold text-brand   italic ">Scanning...</p>
                                             </div>
                                         </div>
                                     </div>
@@ -865,9 +865,9 @@
                     </div>
 
                     <!-- Tax Information (B2B) -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="bg-white rounded-card shadow-md p-6">
                         <div class="flex items-center gap-2 mb-4">
-                            <h2 class="text-xl font-bold text-gray-900">
+                            <h2 class="text-xl font-bold text-ink">
                                 Tax Information
                             </h2>
                         </div>
@@ -875,7 +875,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label
-                                    class="block text-sm font-semibold text-gray-700 mb-2"
+                                    class="block text-sm font-semibold text-ink mb-2"
                                     >Tax Identification Number (TIN)</label
                                 >
                                 <input
@@ -883,10 +883,10 @@
                                     type="text"
                                     maxlength="15"
                                     @input="formatTIN"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono tracking-wider"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent font-mono "
                                     placeholder="000-000-000-000"
                                 />
-                                <p class="mt-2 text-xs text-gray-500 italic">
+                                <p class="mt-2 text-xs text-ink-soft italic">
                                     Provide your TIN if you require a
                                     VAT-compliant invoice for business auditing.
                                 </p>
@@ -898,24 +898,18 @@
                 <!-- Order Summary -->
                 <div class="lg:col-span-1">
                     <div
-                        class="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:sticky lg:top-24"
+                        class="bg-white rounded-card shadow-md p-4 sm:p-6 lg:sticky lg:top-24"
                     >
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">
+                        <h2 class="text-xl font-bold text-ink mb-4">
                             Order Summary
                         </h2>
 
                         <div class="space-y-3 mb-6">
                             <div
-                                class="flex justify-between items-center text-xs font-semibold text-gray-400 uppercase tracking-widest px-1"
-                            >
-                                <span>Order Summary</span>
-                            </div>
-
-                            <div
-                                class="flex justify-between items-center text-sm font-medium text-gray-500 px-1 pt-1"
+                                class="flex justify-between items-center text-sm font-medium text-ink-soft px-1 pt-1"
                             >
                                 <span>Items Total</span>
-                                <span class="text-gray-900 font-bold"
+                                <span class="text-ink font-bold"
                                     >₱{{
                                         Number(
                                             originalSubtotal,
@@ -925,10 +919,10 @@
                             </div>
 
                             <div
-                                class="flex justify-between items-center text-sm font-medium text-gray-500 px-1"
+                                class="flex justify-between items-center text-sm font-medium text-ink-soft px-1"
                             >
                                 <span>Delivery Fee</span>
-                                <span class="text-gray-900 font-bold"
+                                <span class="text-ink font-bold"
                                     >₱{{
                                         Number(
                                             form.fulfillment_method === 'pickup' ? 0 : (shipping_fee_total || 0),
@@ -939,9 +933,9 @@
 
                             <div
                                 v-if="totalSavings > 0"
-                                class="flex justify-between items-center text-[10px] font-bold text-emerald-600 bg-emerald-50/50 px-2 py-1 rounded-md border border-emerald-100/50"
+                                class="flex justify-between items-center text-xs font-bold text-brand bg-brand-tint/50 px-2 py-1 rounded-control border border-brand-soft/50"
                             >
-                                <span class="uppercase tracking-tight italic"
+                                <span class=" tracking-tight italic"
                                     >Wholesale Discount Applied</span
                                 >
                                 <span
@@ -953,9 +947,9 @@
 
                             <div
                                 v-if="localDiscountAmount > 0"
-                                class="flex justify-between items-center text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100"
+                                class="flex justify-between items-center text-xs font-bold text-brand bg-brand-tint px-2 py-1 rounded-control border border-brand-soft"
                             >
-                                <span class="uppercase tracking-tight"
+                                <span class=" tracking-tight"
                                     >SC/PWD Discount Applied (Pending)</span
                                 >
                                 <span
@@ -968,10 +962,10 @@
                             </div>
 
                             <div
-                                class="pt-4 border-t border-gray-100 flex flex-col gap-1"
+                                class="pt-4 border-t border-line flex flex-col gap-1"
                             >
                                 <span
-                                    class="text-xs font-bold text-blue-600 uppercase tracking-widest"
+                                    class="text-xs font-bold text-brand  "
                                     >Amount to Pay</span
                                 >
                                 <div class="flex items-baseline gap-2">
@@ -980,7 +974,7 @@
                                             totalSavings > 0 ||
                                             localDiscountAmount > 0
                                         "
-                                        class="text-sm text-gray-300 line-through font-medium"
+                                        class="text-sm text-ink-faint line-through font-medium"
                                         >₱{{
                                             Number(
                                                 originalSubtotal +
@@ -989,7 +983,7 @@
                                         }}</span
                                     >
                                     <span
-                                        class="text-3xl font-black text-gray-900 tabular-nums leading-none"
+                                        class="text-3xl font-semibold text-ink tabular-nums leading-none"
                                         >₱{{
                                             Number(grandTotal).toLocaleString()
                                         }}</span
@@ -999,11 +993,11 @@
 
                             <!-- VAT Breakdown -->
                             <div
-                                class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100 space-y-1.5 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                                class="mt-4 p-3 bg-mist rounded-control border border-line space-y-1.5 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
                             >
                                 <div
-                                    class="flex justify-between items-center text-[10px] font-bold uppercase tracking-tighter"
-                                    :class="form.apply_discount ? 'text-gray-300' : 'text-gray-400'"
+                                    class="flex justify-between items-center text-xs font-bold  "
+                                    :class="form.apply_discount ? 'text-ink-faint' : 'text-ink-faint'"
                                 >
                                     <span>VATable Sales</span>
                                     <div class="flex items-center gap-1.5">
@@ -1012,7 +1006,7 @@
                                                 minimumFractionDigits: 2, maximumFractionDigits: 2
                                             })
                                         }}</span>
-                                        <span :class="{'text-emerald-600': form.apply_discount}">₱{{
+                                        <span :class="{'text-brand': form.apply_discount}">₱{{
                                             Number(vatBreakdown.vatableSales).toLocaleString(undefined, {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 2,
@@ -1021,12 +1015,12 @@
                                     </div>
                                 </div>
                                 <div
-                                    class="flex justify-between items-center text-[10px] font-bold uppercase tracking-tighter"
-                                    :class="form.apply_discount ? 'text-gray-300' : 'text-gray-400'"
+                                    class="flex justify-between items-center text-xs font-bold  "
+                                    :class="form.apply_discount ? 'text-ink-faint' : 'text-ink-faint'"
                                 >
                                     <div class="flex items-center gap-1.5">
                                         <span>VAT Amount (12%)</span>
-                                        <span v-if="form.apply_discount" class="bg-emerald-100 text-emerald-800 text-[8px] px-1 rounded-sm tracking-widest font-black">EXEMPTED</span>
+                                        <span v-if="form.apply_discount" class="bg-brand-tint text-brand-dark text-xs px-1 rounded-sm  font-semibold">EXEMPTED</span>
                                     </div>
                                     <div class="flex items-center gap-1.5">
                                         <span v-if="form.apply_discount" class="line-through opacity-60">₱{{ 
@@ -1034,7 +1028,7 @@
                                                 minimumFractionDigits: 2, maximumFractionDigits: 2
                                             })
                                         }}</span>
-                                        <span :class="{'text-emerald-600': form.apply_discount}">₱{{
+                                        <span :class="{'text-brand': form.apply_discount}">₱{{
                                             Number(vatBreakdown.vatAmount).toLocaleString(undefined, {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 2,
@@ -1044,16 +1038,16 @@
                                 </div>
                                 <div
                                     v-if="vatBreakdown.vatExemptSales > 0"
-                                    class="flex justify-between items-center text-[10px] font-bold uppercase tracking-tighter"
-                                    :class="form.apply_discount ? 'text-gray-900 border-t border-gray-100 pt-1 mt-1' : 'text-gray-400'"
+                                    class="flex justify-between items-center text-xs font-bold  "
+                                    :class="form.apply_discount ? 'text-ink border-t border-line pt-1 mt-1' : 'text-ink-faint'"
                                 >
                                     <div class="flex items-center gap-1.5">
                                         <span>VAT-Exempt Sales</span>
-                                        <span v-if="form.apply_discount" class="bg-blue-100 text-blue-800 text-[8px] px-1 rounded-sm tracking-widest font-black uppercase">
+                                        <span v-if="form.apply_discount" class="bg-brand-tint text-brand-dark text-xs px-1 rounded-sm  font-semibold ">
                                             {{ form.discount_type }} Applied
                                         </span>
                                     </div>
-                                    <span :class="{'text-blue-700': form.apply_discount}">₱{{
+                                    <span :class="{'text-brand-dark': form.apply_discount}">₱{{
                                         Number(
                                             vatBreakdown.vatExemptSales,
                                         ).toLocaleString(undefined, {
@@ -1063,7 +1057,7 @@
                                     }}</span>
                                 </div>
                                 <p
-                                    class="text-[9px] text-gray-400 italic leading-tight mt-1"
+                                    class="text-xs text-ink-faint italic leading-tight mt-1"
                                 >
                                     Total amount is inclusive of 12% VAT where
                                     applicable.
@@ -1074,7 +1068,7 @@
                         <!-- Payment Method Selection -->
                         <div class="mb-6">
                             <h3
-                                class="text-sm font-semibold text-gray-700 mb-3"
+                                class="text-sm font-semibold text-ink mb-3"
                             >
                                 Payment Method *
                             </h3>
@@ -1084,8 +1078,8 @@
                                     :class="[
                                         'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
                                         form.payment_method === 'gcash'
-                                            ? 'border-blue-500 bg-blue-50 shadow-sm'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white',
+                                            ? 'border-brand bg-brand-tint shadow-sm'
+                                            : 'border-line hover:border-line bg-white',
                                     ]"
                                 >
                                     <input
@@ -1117,14 +1111,14 @@
                                         class="text-sm font-semibold"
                                         :class="
                                             form.payment_method === 'gcash'
-                                                ? 'text-blue-700'
-                                                : 'text-gray-700'
+                                                ? 'text-brand-dark'
+                                                : 'text-ink'
                                         "
                                         >GCash</span
                                     >
                                     <svg
                                         v-if="form.payment_method === 'gcash'"
-                                        class="h-4 w-4 text-blue-500"
+                                        class="h-4 w-4 text-brand"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
@@ -1141,8 +1135,8 @@
                                     :class="[
                                         'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
                                         form.payment_method === 'paymaya'
-                                            ? 'border-green-500 bg-green-50 shadow-sm'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white',
+                                            ? 'border-brand bg-brand-tint shadow-sm'
+                                            : 'border-line hover:border-line bg-white',
                                     ]"
                                 >
                                     <input
@@ -1181,14 +1175,14 @@
                                         class="text-sm font-semibold"
                                         :class="
                                             form.payment_method === 'paymaya'
-                                                ? 'text-green-700'
-                                                : 'text-gray-700'
+                                                ? 'text-brand-dark'
+                                                : 'text-ink'
                                         "
                                         >Maya</span
                                     >
                                     <svg
                                         v-if="form.payment_method === 'paymaya'"
-                                        class="h-4 w-4 text-green-500"
+                                        class="h-4 w-4 text-brand"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
@@ -1205,8 +1199,8 @@
                                     :class="[
                                         'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
                                         form.payment_method === 'card'
-                                            ? 'border-purple-500 bg-purple-50 shadow-sm'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white',
+                                            ? 'border-brand bg-brand-tint shadow-sm'
+                                            : 'border-line hover:border-line bg-white',
                                     ]"
                                 >
                                     <input
@@ -1259,14 +1253,14 @@
                                         class="text-sm font-semibold"
                                         :class="
                                             form.payment_method === 'card'
-                                                ? 'text-purple-700'
-                                                : 'text-gray-700'
+                                                ? 'text-brand-dark'
+                                                : 'text-ink'
                                         "
                                         >Card</span
                                     >
                                     <svg
                                         v-if="form.payment_method === 'card'"
-                                        class="h-4 w-4 text-purple-500"
+                                        class="h-4 w-4 text-brand"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
@@ -1285,8 +1279,8 @@
                                     cod_available
                                         ? form.payment_method === 'cod'
                                             ? 'border-orange-400 bg-orange-50 shadow-sm cursor-pointer'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white cursor-pointer'
-                                        : 'border-gray-100 bg-gray-100 cursor-not-allowed opacity-60'
+                                            : 'border-line hover:border-line bg-white cursor-pointer'
+                                        : 'border-line bg-mist cursor-not-allowed opacity-60'
                                 ]">
                                     <input type="radio" v-model="form.payment_method" value="cod" class="sr-only" :disabled="!cod_available" />
                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1295,7 +1289,7 @@
                                         <circle cx="12" cy="12" r="3" fill="white" fill-opacity="0.7"/>
                                         <path d="M4 9.5h2M18 9.5h2M4 14.5h2M18 14.5h2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
                                     </svg>
-                                    <span class="text-sm font-semibold" :class="form.payment_method === 'cod' ? 'text-orange-700' : 'text-gray-700'">Cash on Delivery</span>
+                                    <span class="text-sm font-semibold" :class="form.payment_method === 'cod' ? 'text-orange-700' : 'text-ink'">Cash on Delivery</span>
                                     <svg v-if="form.payment_method === 'cod'" class="h-4 w-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                     </svg>
@@ -1308,8 +1302,8 @@
                                     :class="[
                                         'flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none',
                                         form.payment_method === 'purchase_order'
-                                            ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white',
+                                            ? 'border-brand bg-brand-tint shadow-sm'
+                                            : 'border-line hover:border-line bg-white',
                                     ]"
                                 >
                                     <input
@@ -1319,23 +1313,23 @@
                                         class="sr-only"
                                     />
                                     <!-- PO icon -->
-                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     <span
                                         class="text-sm font-semibold flex items-center gap-1.5"
                                         :class="
                                             form.payment_method === 'purchase_order'
-                                                ? 'text-indigo-700'
-                                                : 'text-gray-700'
+                                                ? 'text-brand-dark'
+                                                : 'text-ink'
                                         "
                                     >
                                         Purchase Order (Net-30)
                                         <Tooltip @click.stop content="Upload your company's Purchase Order document. The seller will verify it before processing your order." position="top">
-                                            <svg class="w-4 h-4 text-indigo-400 hover:text-indigo-600 transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <svg class="w-4 h-4 text-brand hover:text-brand transition cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         </Tooltip>
                                     </span>
                                     <svg
                                         v-if="form.payment_method === 'purchase_order'"
-                                        class="h-4 w-4 text-indigo-500"
+                                        class="h-4 w-4 text-brand"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
@@ -1350,7 +1344,7 @@
 
                             <p
                                 v-if="false && !cod_available"
-                                class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"
+                                class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-control px-3 py-2"
                             >
                                 Cash on delivery isn’t available when too many
                                 of your past orders were rejected (including
@@ -1370,14 +1364,14 @@
                         <!-- Purchase Order File Upload / Selection -->
                         <div
                             v-if="form.payment_method === 'purchase_order'"
-                            class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6"
+                            class="bg-brand-tint border border-brand-soft rounded-control p-4 mb-6"
                         >
-                            <h3 class="font-bold text-indigo-900 mb-2">Purchase Order Details</h3>
-                            <p class="text-xs text-indigo-800 mb-4">Upload the Purchase Order document for this order. Payment is expected within 30 days of invoice.</p>
+                            <h3 class="font-bold text-brand-dark mb-2">Purchase Order Details</h3>
+                            <p class="text-xs text-brand-dark mb-4">Upload the Purchase Order document for this order. Payment is expected within 30 days of invoice.</p>
 
                             <div v-if="savedPurchaseOrders.length > 0" class="mb-4">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Company / billing details</label>
-                                <select v-model="form.saved_purchase_order_id" class="w-full rounded-md border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <label class="block text-xs font-semibold text-ink mb-1">Company / billing details</label>
+                                <select v-model="form.saved_purchase_order_id" class="w-full rounded-control border-line text-sm focus:ring-brand focus:border-brand">
                                     <option :value="null">-- No saved profile --</option>
                                     <option v-for="po in savedPurchaseOrders" :key="po.id" :value="po.id">
                                         {{ po.label }} ({{ po.company_name }})
@@ -1386,24 +1380,24 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">PO Document *</label>
-                                <input type="file" @change="e => form.po_document = e.target.files[0]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200" accept=".pdf,.png,.jpg,.jpeg" />
+                                <label class="block text-xs font-semibold text-ink mb-1">PO Document *</label>
+                                <input type="file" @change="e => form.po_document = e.target.files[0]" class="block w-full text-sm text-ink-soft file:mr-4 file:py-2 file:px-4 file:rounded-control file:border-0 file:text-sm file:font-semibold file:bg-brand-tint file:text-brand-dark hover:file:bg-brand-soft" accept=".pdf,.png,.jpg,.jpeg" />
                                 <p v-if="form.errors.po_document" class="text-red-600 text-xs mt-1.5">{{ form.errors.po_document }}</p>
 
                                 <label v-if="!form.saved_purchase_order_id" class="mt-3 flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" v-model="form.save_purchase_order" class="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" />
-                                    <span class="text-xs text-gray-700 font-medium">Save my company details for future purchase orders</span>
+                                    <input type="checkbox" v-model="form.save_purchase_order" class="h-4 w-4 text-brand rounded border-line focus:ring-brand" />
+                                    <span class="text-xs text-ink font-medium">Save my company details for future purchase orders</span>
                                 </label>
                             </div>
                         </div>
 
                         <div
                             v-if="form.payment_method !== 'cod'"
-                            class="bg-green-50 border border-green-200 rounded-lg p-3 mb-6"
+                            class="bg-brand-tint border border-brand-soft rounded-control p-3 mb-6"
                         >
                             <div class="flex items-start">
                                 <svg
-                                    class="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0"
+                                    class="h-5 w-5 text-brand mr-2 mt-0.5 flex-shrink-0"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -1415,7 +1409,7 @@
                                         d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                                     />
                                 </svg>
-                                <p class="text-xs text-green-800">
+                                <p class="text-xs text-brand-dark">
                                     <strong>Buyer protection:</strong> Your
                                     payment is held by the platform until you
                                     confirm receipt of your order.
@@ -1426,7 +1420,7 @@
                         <button
                             type="submit"
                             :disabled="form.processing || !isFormValid"
-                            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 rounded-xl hover:shadow-xl transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            class="w-full bg-brand hover:bg-brand-dark text-white px-6 py-4 rounded-card hover:shadow-xl transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         >
                             <svg
                                 v-if="form.processing"
@@ -1459,7 +1453,7 @@
 
                         <a
                             href="/cart"
-                            class="block w-full text-center text-blue-600 hover:text-blue-700 mt-4 font-medium"
+                            class="block w-full text-center text-brand hover:text-brand-dark mt-4 font-medium"
                         >
                             &larr; Back to Cart
                         </a>
@@ -1743,7 +1737,6 @@ const paymentMethods = computed(() => {
         { value: "gcash", label: "GCash" },
         { value: "paymaya", label: "Maya" },
         { value: "card", label: "Card" },
-        { value: "wallet", label: "Wallet" },
     ];
     if (isApprovedBusiness.value) {
         base.push({ value: "purchase_order", label: "Purchase Order (Net-30)" });

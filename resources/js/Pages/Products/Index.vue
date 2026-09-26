@@ -1,371 +1,177 @@
 <template>
     <MainLayout>
-    <!-- <div class="relative bg-slate-800 overflow-hidden min-h-[400px] flex items-center">
-        <div class="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px]"></div>
+        <OnboardingWizardModal v-if="$page.props.auth.user?.can_access_wholesale && !$page.props.auth.user?.is_distributor" type="buyer" />
 
-        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center w-full">
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 text-white tracking-tight">
-                Welcome to <br class="hidden md:block"/> 
-                <span class="text-blue-400">MedEquip.</span>
-            </h1>
-            
-            <p class="text-slate-300 text-lg md:text-xl max-w-2xl mx-auto font-normal mb-10">
-                Sourcing healthcare products made easy. Shop for essential medical supplies directly from verified distributors in Cavite.
+        <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+            <h1 class="text-2xl sm:text-[28px] font-semibold leading-tight tracking-tight text-ink">Medical supplies from licensed distributors</h1>
+            <p class="mt-1.5 text-ink-soft">
+                Sellers submit their FDA License to Operate, business permit and other documents, and our team reviews them before approving a shop.
+                <Link href="/help" class="font-medium text-brand underline underline-offset-4 hover:text-brand-dark">How verification works</Link>
             </p>
-            
-            <div class="max-w-3xl mx-auto">
-                <div class="bg-white rounded-xl shadow-xl p-2 flex items-center focus-within:ring-4 focus-within:ring-blue-500/30 transition-shadow">
-                    <div class="pl-4 pr-2 text-slate-400">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                    
-                    <input 
-                        v-model="searchQuery"
-                        @keyup.enter="applyFilters"
-                        type="text" 
-                        placeholder="Search surgical tape, stethoscopes, gloves..." 
-                        class="w-full bg-transparent px-2 py-3 text-slate-900 placeholder-slate-400 text-lg focus:outline-none border-none truncate"
-                    />
-                    
-                    <button 
-                        @click="applyFilters"
-                        class="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors ml-2"
-                    >
-                        Search
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div> -->
+        </section>
 
-    <OnboardingWizardModal v-if="$page.props.auth.user?.can_access_wholesale && !$page.props.auth.user?.is_distributor" type="buyer" />
+        <div v-if="isFilterOpen" @click="isFilterOpen = false" class="fixed inset-0 bg-ink/50 z-40 lg:hidden"></div>
 
-    <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 min-h-[300px] flex items-center">
-    <!-- Subtle animated background pattern with strict overflow container -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#00f_1px,transparent_1px)] [background-size:24px_24px] animate-pulse"></div>
-    </div>
-
-    <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center w-full">
-        <!-- Hero Heading -->
-        <h1 class="text-3xl md:text-4xl font-extrabold mb-4 text-white tracking-tight leading-tight">
-            Welcome to <br class="hidden md:block"/>
-            <span class="text-blue-400">MedEquip</span>
-        </h1>
-
-        <!-- Subheading -->
-        <p class="text-slate-300 text-sm md:text-sm max-w-2xl mx-auto font-normal mb-8 animate-fadeIn">
-            Sourcing healthcare products made easy. Shop for essential medical supplies directly from verified distributors in Cavite.
-        </p>
-
-        <!-- Search Bar -->
-        <div class="relative w-full max-w-2xl mx-auto">
-            <div class="flex items-center bg-white rounded-xl shadow-md border-2 border-transparent focus-within:border-blue-400 hover:border-blue-300 transition-colors duration-300">
-                <!-- Icon -->
-                <div class="pl-3 pr-2 text-blue-400 flex-shrink-0">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </div>
-
-                <!-- Input -->
-                <input 
-                    v-model="searchQuery"
-                    @input="handleSearchInput"
-                    @focus="handleSearchInput"
-                    @blur="closeAutocomplete"
-                    @keyup.enter="applyFilters"
-                    type="text" 
-                    placeholder="Search surgical tape, stethoscopes, gloves..." 
-                    class="w-full px-3 py-2 text-slate-900 placeholder-slate-400 text-sm sm:text-base bg-transparent focus:outline-none"
-                    autocomplete="off"
-                />
-
-                <!-- Search Button -->
-                <button 
-                    @click="applyFilters"
-                    class="flex-shrink-0 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 sm:px-6 py-2 rounded-xl font-semibold transition-colors duration-300 shadow-md hover:shadow-lg text-sm sm:text-base relative z-10"
+        <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <aside
+                    aria-label="Filters"
+                    :class="['fixed inset-y-0 left-0 z-50 w-[80vw] max-w-sm bg-white transform lg:transform-none lg:static lg:w-[232px] lg:bg-transparent lg:shadow-none transition-transform duration-300 ease-in-out lg:flex-shrink-0', isFilterOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0']"
                 >
-                    Search
-                </button>
-            </div>
-            
-            <!-- Autocomplete Dropdown -->
-            <transition
-                enter-active-class="transition ease-out duration-200"
-                enter-from-class="opacity-0 -translate-y-2"
-                enter-to-class="opacity-100 translate-y-0"
-                leave-active-class="transition ease-in duration-150"
-                leave-from-class="opacity-100 translate-y-0"
-                leave-to-class="opacity-0 -translate-y-2"
-            >
-                <div v-if="showAutocomplete && (autocompleteResults.products.length > 0 || autocompleteResults.distributors.length > 0)" 
-                     class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-40 text-left max-h-96 overflow-y-auto">
-                    
-                    <!-- Distributors section -->
-                    <div v-if="autocompleteResults.distributors.length > 0">
-                        <div class="px-4 py-2 bg-slate-50/80 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Distributors</div>
-                        <Link 
-                            v-for="dist in autocompleteResults.distributors" 
-                            :key="'d-'+dist.id" 
-                            :href="`/seller/${dist.slug}`"
-                            class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0"
-                        >
-                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden shadow-inner">
-                                <img v-if="dist.logo_path" :src="'/storage/' + dist.logo_path" class="w-full h-full object-cover" />
-                                <span v-else>{{ dist.company_name.charAt(0) }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-slate-900 truncate">{{ dist.company_name }}</p>
-                                <p class="text-xs text-slate-500 mt-0.5">Showing {{ dist.products_count || 0 }} products</p>
-                            </div>
+                    <div class="lg:hidden px-6 py-4 border-b border-line flex justify-between items-center bg-white">
+                        <h2 class="font-semibold text-lg text-ink">Filters</h2>
+                        <button @click="isFilterOpen = false" class="p-2 text-ink-soft hover:text-ink hover:bg-mist rounded-control transition-colors" aria-label="Close filters">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="p-6 lg:p-0 lg:sticky lg:top-24 h-full lg:h-auto overflow-y-auto lg:overflow-visible pb-24 lg:pb-0">
+                        <nav aria-label="Categories" class="border-b border-line pb-5 mb-5">
+                            <h3 class="mb-2 text-sm font-semibold text-ink">Category</h3>
+                            <ul>
+                                <li>
+                                    <button type="button" :class="railItem(!filters.category)" :aria-current="!filters.category ? 'true' : undefined" @click="selectCategory('')">
+                                        All products
+                                    </button>
+                                </li>
+                                <template v-for="parent in categories" :key="parent.id">
+                                    <li>
+                                        <button type="button" :class="railItem(Number(filters.category) === parent.id)" :aria-current="Number(filters.category) === parent.id ? 'true' : undefined" @click="selectCategory(parent.id)">
+                                            {{ parent.name }}
+                                        </button>
+                                    </li>
+                                    <li v-for="child in (activeParentId === parent.id ? parent.children : [])" :key="child.id">
+                                        <button type="button" :class="[railItem(Number(filters.category) === child.id), 'pl-7 text-sm']" :aria-current="Number(filters.category) === child.id ? 'true' : undefined" @click="selectCategory(child.id)">
+                                            {{ child.name }}
+                                        </button>
+                                    </li>
+                                </template>
+                            </ul>
+                            <p v-if="selectedCategoryHint" class="mt-2 px-3 text-sm text-ink-soft">{{ selectedCategoryHint }}</p>
+                        </nav>
+
+                        <div class="border-b border-line pb-5 mb-5">
+                            <h3 class="mb-2 text-sm font-semibold text-ink">Type</h3>
+                            <ul>
+                                <li v-for="option in typeOptions" :key="option.value">
+                                    <button type="button" :class="railItem(filters.type === option.value)" :aria-current="filters.type === option.value ? 'true' : undefined" @click="selectType(option.value)">
+                                        {{ option.label }}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="border-b border-line pb-5 mb-5">
+                            <h3 class="mb-2 text-sm font-semibold text-ink">Price (₱)</h3>
                             <div class="flex items-center gap-2">
-                                <span class="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-sm transition whitespace-nowrap hidden sm:block pointer-events-none">View Profile</span>
+                                <TextInput v-model="filters.min_price" @change="applyFilters" type="number" min="0" inputmode="numeric" placeholder="Min" aria-label="Minimum price" class="min-w-0 flex-1" />
+                                <TextInput v-model="filters.max_price" @change="applyFilters" type="number" min="0" inputmode="numeric" placeholder="Max" aria-label="Maximum price" class="min-w-0 flex-1" />
                             </div>
-                        </Link>
+                        </div>
+
+                        <BaseButton variant="ghost" size="sm" class="w-full" @click="resetFilters">Reset filters</BaseButton>
                     </div>
-                    
-                    <!-- Products section -->
-                    <div v-if="autocompleteResults.products.length > 0">
-                        <div class="px-4 py-2 bg-slate-50/80 border-b border-y border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Products</div>
-                        <Link 
-                            v-for="prod in autocompleteResults.products" 
-                            :key="'p-'+prod.id" 
-                            :href="`/products/${prod.slug}`"
-                            class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0"
-                        >
-                            <div class="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
-                                <img v-if="prod.image_path" :src="'/storage/' + prod.image_path" class="w-full h-full object-cover" />
-                                <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                </div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs sm:text-sm font-bold text-slate-900 truncate">{{ prod.name }}</p>
-                                <p class="text-[10px] sm:text-xs text-slate-500 truncate">{{ prod.brand || 'Generic' }} · ₱{{ Number(prod.base_price).toLocaleString() }}</p>
-                            </div>
-                        </Link>
-                    </div>
-                </div>
-            </transition>
-        </div>
+                </aside>
 
-        <!-- Optional small interactive hints under search bar -->
-        <p class="text-slate-400 text-xs mt-2 animate-pulse">
-            Try searching for <span class="font-medium text-blue-400">stethoscope</span>, <span class="font-medium text-blue-400">gloves</span>, or <span class="font-medium text-blue-400">surgical tape</span>
-        </p>
-    </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-4 mb-4">
+                        <p class="text-ink-soft">
+                            <span class="font-semibold tabular-nums text-ink">{{ products.total }}</span> {{ products.total === 1 ? 'product' : 'products' }}
+                        </p>
 
-    <!-- Optional decorative icons floating -->
-    <div class="absolute top-6 left-6 text-blue-500 opacity-20 animate-bounce-slow">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c2 2 4 4 4 4m0 0l-4 4-4-4m4-4v8"/>
-        </svg>
-    </div>
-    <div class="absolute bottom-6 right-12 text-blue-400 opacity-15 animate-bounce-slow">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-    </div>
-</div>
-
-<!-- end of improved code -->
-
-    <div v-if="isFilterOpen" @click="isFilterOpen = false" class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"></div>
-
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 bg-slate-50">
-        <div class="flex flex-col lg:flex-row gap-8">
-            <aside :class="['fixed inset-y-0 left-0 z-50 w-[80vw] max-w-sm bg-white shadow-2xl transform lg:transform-none lg:static lg:w-64 lg:bg-transparent lg:shadow-none transition-transform duration-300 ease-in-out lg:flex-shrink-0', isFilterOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0']">
-                <div class="lg:hidden px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
-                    <h3 class="font-bold text-lg text-slate-900">Filters</h3>
-                    <button @click="isFilterOpen = false" class="p-2 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-lg transition-colors">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-
-                <div class="bg-white lg:rounded-xl lg:border lg:border-slate-200 p-6 lg:sticky lg:top-24 space-y-6 h-full lg:h-auto overflow-y-auto lg:overflow-visible pb-24 lg:pb-6">
-                    <h3 class="hidden lg:flex font-bold text-lg text-slate-900 items-center border-b border-slate-100 pb-4">
-                        <svg class="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        Filters
-                    </h3>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Category</label>
-                        <select 
-                            v-model="filters.category" 
-                            @change="applyFilters"
-                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                        >
-                            <option value="">All Categories</option>
-                            <template v-for="category in categories" :key="category.id">
-                                <optgroup :label="category.name">
-                                    <option :value="category.id">All {{ category.name }}</option>
-                                    <option 
-                                        v-for="child in category.children" 
-                                        :key="child.id" 
-                                        :value="child.id"
-                                    >
-                                        {{ child.name }}
-                                    </option>
-                                </optgroup>
-                            </template>
-                        </select>
-                        <p v-if="selectedCategoryHint" class="text-xs text-slate-500 mt-1.5">{{ selectedCategoryHint }}</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Type</label>
-                        <select 
-                            v-model="filters.type" 
-                            @change="applyFilters"
-                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                        >
-                            <option value="">All Types</option>
-                            <option value="equipment">Equipment</option>
-                            <option value="consumable">Consumable</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Price Range (₱)</label>
-                        <div class="flex items-center space-x-2">
-                            <input 
-                                v-model.number="filters.min_price"
+                        <label class="flex items-center gap-2 text-ink-soft">
+                            <span>Sort</span>
+                            <select
+                                v-model="filters.sort"
                                 @change="applyFilters"
-                                type="number" 
-                                placeholder="Min" 
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                class="h-9 rounded-control border border-line bg-white py-0 pl-3 pr-8 text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-tint"
+                            >
+                                <option value="popularity">Most popular</option>
+                                <option value="newest">Newest</option>
+                                <option value="price_low">Price, low to high</option>
+                                <option value="price_high">Price, high to low</option>
+                                <option value="name">Name, A to Z</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <!-- Product grid, with a light overlay while filters reload -->
+                    <div class="relative min-h-[300px]">
+                        <div v-if="isLoading" class="absolute inset-0 z-10 flex items-start justify-center pt-24 rounded-card bg-mist/60">
+                            <div class="flex items-center gap-2 rounded-control border border-line bg-white px-4 py-2 text-sm font-medium text-brand shadow-sm">
+                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Updating products</span>
+                            </div>
+                        </div>
+
+                        <div v-if="products.data.length" class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 auto-rows-fr" :class="{ 'opacity-60': isLoading }">
+                            <ProductCard
+                                v-for="product in products.data"
+                                :key="product.id"
+                                :product="product"
+                                :showWholesale="true"
+                                :showStock="true"
+                                :showSeller="true"
+                                :showCategory="false"
                             />
-                            <span class="text-slate-400">-</span>
-                            <input 
-                                v-model.number="filters.max_price"
-                                @change="applyFilters"
-                                type="number" 
-                                placeholder="Max" 
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
+                        </div>
+
+                        <div v-else-if="!isLoading" class="flex min-h-[420px] w-full flex-col items-center justify-center rounded-card border border-line bg-white px-6 text-center">
+                            <h3 class="text-lg font-semibold text-ink">No products match these filters</h3>
+                            <p class="mt-1 mb-5 max-w-sm text-ink-soft">Try a different search term, widen the price range, or clear the filters to see everything.</p>
+                            <BaseButton variant="secondary" @click="resetFilters">Clear filters</BaseButton>
                         </div>
                     </div>
 
-                    <button 
-                        @click="resetFilters"
-                        class="w-full px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-semibold mt-4"
-                    >
-                        Reset Filters
-                    </button>
+                    <!-- Pagination -->
+                    <div v-if="products.data.length" class="mt-10 flex justify-center">
+                        <nav class="flex flex-wrap justify-center gap-2" aria-label="Pagination">
+                            <Link
+                                v-for="link in products.links"
+                                :key="link.label"
+                                :href="link.url || '#'"
+                                preserve-scroll
+                                preserve-state
+                                replace
+                                :only="['products', 'filters']"
+                                :class="[
+                                    'min-w-10 rounded-control border px-3.5 py-2 text-center text-sm font-medium tabular-nums transition-colors',
+                                    link.active
+                                        ? 'border-brand bg-brand text-white'
+                                        : link.url
+                                            ? 'border-line bg-white text-ink hover:border-brand hover:text-brand'
+                                            : 'cursor-not-allowed border-line bg-mist text-ink-faint'
+                                ]"
+                                v-html="link.label"
+                            />
+                        </nav>
+                    </div>
                 </div>
-            </aside>
-
-            <div class="flex-1 min-w-0">
-    <!-- Top Bar: Showing total & Sort -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <p class="text-slate-600 text-sm">
-            Showing <span class="font-bold text-slate-900">{{ products.total }}</span> products
-        </p>
-        
-      <div class="flex items-center gap-2">
-    <span class="text-sm text-slate-500">Sort by:</span>
-
-    <select 
-        v-model="filters.sort" 
-        @change="applyFilters"
-        class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm font-medium text-slate-700"
-    >
-        <option value="popularity">Popularity</option>
-        <option value="newest">Newest First</option>
-        <option value="price_low">Price: Low to High</option>
-        <option value="price_high">Price: High to Low</option>
-        <option value="name">Name: A-Z</option>
-    </select>
-</div>
-    </div>
-
-    <!-- Product Grid Container with smooth SPA state feedback -->
-    <div class="relative min-h-[300px]">
-        <!-- Smooth loading overlay -->
-        <div v-if="isLoading" class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-xl transition-all duration-200">
-            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border border-slate-100 text-sm font-semibold text-blue-600">
-                <svg class="animate-spin h-4 w-4 text-blue-600" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Updating products...</span>
             </div>
         </div>
 
-        <div v-if="products.data.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6 auto-rows-fr" :class="{ 'opacity-60': isLoading }">
-            <ProductCard 
-                v-for="product in products.data" 
-                :key="product.id" 
-                :product="product"
-                :showWholesale="true"
-                :showStock="true"
-                :showSeller="true"
-                :showCategory="false"
-                @add-to-cart="addToCart"
-            />
-        </div>
-
-        <!-- No products fallback -->
-        <div v-else-if="!isLoading" class="w-full text-center bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center" style="min-height: 500px;">
-            <svg class="h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <h3 class="text-lg font-bold text-slate-900 mb-1">No products found</h3>
-            <p class="text-slate-500 mb-6 text-sm">We couldn't find any products matching your filters.</p>
-            <button @click="resetFilters" class="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
-                Clear Filters
-            </button>
-        </div>
-    </div>
-
-    <!-- Pagination -->
-    <div v-if="products.data.length" class="mt-10 flex justify-center">
-        <nav class="flex flex-wrap justify-center gap-2">
-            <Link
-                v-for="link in products.links"
-                :key="link.label"
-                :href="link.url || '#'"
-                preserve-scroll
-                preserve-state
-                replace
-                :only="['products', 'filters']"
-                :class="[
-                    'px-4 py-2 rounded-lg transition-colors text-sm font-semibold border',
-                    link.active 
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
-                        : link.url 
-                            ? 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300' 
-                            : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
-                ]"
-                v-html="link.label"
-            />
-        </nav>
-    </div>
-</div>
-        </div>
-    </div>
-
-    <button 
-        @click="isFilterOpen = true"
-        class="lg:hidden fixed bottom-24 right-4 z-40 bg-blue-600 text-white rounded-full p-4 shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-colors flex items-center justify-center"
-        style="bottom: calc(5rem + env(safe-area-inset-bottom, 0px))"
-    >
-        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-    </button>
-</MainLayout>
+        <button
+            @click="isFilterOpen = true"
+            class="lg:hidden fixed right-4 z-40 flex items-center gap-2 rounded-full bg-brand px-4 py-3 font-medium text-white shadow-lg transition-colors hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            style="bottom: calc(5rem + env(safe-area-inset-bottom, 0px))"
+        >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+            Filters
+        </button>
+    </MainLayout>
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted, computed, onUnmounted } from 'vue';
-import { Head, router, Link, usePage } from '@inertiajs/vue3';
+import { ref, reactive, watch, computed } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import ProductCard from '@/Components/ProductCard.vue';
 import OnboardingWizardModal from '@/Components/OnboardingWizardModal.vue';
+import BaseButton from '@/Components/ui/BaseButton.vue';
+import TextInput from '@/Components/ui/TextInput.vue';
 
 const props = defineProps({
     products: Object,
@@ -374,36 +180,7 @@ const props = defineProps({
     filters: Object,
 });
 
-const searchQuery = ref(props.filters?.search || '');
-const showAutocomplete = ref(false);
-const autocompleteResults = ref({ products: [], distributors: [] });
-let debounceTimer = null;
 const isLoading = ref(false);
-
-const handleSearchInput = () => {
-    clearTimeout(debounceTimer);
-    if (!searchQuery.value.trim()) {
-        showAutocomplete.value = false;
-        autocompleteResults.value = { products: [], distributors: [] };
-        return;
-    }
-    showAutocomplete.value = true;
-    debounceTimer = setTimeout(async () => {
-        try {
-            const res = await window.axios.get(`/products/search?q=${encodeURIComponent(searchQuery.value)}`);
-            autocompleteResults.value = res.data;
-        } catch (error) {
-            console.error('Autocomplete fetch failed', error);
-        }
-    }, 300);
-};
-
-// Delaying close so that clicking a link isn't interrupted by blur event hiding it
-const closeAutocomplete = () => {
-    setTimeout(() => {
-        showAutocomplete.value = false;
-    }, 200);
-};
 
 const filters = reactive({
     category: props.filters?.category || '',
@@ -423,13 +200,35 @@ watch(() => props.filters, (newFilters) => {
         filters.min_price = newFilters.min_price || '';
         filters.max_price = newFilters.max_price || '';
         filters.sort = newFilters.sort || 'popularity';
-        if (newFilters.search !== undefined) {
-            searchQuery.value = newFilters.search || '';
-        }
     }
 }, { deep: true });
 
 const isFilterOpen = ref(false);
+
+const typeOptions = [
+    { value: '', label: 'All types' },
+    { value: 'equipment', label: 'Equipment' },
+    { value: 'consumable', label: 'Consumable' },
+];
+
+// Shared look for the filter lists (categories and type).
+const railItem = (active) => [
+    'flex w-full items-center justify-between rounded-r-control border-l-2 px-3 py-1.5 text-left transition-colors',
+    active
+        ? 'border-brand bg-brand-tint/60 font-medium text-ink lg:bg-white'
+        : 'border-transparent text-ink-soft hover:bg-white/70 hover:text-ink',
+];
+
+// The top-level category that contains the current selection, so its subcategories can be listed.
+const activeParentId = computed(() => {
+    const id = Number(filters.category);
+    if (!id) return null;
+    for (const parent of props.categories || []) {
+        if (parent.id === id) return parent.id;
+        if ((parent.children || []).some((child) => child.id === id)) return parent.id;
+    }
+    return null;
+});
 
 const selectedCategoryHint = computed(() => {
     const id = Number(filters.category);
@@ -444,10 +243,21 @@ const selectedCategoryHint = computed(() => {
     return '';
 });
 
-const applyFilters = () => {
+const selectCategory = (id) => {
+    filters.category = id;
+    applyFilters();
+};
+
+const selectType = (value) => {
+    filters.type = value;
+    applyFilters();
+};
+
+// The search term lives in the header search box; keep whatever is currently applied.
+const applyFilters = (options = {}) => {
     isLoading.value = true;
     router.get('/products', {
-        search: searchQuery.value || undefined,
+        search: options.clearSearch ? undefined : (props.filters?.search || undefined),
         category: filters.category || undefined,
         distributor: filters.distributor || undefined,
         type: filters.type || undefined,
@@ -467,13 +277,12 @@ const applyFilters = () => {
 };
 
 const resetFilters = () => {
-    searchQuery.value = '';
     filters.category = '';
     filters.distributor = '';
     filters.type = '';
     filters.min_price = '';
     filters.max_price = '';
     filters.sort = 'popularity';
-    applyFilters();
+    applyFilters({ clearSearch: true });
 };
 </script>

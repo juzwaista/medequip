@@ -1,372 +1,301 @@
 <template>
-    <Head title="Create Account · MedEquip" />
+    <Head title="Create account · MedEquip" />
     <TermsModal :show="showTermsModal" :role="form.role" @close="showTermsModal = false" />
 
-    <div class="min-h-screen min-h-[100dvh] flex min-w-0 overflow-x-hidden">
-        <!-- Left: Brand Panel (Fixed) -->
-        <div class="hidden lg:flex lg:w-[40%] xl:w-[42%] bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 flex-col justify-between p-10 relative overflow-hidden flex-shrink-0 sticky top-0 h-screen">
-            <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                <div class="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-                <div class="absolute bottom-0 right-0 w-72 h-72 bg-cyan-400/20 rounded-full blur-2xl"></div>
+    <AuthLayout
+        wide
+        headline="Set up your account in three short steps."
+        blurb="Buy medical supplies for yourself or your business, or start selling as a distributor."
+    >
+        <!-- Progress -->
+        <ol class="mb-6 flex items-center gap-3 text-sm" aria-label="Registration progress">
+            <li
+                v-for="(label, i) in ['Who you are', 'Your account', 'Location']"
+                :key="label"
+                class="flex items-center gap-2"
+                :class="i < 2 ? 'flex-1' : ''"
+                :aria-current="currentStep === i + 1 ? 'step' : undefined"
+            >
+                <span
+                    class="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold tabular-nums"
+                    :class="currentStep > i + 1 ? 'bg-brand text-white' : currentStep === i + 1 ? 'bg-ink text-white' : 'bg-mist text-ink-faint'"
+                >{{ i + 1 }}</span>
+                <span class="whitespace-nowrap" :class="currentStep === i + 1 ? 'font-medium text-ink' : 'text-ink-soft max-sm:hidden'">{{ label }}</span>
+                <span v-if="i < 2" class="h-px flex-1 bg-line max-sm:hidden"></span>
+            </li>
+        </ol>
+
+        <div class="mb-6 flex items-start justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-semibold tracking-tight text-ink">Create your account</h1>
+                <p class="mt-1 text-ink-soft">Step {{ currentStep }} of 3</p>
             </div>
-            <div class="relative z-10">
-                <a href="/products" class="inline-flex items-center gap-3">
-                    <img :src="'/images/logo.png'" alt="MedEquip" class="h-8 sm:h-10 md:h-14 lg:h-20 xl:h-24 w-auto brightness-0 invert transition-all duration-300" />
-                </a>
+            <p v-if="lastSaved" class="flex items-center gap-1.5 whitespace-nowrap pt-1.5 text-sm text-ink-soft">
+                <span class="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true"></span>
+                Draft saved {{ lastSaved }}
+            </p>
+        </div>
+
+        <form @submit.prevent="submit" class="space-y-5">
+
+            <!-- Step 1: who you are -->
+            <div v-show="currentStep === 1" class="space-y-6">
+                <fieldset>
+                    <legend class="mb-2 text-sm font-medium text-ink">I want to</legend>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <ChoiceCard v-model="form.role" value="customer" name="role" title="Buy supplies" description="Order from verified distributors" />
+                        <ChoiceCard v-model="form.role" value="distributor" name="role" title="Sell as a distributor" description="List products and manage inventory" />
+                    </div>
+                </fieldset>
+
+                <fieldset v-if="form.role === 'customer'">
+                    <legend class="mb-2 text-sm font-medium text-ink">Buying as</legend>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <ChoiceCard v-model="form.is_business" :value="false" name="buyer-type" title="Personal" description="Buying for myself" />
+                        <ChoiceCard v-model="form.is_business" :value="true" name="buyer-type" title="Business" description="Clinic, hospital, pharmacy" />
+                    </div>
+                </fieldset>
+
+                <div v-if="needsBusinessDetails" class="space-y-4 rounded-card border border-line bg-mist/60 p-4">
+                    <p class="text-sm font-semibold text-ink">Business details</p>
+                    <TextInput
+                        v-model="form.company_name"
+                        label="Company name"
+                        type="text"
+                        placeholder="Your company name"
+                        :error="step1Errors.company_name || form.errors.company_name"
+                    />
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <SelectInput
+                            v-if="form.role === 'customer'"
+                            v-model="form.business_type"
+                            label="Business type"
+                            :error="step1Errors.business_type || form.errors.business_type"
+                        >
+                            <option value="">Select type</option>
+                            <option value="Hospital">Hospital</option>
+                            <option value="Clinic">Clinic</option>
+                            <option value="Pharmacy">Pharmacy</option>
+                            <option value="Other">Other</option>
+                        </SelectInput>
+                        <TextInput
+                            v-model="form.tin_number"
+                            label="TIN number"
+                            optional
+                            type="text"
+                            placeholder="123-456-789-000"
+                            :class="form.role === 'distributor' ? 'sm:col-span-2' : ''"
+                        />
+                    </div>
+                </div>
             </div>
-            <div class="relative z-10 space-y-5">
-                <h1 class="text-3xl xl:text-4xl font-black text-white leading-tight">
-                    Stock your clinic with ease.<br>
-                    <span class="text-cyan-300">Get started today.</span>
-                </h1>
-                <p class="text-blue-100 leading-relaxed">
-                    Browse and order trusted medical equipment and essential supplies from verified local suppliers—fast, simple, and reliable.
-                </p>
-                <ul class="space-y-3 pt-2">
-                    <li v-for="item in ['Verified local distributors', 'Secure payments', 'Convenient ordering', 'Fast, direct delivery']" :key="item" class="flex items-center gap-3 text-sm text-blue-100">
-                        <span class="flex-shrink-0 h-5 w-5 rounded-full bg-emerald-400/30 border border-emerald-400/50 flex items-center justify-center">
-                            <svg class="h-3 w-3 text-emerald-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+
+            <!-- Step 2: account credentials -->
+            <div v-show="currentStep === 2" class="space-y-4">
+                <div>
+                    <TextInput
+                        v-model="form.username"
+                        label="Username"
+                        type="text"
+                        autocomplete="username"
+                        placeholder="e.g. cavite_clinic"
+                        hint="4–20 characters: letters, numbers, underscore (stored lowercase)."
+                        :error="step2Errors.username || form.errors.username || (usernameHint.state === 'taken' || usernameHint.state === 'invalid' ? usernameHint.message : '')"
+                    />
+                    <p v-if="usernameHint.state === 'loading'" class="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
+                        <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        Checking availability…
+                    </p>
+                    <p v-else-if="usernameHint.state === 'available'" class="mt-1 text-sm font-medium text-brand">✓ {{ usernameHint.message }}</p>
+                </div>
+
+                <TextInput
+                    v-model="form.email"
+                    label="Email address"
+                    type="email"
+                    autocomplete="email"
+                    placeholder="you@example.com"
+                    :error="step2Errors.email || form.errors.email"
+                />
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <TextInput
+                            v-model="form.password"
+                            label="Password"
+                            :type="showPassword ? 'text' : 'password'"
+                            autocomplete="new-password"
+                            input-class="pr-11"
+                            :error="step2Errors.password || form.errors.password"
+                        >
+                            <template #end>
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="rounded-control p-1.5 text-ink-faint hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                                    :aria-label="showPassword ? 'Hide passwords' : 'Show passwords'"
+                                >
+                                    <svg v-if="!showPassword" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                </button>
+                            </template>
+                        </TextInput>
+                        <ul v-if="form.password.length > 0" class="mt-2 space-y-0.5 text-sm text-ink-soft" aria-label="Password requirements">
+                            <li :class="pwdRules.len ? 'text-brand' : ''">{{ pwdRules.len ? '✓' : '○' }} 10 or more characters</li>
+                            <li :class="pwdRules.upper ? 'text-brand' : ''">{{ pwdRules.upper ? '✓' : '○' }} An uppercase letter</li>
+                            <li :class="pwdRules.lower ? 'text-brand' : ''">{{ pwdRules.lower ? '✓' : '○' }} A lowercase letter</li>
+                            <li :class="pwdRules.num ? 'text-brand' : ''">{{ pwdRules.num ? '✓' : '○' }} A number</li>
+                            <li :class="pwdRules.sym ? 'text-brand' : ''">{{ pwdRules.sym ? '✓' : '○' }} A symbol (for example !@#$)</li>
+                        </ul>
+                    </div>
+                    <TextInput
+                        v-model="form.password_confirmation"
+                        label="Confirm password"
+                        :type="showPassword ? 'text' : 'password'"
+                        autocomplete="new-password"
+                        :error="step2Errors.password_confirmation"
+                    />
+                </div>
+
+                <TextInput
+                    v-model="form.contact_number"
+                    @input="sanitizeContactNumber"
+                    @blur="touchedContact = true"
+                    label="Contact number"
+                    type="tel"
+                    inputmode="numeric"
+                    pattern="09[0-9]{9}"
+                    maxlength="11"
+                    placeholder="09XXXXXXXXX"
+                    :error="contactError || form.errors.contact_number"
+                />
+            </div>
+
+            <!-- Step 3: location and terms -->
+            <div v-show="currentStep === 3" class="space-y-4">
+                <p class="text-sm font-semibold text-ink">{{ form.role === 'distributor' ? 'Business address' : 'Delivery address' }}</p>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <SelectInput
+                        v-model="selectedCity"
+                        @change="onCityChange"
+                        label="City or municipality"
+                        :error="step3Errors.city || form.errors.city"
+                    >
+                        <option value="">Select city</option>
+                        <option v-for="(data, city) in cities" :key="city" :value="city">{{ city }}</option>
+                    </SelectInput>
+
+                    <SelectInput
+                        v-if="availableBarangays.length > 0"
+                        v-model="selectedBarangay"
+                        label="Barangay"
+                        :error="step3Errors.barangay || form.errors.barangay"
+                    >
+                        <option value="">Select barangay</option>
+                        <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">{{ brgy }}</option>
+                        <option value="other">Other (type manually)</option>
+                    </SelectInput>
+                    <TextInput
+                        v-else
+                        v-model="manualBarangay"
+                        label="Barangay"
+                        type="text"
+                        placeholder="Enter barangay name"
+                        :error="step3Errors.barangay || form.errors.barangay"
+                    />
+                </div>
+
+                <TextInput
+                    v-if="selectedBarangay === 'other' && availableBarangays.length > 0"
+                    v-model="manualBarangay"
+                    label="Barangay name"
+                    type="text"
+                    placeholder="Type your barangay name"
+                />
+
+                <TextInput
+                    v-model="form.address_line"
+                    label="Street address"
+                    type="text"
+                    placeholder="e.g. Blk 5 Lot 10 Sampaguita St."
+                    :error="step3Errors.address_line || form.errors.address_line"
+                />
+
+                <TextInput
+                    :model-value="zipCode"
+                    label="Zip code"
+                    type="text"
+                    readonly
+                    disabled
+                    placeholder="Filled in from your city"
+                />
+
+                <!-- Map pin -->
+                <div>
+                    <p class="mb-1 text-sm font-medium text-ink">
+                        Pin your exact location
+                        <span class="font-normal text-ink-soft">{{ form.role === 'distributor' ? '(your shop or warehouse)' : '(required for delivery)' }}</span>
+                    </p>
+                    <MapPicker
+                        v-model:lat="form.latitude"
+                        v-model:lng="form.longitude"
+                        :geocodeQuery="geocodeQuery"
+                        height="200px"
+                        @update:address="onMapAddressPicked"
+                    />
+                    <p v-if="detectedLocation" class="mt-2 flex items-center gap-1.5 rounded-control border border-[#B9C7DA] bg-[#F1F5FA] px-3 py-2 text-sm text-seal">
+                        <svg class="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                        {{ detectedLocation }}
+                    </p>
+                    <p v-if="step3Errors.location" class="mt-1 text-sm text-danger">{{ step3Errors.location }}</p>
+                    <p v-if="form.errors.latitude" class="mt-1 text-sm text-danger">{{ form.errors.latitude }}</p>
+                </div>
+
+                <!-- Terms -->
+                <div class="rounded-card border border-line bg-mist/60 p-4">
+                    <label class="flex cursor-pointer items-start gap-3">
+                        <input type="checkbox" v-model="form.terms_accepted" class="mt-0.5 h-4 w-4 flex-shrink-0 rounded-control border-line accent-brand">
+                        <span class="leading-snug text-ink-soft">
+                            I agree to the
+                            <button type="button" @click.prevent="showTermsModal = true" class="font-medium text-brand underline underline-offset-2 hover:text-brand-dark">Terms and Conditions</button>
+                            of MedEquip, including the
+                            <span v-if="form.role === 'customer'" class="font-medium text-ink">Customer Terms</span>
+                            <span v-else class="font-medium text-ink">Distributor Terms</span>.
                         </span>
-                        {{ item }}
-                    </li>
-                </ul>
-            </div>
-            <p class="relative z-10 text-blue-200 text-xs">&copy; 2026 MedEquip Platform. Cavite, Philippines.</p>
-        </div>
-
-        <!-- Right: Registration Form (Scrollable) -->
-        <div class="flex-1 overflow-y-auto bg-slate-50 flex justify-center py-10 px-4 sm:px-8">
-            <div class="w-full max-w-xl">
-                <!-- Mobile logo -->
-                <div class="lg:hidden text-center mb-6">
-                    <a href="/products"><img :src="'/images/logo.png'" alt="MedEquip" class="h-10 w-auto mx-auto" /></a>
-                </div>
-
-                <!-- Registration Card -->
-                <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-
-                    <!-- Progress Bar -->
-                    <div class="px-8 pt-8 pb-4">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span v-for="n in 3" :key="n" class="text-[10px] font-bold uppercase tracking-wider flex-1 text-center transition-colors duration-300"
-                                :class="n <= currentStep ? 'text-blue-600' : 'text-gray-300'">
-                                <span v-if="n === 1">Who you are</span>
-                                <span v-if="n === 2">Credentials</span>
-                                <span v-if="n === 3">Location</span>
-                            </span>
-                        </div>
-                        <div class="flex gap-1.5">
-                            <div v-for="n in 3" :key="n" class="h-1.5 flex-1 rounded-full transition-all duration-500"
-                                :class="n <= currentStep ? 'bg-blue-500' : 'bg-gray-100'"></div>
-                        </div>
-                    </div>
-
-                    <div class="px-8 pb-8">
-                        <!-- Draft Saved Badge -->
-                        <div class="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 class="text-2xl font-black text-gray-900">Get started</h2>
-                                <p class="text-gray-400 text-sm mt-0.5">Step {{ currentStep }} of 3</p>
-                            </div>
-                            <transition enter-active-class="transition ease-out duration-300" enter-from-class="opacity-0 scale-90" enter-to-class="opacity-100 scale-100" leave-active-class="transition ease-in duration-200" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-90">
-                                <div v-if="lastSaved" class="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black border border-emerald-100 shadow-sm">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Saved {{ lastSaved }}
-                                </div>
-                            </transition>
-                        </div>
-
-                        <form @submit.prevent="submit" class="space-y-5">
-
-                            <!-- ─── STEP 1: Who are you? ───────────────────────────────── -->
-                            <div v-show="currentStep === 1" class="space-y-5">
-                                <!-- Account Type -->
-                                <div class="space-y-3">
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Account Type</h3>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <label :class="form.role === 'customer' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300 bg-gray-50'"
-                                            class="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition-all">
-                                            <input type="radio" v-model="form.role" value="customer" class="mt-0.5 text-blue-600 focus:ring-blue-500">
-                                            <div>
-                                                <span class="font-bold text-gray-900 text-sm block">Customer</span>
-                                                <p class="text-xs text-gray-500 mt-0.5">Buy medical supplies</p>
-                                            </div>
-                                        </label>
-                                        <label :class="form.role === 'distributor' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300 bg-gray-50'"
-                                            class="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition-all">
-                                            <input type="radio" v-model="form.role" value="distributor" class="mt-0.5 text-blue-600 focus:ring-blue-500">
-                                            <div>
-                                                <span class="font-bold text-gray-900 text-sm block">Distributor</span>
-                                                <p class="text-xs text-gray-500 mt-0.5">Sell & manage inventory</p>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Customer Profile Type -->
-                                <div v-if="form.role === 'customer'" class="space-y-3">
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Buying as</h3>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <label :class="!form.is_business ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300 bg-gray-50'"
-                                            class="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition-all">
-                                            <input type="radio" v-model="form.is_business" :value="false" class="mt-0.5 text-blue-600 focus:ring-blue-500">
-                                            <div>
-                                                <span class="font-bold text-gray-900 text-sm block">Personal</span>
-                                                <p class="text-xs text-gray-500 mt-0.5">Buying for myself</p>
-                                            </div>
-                                        </label>
-                                        <label :class="form.is_business ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-gray-300 bg-gray-50'"
-                                            class="flex items-start gap-3 cursor-pointer p-4 rounded-2xl border-2 transition-all">
-                                            <input type="radio" v-model="form.is_business" :value="true" class="mt-0.5 text-blue-600 focus:ring-blue-500">
-                                            <div>
-                                                <span class="font-bold text-gray-900 text-sm block">Business</span>
-                                                <p class="text-xs text-gray-500 mt-0.5">Clinic, hospital, etc.</p>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Business Details (if business customer or distributor) -->
-                                <transition enter-active-class="transition ease-out duration-300" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0">
-                                    <div v-if="needsBusinessDetails" class="space-y-4">
-                                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Business Details</h3>
-                                        <div>
-                                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Name <span class="text-red-500">*</span></label>
-                                            <input type="text" v-model="form.company_name" placeholder="Your Company Name"
-                                                class="w-full border-2 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all placeholder-gray-300"
-                                                :class="step1Errors.company_name ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                            <p v-if="step1Errors.company_name" class="text-red-500 text-xs mt-1.5">{{ step1Errors.company_name }}</p>
-                                            <p v-if="form.errors.company_name" class="text-red-600 text-xs mt-1.5">{{ form.errors.company_name }}</p>
-                                        </div>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div v-if="form.role === 'customer'">
-                                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Business Type <span class="text-red-500">*</span></label>
-                                                <select v-model="form.business_type"
-                                                    class="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all bg-white text-sm"
-                                                    :class="step1Errors.business_type ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                                    <option value="">Select type</option>
-                                                    <option value="Hospital">Hospital</option>
-                                                    <option value="Clinic">Clinic</option>
-                                                    <option value="Pharmacy">Pharmacy</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
-                                                <p v-if="step1Errors.business_type" class="text-red-500 text-xs mt-1.5">{{ step1Errors.business_type }}</p>
-                                                <p v-if="form.errors.business_type" class="text-red-600 text-xs mt-1.5">{{ form.errors.business_type }}</p>
-                                            </div>
-                                            <div :class="form.role === 'distributor' ? 'col-span-2' : ''">
-                                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">TIN Number <span class="text-gray-400 font-normal">(Optional)</span></label>
-                                                <input type="text" v-model="form.tin_number" placeholder="123-456-789-000"
-                                                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </transition>
-                            </div>
-
-                            <!-- ─── STEP 2: Credentials ────────────────────────────────── -->
-                            <div v-show="currentStep === 2" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Username <span class="text-red-500">*</span></label>
-                                    <input type="text" v-model="form.username" autocomplete="username" placeholder="e.g. cavite_clinic"
-                                        class="w-full border-2 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all placeholder-gray-300"
-                                        :class="usernameHint.state === 'taken' || usernameHint.state === 'invalid' || step2Errors.username ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : usernameHint.state === 'available' ? 'border-emerald-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                    <p class="text-xs text-gray-500 mt-1">4–20 characters: letters, numbers, underscore (stored lowercase).</p>
-                                    <p v-if="usernameHint.state === 'loading'" class="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
-                                        <svg class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                        Checking availability…
-                                    </p>
-                                    <p v-else-if="usernameHint.state !== 'idle'" class="text-xs mt-1.5 font-medium flex items-center gap-1.5"
-                                        :class="usernameHint.state === 'available' ? 'text-emerald-600' : 'text-red-600'">
-                                        <span class="inline-flex h-4 w-4 rounded-full items-center justify-center text-[10px]"
-                                            :class="usernameHint.state === 'available' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
-                                            {{ usernameHint.state === 'available' ? '✓' : '×' }}
-                                        </span>
-                                        {{ usernameHint.message }}
-                                    </p>
-                                    <p v-if="step2Errors.username" class="text-red-500 text-xs mt-1.5">{{ step2Errors.username }}</p>
-                                    <p v-if="form.errors.username" class="text-red-600 text-xs mt-1.5">{{ form.errors.username }}</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Email Address <span class="text-red-500">*</span></label>
-                                    <input type="email" v-model="form.email" placeholder="you@example.com"
-                                        class="w-full border-2 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all placeholder-gray-300"
-                                        :class="step2Errors.email ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                    <p v-if="step2Errors.email" class="text-red-500 text-xs mt-1.5">{{ step2Errors.email }}</p>
-                                    <p v-if="form.errors.email" class="text-red-600 text-xs mt-1.5">{{ form.errors.email }}</p>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-semibold mb-1.5 text-gray-700">Password <span class="text-red-500">*</span></label>
-                                        <div class="relative">
-                                            <input :type="showPassword ? 'text' : 'password'" v-model="form.password" placeholder="••••••••"
-                                                class="w-full border-2 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none transition-all placeholder-gray-300"
-                                                :class="step2Errors.password ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                            <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                                <svg v-if="!showPassword" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                                <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                                            </button>
-                                        </div>
-                                        <p v-if="step2Errors.password" class="text-red-500 text-xs mt-1.5">{{ step2Errors.password }}</p>
-                                        <p v-if="form.errors.password" class="text-red-600 text-xs mt-1.5">{{ form.errors.password }}</p>
-                                        <ul v-if="form.password.length > 0" class="mt-2 space-y-0.5 text-xs text-gray-500">
-                                            <li :class="pwdRules.len ? 'text-emerald-600' : ''">{{ pwdRules.len ? '✓' : '○' }} 10+ characters</li>
-                                            <li :class="pwdRules.upper ? 'text-emerald-600' : ''">{{ pwdRules.upper ? '✓' : '○' }} Uppercase letter</li>
-                                            <li :class="pwdRules.lower ? 'text-emerald-600' : ''">{{ pwdRules.lower ? '✓' : '○' }} Lowercase letter</li>
-                                            <li :class="pwdRules.num ? 'text-emerald-600' : ''">{{ pwdRules.num ? '✓' : '○' }} Number</li>
-                                            <li :class="pwdRules.sym ? 'text-emerald-600' : ''">{{ pwdRules.sym ? '✓' : '○' }} Symbol (e.g. !@#$)</li>
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold mb-1.5 text-gray-700">Confirm Password <span class="text-red-500">*</span></label>
-                                        <input :type="showPassword ? 'text' : 'password'" v-model="form.password_confirmation" placeholder="••••••••"
-                                            class="w-full border-2 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all placeholder-gray-300"
-                                            :class="step2Errors.password_confirmation ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                        <p v-if="step2Errors.password_confirmation" class="text-red-500 text-xs mt-1.5">{{ step2Errors.password_confirmation }}</p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold mb-1.5 text-gray-700">Contact Number <span class="text-red-500">*</span></label>
-                                    <input v-model="form.contact_number" @input="sanitizeContactNumber" @blur="touchedContact = true" type="tel" inputmode="numeric" pattern="09[0-9]{9}" maxlength="11" placeholder="09XXXXXXXXX"
-                                        class="w-full border-2 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all placeholder-gray-300"
-                                        :class="contactError ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                    <p v-if="contactError" class="text-red-500 text-xs mt-1.5">{{ contactError }}</p>
-                                    <p v-if="form.errors.contact_number" class="text-red-600 text-xs mt-1.5">{{ form.errors.contact_number }}</p>
-                                </div>
-                            </div>
-
-                            <!-- ─── STEP 3: Location & Finalize ────────────────────────── -->
-                            <div v-show="currentStep === 3" class="space-y-4">
-                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ form.role === 'distributor' ? 'Business Address' : 'Delivery Address' }}</h3>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">City / Municipality <span class="text-red-500">*</span></label>
-                                        <select v-model="selectedCity" @change="onCityChange"
-                                            class="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all bg-white text-sm"
-                                            :class="step3Errors.city ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                            <option value="">Select city</option>
-                                            <option v-for="(data, city) in cities" :key="city" :value="city">{{ city }}</option>
-                                        </select>
-                                        <p v-if="step3Errors.city" class="text-red-500 text-xs mt-1.5">{{ step3Errors.city }}</p>
-                                        <p v-if="form.errors.city" class="text-red-600 text-xs mt-1.5">{{ form.errors.city }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay <span class="text-red-500">*</span></label>
-                                        <select v-if="availableBarangays.length > 0" v-model="selectedBarangay"
-                                            class="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all bg-white text-sm"
-                                            :class="step3Errors.barangay ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'">
-                                            <option value="">Select barangay</option>
-                                            <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">{{ brgy }}</option>
-                                            <option value="other">Other (type manually)</option>
-                                        </select>
-                                        <input v-else v-model="manualBarangay" type="text" placeholder="Enter barangay name"
-                                            class="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all text-sm placeholder-gray-300"
-                                            :class="step3Errors.barangay ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'" />
-                                        <p v-if="step3Errors.barangay" class="text-red-500 text-xs mt-1.5">{{ step3Errors.barangay }}</p>
-                                        <p v-if="form.errors.barangay" class="text-red-600 text-xs mt-1.5">{{ form.errors.barangay }}</p>
-                                    </div>
-                                </div>
-
-                                <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Barangay Name <span class="text-red-500">*</span></label>
-                                    <input v-model="manualBarangay" type="text" placeholder="Type your barangay name"
-                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm placeholder-gray-300" />
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Street Address <span class="text-red-500">*</span></label>
-                                    <input v-model="form.address_line" type="text" placeholder="e.g., Blk 5 Lot 10 Sampaguita St."
-                                        class="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all text-sm placeholder-gray-300"
-                                        :class="step3Errors.address_line ? 'border-red-400 focus:border-red-400 focus:ring-4 focus:ring-red-400/10' : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'" />
-                                    <p v-if="step3Errors.address_line" class="text-red-500 text-xs mt-1.5">{{ step3Errors.address_line }}</p>
-                                    <p v-if="form.errors.address_line" class="text-red-600 text-xs mt-1.5">{{ form.errors.address_line }}</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Zip Code</label>
-                                    <input v-model="zipCode" type="text" readonly placeholder="Auto-filled from city" class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl bg-gray-50 text-gray-500 text-sm" />
-                                </div>
-
-                                <!-- Map Pin -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2">
-                                        Pin Exact Location <span class="text-red-500">*</span>
-                                        <span class="text-xs font-normal text-gray-400 italic">{{ form.role === 'distributor' ? '(Your shop or warehouse location)' : '(Required for delivery)' }}</span>
-                                    </label>
-                                    <MapPicker
-                                        v-model:lat="form.latitude"
-                                        v-model:lng="form.longitude"
-                                        :geocodeQuery="geocodeQuery"
-                                        height="200px"
-                                        @update:address="onMapAddressPicked"
-                                    />
-                                    <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 -translate-y-1" enter-to-class="opacity-100 translate-y-0">
-                                        <p v-if="detectedLocation" class="mt-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
-                                            <svg class="h-3.5 w-3.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-                                            {{ detectedLocation }}
-                                        </p>
-                                    </transition>
-                                    <p v-if="step3Errors.location" class="text-red-500 text-xs mt-1.5">{{ step3Errors.location }}</p>
-                                    <p v-if="form.errors.latitude" class="text-red-600 text-xs mt-1.5">{{ form.errors.latitude }}</p>
-                                </div>
-
-                                <!-- Terms -->
-                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-3.5">
-                                    <label class="flex items-start gap-3 cursor-pointer">
-                                        <input type="checkbox" v-model="form.terms_accepted"
-                                            class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0">
-                                        <div class="text-sm leading-snug text-gray-700">
-                                            I agree to the
-                                            <button type="button" @click="showTermsModal = true" class="text-blue-600 hover:underline font-semibold">Terms and Conditions</button>
-                                            of MedEquip, including the
-                                            <span v-if="form.role === 'customer'" class="font-semibold text-gray-800">Customer Terms</span>
-                                            <span v-else class="font-semibold text-gray-800">Distributor Terms</span>.
-                                        </div>
-                                    </label>
-                                    <p v-if="step3Errors.terms" class="text-red-500 text-xs mt-1.5 ml-7">{{ step3Errors.terms }}</p>
-                                    <p v-if="form.errors.terms_accepted" class="text-red-600 text-xs mt-1 ml-7">{{ form.errors.terms_accepted }}</p>
-                                </div>
-                            </div>
-
-                            <!-- ─── Navigation ─────────────────────────────────────────── -->
-                            <div class="pt-2 flex items-center justify-between gap-3">
-                                <button type="button" v-if="currentStep > 1" @click="currentStep--"
-                                    class="text-gray-500 hover:text-gray-800 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-gray-100 transition">
-                                    Back
-                                </button>
-                                <div v-else></div>
-
-                                <!-- Next button (steps 1 and 2) -->
-                                <button type="button" v-if="currentStep < 3" @click="tryAdvance"
-                                    class="font-bold text-sm px-8 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2"
-                                    :class="canAdvance ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
-                                    Next
-                                </button>
-
-                                <!-- Submit button (step 3) -->
-                                <button type="submit" v-if="currentStep === 3" :disabled="form.processing"
-                                    class="bg-blue-600 text-white px-8 py-2.5 rounded-xl hover:bg-blue-700 transition-all font-bold text-sm shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
-                                    <svg v-if="form.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                    {{ form.processing ? 'Creating account…' : 'Create Account' }}
-                                </button>
-                            </div>
-                        </form>
-
-                        <p class="text-sm text-center mt-6 text-gray-500">
-                            Already have an account?
-                            <Link href="/login" class="text-blue-600 hover:underline font-bold ml-1">Sign in</Link>
-                        </p>
-                    </div>
+                    </label>
+                    <p v-if="step3Errors.terms" class="ml-7 mt-1 text-sm text-danger">{{ step3Errors.terms }}</p>
+                    <p v-if="form.errors.terms_accepted" class="ml-7 mt-1 text-sm text-danger">{{ form.errors.terms_accepted }}</p>
                 </div>
             </div>
-        </div>
-    </div>
+
+            <!-- Navigation -->
+            <div class="flex items-center justify-between gap-3 pt-2">
+                <BaseButton v-if="currentStep > 1" variant="ghost" @click="currentStep--">Back</BaseButton>
+                <div v-else></div>
+
+                <!-- Steps 1 and 2. Stays clickable when incomplete so the step's validation messages can appear. -->
+                <BaseButton v-if="currentStep < 3" :variant="canAdvance ? 'primary' : 'secondary'" class="min-w-32" @click="tryAdvance">Next</BaseButton>
+
+                <BaseButton v-if="currentStep === 3" type="submit" :disabled="form.processing" class="min-w-40">
+                    {{ form.processing ? 'Creating account…' : 'Create account' }}
+                </BaseButton>
+            </div>
+        </form>
+
+        <p class="mt-6 text-center text-ink-soft">
+            Already have an account?
+            <Link href="/login" class="ml-1 font-medium text-brand hover:text-brand-dark hover:underline underline-offset-2">Sign in</Link>
+        </p>
+    </AuthLayout>
 </template>
 
 <script setup>
+import AuthLayout from '@/Layouts/AuthLayout.vue';
+import BaseButton from '@/Components/ui/BaseButton.vue';
+import TextInput from '@/Components/ui/TextInput.vue';
+import SelectInput from '@/Components/ui/SelectInput.vue';
+import ChoiceCard from '@/Components/ui/ChoiceCard.vue';
 import { computed, reactive, ref, watch, onMounted } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import TermsModal from '@/Components/TermsModal.vue';

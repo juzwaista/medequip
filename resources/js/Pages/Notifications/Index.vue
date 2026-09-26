@@ -3,20 +3,20 @@
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Notifications</h1>
-                    <p class="text-gray-600 mt-1 text-sm">Stay updated on your orders and account activity.</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-ink">Notifications</h1>
+                    <p class="text-ink-soft mt-1 text-sm">Stay updated on your orders and account activity.</p>
                 </div>
                 <button
                     v-if="notifications.data?.length && hasUnread"
                     type="button"
-                    class="px-4 py-2 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    class="px-4 py-2 rounded-card border border-line text-sm font-semibold text-ink hover:bg-mist"
                     @click="markAllRead"
                 >
                     Mark all read
                 </button>
             </div>
 
-            <div v-if="!notifications.data?.length" class="bg-white rounded-xl shadow border border-gray-100 p-12 text-center text-gray-500">
+            <div v-if="!notifications.data?.length" class="bg-white rounded-card shadow border border-line p-12 text-center text-ink-soft">
                 You're all caught up.
             </div>
 
@@ -27,12 +27,12 @@
                 >
                     <!-- Single Notification -->
                     <div v-if="!g.isGroup" 
-                        class="bg-white rounded-xl shadow-sm border overflow-hidden transition"
-                        :class="g.latest.read_at ? 'border-gray-100 opacity-80' : 'border-blue-200 ring-1 ring-blue-100'"
+                        class="bg-white rounded-card shadow-sm border overflow-hidden transition"
+                        :class="g.latest.read_at ? 'border-line opacity-80' : 'border-brand-soft ring-1 ring-brand-soft'"
                     >
                         <button
                             type="button"
-                            class="block p-4 hover:bg-gray-50/80 text-left w-full"
+                            class="block p-4 hover:bg-mist/80 text-left w-full"
                             @click="openNotification(g.latest)"
                         >
                             <div class="flex gap-3 items-start">
@@ -43,21 +43,21 @@
                                 />
                                 <div class="min-w-0 flex-1">
                                     <div class="flex justify-between gap-2 items-start">
-                                        <p class="font-semibold text-gray-900 text-sm sm:text-base">
+                                        <p class="font-semibold text-ink text-sm sm:text-base">
                                             {{ g.latest.data?.title || 'Notification' }}
                                         </p>
                                         <span
                                             v-if="!g.latest.read_at"
-                                            class="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"
+                                            class="shrink-0 w-2 h-2 rounded-full bg-brand mt-2"
                                             aria-hidden="true"
                                         />
                                     </div>
-                                    <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ g.latest.data?.body || g.latest.data?.preview || g.latest.data?.message || '' }}</p>
+                                    <p class="text-sm text-ink-soft mt-1 line-clamp-2">{{ g.latest.data?.body || g.latest.data?.preview || g.latest.data?.message || '' }}</p>
                                     <div class="flex items-center gap-2 mt-2">
-                                        <p class="text-xs text-gray-400">{{ formatWhen(g.latest.created_at) }}</p>
+                                        <p class="text-xs text-ink-faint">{{ formatWhen(g.latest.created_at) }}</p>
                                         <span
                                             v-if="kindLabel(g.latest)"
-                                            class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                                            class="text-xs font-semibold   px-1.5 py-0.5 rounded-full"
                                             :class="kindBadge(g.latest)"
                                         >{{ kindLabel(g.latest) }}</span>
                                     </div>
@@ -67,32 +67,32 @@
                     </div>
 
                     <!-- Grouped Notification -->
-                    <div v-else class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div v-else class="bg-white rounded-card shadow-sm border border-line overflow-hidden">
                         <!-- Group Header -->
                         <div 
-                            class="flex items-center justify-between p-4 bg-gray-50/50 cursor-pointer hover:bg-gray-100/50 transition border-b border-gray-100"
+                            class="flex items-center justify-between p-4 bg-mist/50 cursor-pointer hover:bg-mist/50 transition border-b border-line"
                             @click="toggleGroup(g.id)"
                         >
                             <div class="flex items-center gap-3">
-                                <span class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                                    <svg v-if="g.type === 'order'" class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                                    <svg v-else class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                <span class="w-8 h-8 rounded-control bg-white border border-line flex items-center justify-center shadow-sm">
+                                    <svg v-if="g.type === 'order'" class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    <svg v-else class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                 </span>
                                 <div>
-                                    <p class="text-xs font-black text-gray-900 uppercase tracking-widest">
+                                    <p class="text-xs font-semibold text-ink  ">
                                         {{ g.type === 'order' ? 'Order' : 'Chat' }} Updates
                                     </p>
-                                    <p class="text-[10px] text-gray-500 font-bold">
+                                    <p class="text-xs text-ink-soft font-bold">
                                         {{ g.label }} &middot; {{ g.items.length }} notifications
                                     </p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span v-if="g.unreadCount > 0" class="bg-blue-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                                <span v-if="g.unreadCount > 0" class="bg-brand text-white text-xs font-semibold px-1.5 py-0.5 rounded-full">
                                     {{ g.unreadCount }} new
                                 </span>
                                 <svg 
-                                    class="w-5 h-5 text-gray-400 transition-transform duration-300" 
+                                    class="w-5 h-5 text-ink-faint transition-transform duration-300" 
                                     :class="{'rotate-180': expandedGroups.includes(g.id)}"
                                     fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                 >
@@ -102,10 +102,10 @@
                         </div>
 
                         <!-- Latest Item (Always Visible if collapsed, but styled as summary) -->
-                        <div v-if="!expandedGroups.includes(g.id)" class="divide-y divide-gray-50">
+                        <div v-if="!expandedGroups.includes(g.id)" class="divide-y divide-line">
                             <button
                                 type="button"
-                                class="block p-4 hover:bg-gray-50/80 text-left w-full"
+                                class="block p-4 hover:bg-mist/80 text-left w-full"
                                 @click="openNotification(g.latest)"
                             >
                                 <div class="flex gap-3 items-start">
@@ -116,27 +116,27 @@
                                     />
                                     <div class="min-w-0 flex-1">
                                         <div class="flex justify-between gap-2 items-start">
-                                            <p class="font-semibold text-gray-900 text-sm">
+                                            <p class="font-semibold text-ink text-sm">
                                                 {{ g.latest.data?.title }}
                                             </p>
-                                            <p class="text-[10px] text-gray-400 shrink-0">{{ formatWhen(g.latest.created_at) }}</p>
+                                            <p class="text-xs text-ink-faint shrink-0">{{ formatWhen(g.latest.created_at) }}</p>
                                         </div>
-                                        <p class="text-xs text-gray-600 mt-0.5 line-clamp-1 italic">Latest: {{ g.latest.data?.body || g.latest.data?.preview }}</p>
+                                        <p class="text-xs text-ink-soft mt-0.5 line-clamp-1 italic">Latest: {{ g.latest.data?.body || g.latest.data?.preview }}</p>
                                     </div>
                                 </div>
                             </button>
                         </div>
 
                         <!-- All Items (Expanded) -->
-                        <div v-else class="divide-y divide-gray-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div v-else class="divide-y divide-line    duration-300">
                             <div 
                                 v-for="n in g.items" 
                                 :key="n.id"
-                                class="p-4 hover:bg-gray-50/80 transition group relative"
-                                :class="{'bg-blue-50/30': !n.read_at}"
+                                class="p-4 hover:bg-mist/80 transition group relative"
+                                :class="{'bg-brand-tint/30': !n.read_at}"
                             >
                                 <div 
-                                    class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 scale-y-0 group-hover:scale-y-100 transition-transform"
+                                    class="absolute left-0 top-0 bottom-0 w-1 bg-brand scale-y-0 group-hover:scale-y-100 transition-transform"
                                     v-if="!n.read_at"
                                 ></div>
                                 <button
@@ -152,13 +152,13 @@
                                         />
                                         <div class="min-w-0 flex-1">
                                             <div class="flex justify-between gap-2 items-start">
-                                                <p class="font-medium text-gray-900 text-sm">
+                                                <p class="font-medium text-ink text-sm">
                                                     {{ n.data?.title }}
                                                 </p>
-                                                <span v-if="!n.read_at" class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0"></span>
+                                                <span v-if="!n.read_at" class="w-1.5 h-1.5 rounded-full bg-brand mt-1.5 shrink-0"></span>
                                             </div>
-                                            <p class="text-xs text-gray-600 mt-0.5">{{ n.data?.body || n.data?.preview }}</p>
-                                            <p class="text-[10px] text-gray-400 mt-1">{{ formatWhen(n.created_at) }}</p>
+                                            <p class="text-xs text-ink-soft mt-0.5">{{ n.data?.body || n.data?.preview }}</p>
+                                            <p class="text-xs text-ink-faint mt-1">{{ formatWhen(n.created_at) }}</p>
                                         </div>
                                     </div>
                                 </button>
@@ -173,9 +173,9 @@
                     v-for="link in notifications.links"
                     :key="link.label"
                     :href="link.url || '#'"
-                    class="px-3 py-1 rounded-lg text-sm border"
+                    class="px-3 py-1 rounded-control text-sm border"
                     :class="[
-                        link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                        link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                         !link.url ? 'pointer-events-none opacity-50' : '',
                     ]"
                     preserve-state
@@ -301,27 +301,27 @@ function iconSvg(n) {
 }
 
 const bgMap = {
-    welcome: 'bg-indigo-500',
-    order_placed: 'bg-blue-500',
-    order_accepted: 'bg-emerald-500',
+    welcome: 'bg-brand',
+    order_placed: 'bg-brand',
+    order_accepted: 'bg-brand',
     order_rejected: 'bg-red-500',
     order_packed: 'bg-amber-500',
-    order_shipped: 'bg-sky-500',
-    order_delivered: 'bg-green-600',
-    order_cancelled: 'bg-gray-500',
-    order_completed: 'bg-emerald-600',
-    payment_confirmed: 'bg-green-500',
-    prescription: 'bg-violet-500',
+    order_shipped: 'bg-brand',
+    order_delivered: 'bg-brand',
+    order_cancelled: 'bg-ink-soft',
+    order_completed: 'bg-brand',
+    payment_confirmed: 'bg-brand',
+    prescription: 'bg-brand',
     review_prompt: 'bg-yellow-500',
-    chat: 'bg-blue-500',
+    chat: 'bg-brand',
     moderation: 'bg-rose-600',
-    system_announcement: 'bg-indigo-600',
-    default: 'bg-gray-400',
+    system_announcement: 'bg-brand',
+    default: 'bg-ink-soft',
 };
 
 function iconBg(n) {
     const kind = n.data?.kind || '';
-    if (kind === 'distributor_suspension_lifted') return 'bg-emerald-600';
+    if (kind === 'distributor_suspension_lifted') return 'bg-brand';
     if (kind === 'distributor_warned') return 'bg-amber-500';
     if (kind.startsWith('distributor_')) return 'bg-rose-600';
     return bgMap[iconKey(n)] || bgMap.default;
@@ -350,25 +350,25 @@ const labelMap = {
 };
 
 const badgeMap = {
-    order_placed: 'bg-blue-50 text-blue-700',
-    order_accepted: 'bg-emerald-50 text-emerald-700',
+    order_placed: 'bg-brand-tint text-brand-dark',
+    order_accepted: 'bg-brand-tint text-brand-dark',
     order_rejected: 'bg-red-50 text-red-700',
     order_packed: 'bg-amber-50 text-amber-700',
-    order_shipped: 'bg-sky-50 text-sky-700',
-    order_delivered: 'bg-green-50 text-green-700',
-    order_cancelled: 'bg-gray-100 text-gray-600',
-    order_completed: 'bg-emerald-50 text-emerald-700',
-    payment_confirmed: 'bg-green-50 text-green-700',
-    order_requires_prescription: 'bg-violet-50 text-violet-700',
-    prescription_uploaded: 'bg-violet-50 text-violet-700',
-    prescription_approved: 'bg-emerald-50 text-emerald-700',
+    order_shipped: 'bg-brand-tint text-brand-dark',
+    order_delivered: 'bg-brand-tint text-brand-dark',
+    order_cancelled: 'bg-mist text-ink-soft',
+    order_completed: 'bg-brand-tint text-brand-dark',
+    payment_confirmed: 'bg-brand-tint text-brand-dark',
+    order_requires_prescription: 'bg-brand-tint text-brand-dark',
+    prescription_uploaded: 'bg-brand-tint text-brand-dark',
+    prescription_approved: 'bg-brand-tint text-brand-dark',
     prescription_rejected: 'bg-red-50 text-red-700',
     review_prompt: 'bg-yellow-50 text-yellow-700',
     distributor_warned: 'bg-amber-50 text-amber-800',
     distributor_suspended: 'bg-rose-50 text-rose-800',
-    distributor_suspension_lifted: 'bg-emerald-50 text-emerald-800',
-    distributor_banned: 'bg-gray-800 text-gray-100',
-    system_announcement: 'bg-indigo-50 text-indigo-800',
+    distributor_suspension_lifted: 'bg-brand-tint text-brand-dark',
+    distributor_banned: 'bg-ink text-white',
+    system_announcement: 'bg-brand-tint text-brand-dark',
 };
 
 function kindLabel(n) {
@@ -376,7 +376,7 @@ function kindLabel(n) {
 }
 
 function kindBadge(n) {
-    return badgeMap[n.data?.kind] || 'bg-gray-100 text-gray-600';
+    return badgeMap[n.data?.kind] || 'bg-mist text-ink-soft';
 }
 
 function resolveHref(n) {

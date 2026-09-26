@@ -14,7 +14,7 @@
                     <p class="text-xs sm:text-sm text-amber-800/90 mt-1 leading-relaxed" v-html="roleBannerText"></p>
                     <p
                         v-if="$page.props.flash?.status === 'verification-link-sent'"
-                        class="text-xs font-semibold text-emerald-800 mt-2 flex items-center gap-1.5"
+                        class="text-xs font-semibold text-brand-dark mt-2 flex items-center gap-1.5"
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -27,7 +27,7 @@
                 <button
                     type="button"
                     :disabled="resendForm.processing || cooldown > 0"
-                    class="inline-flex justify-center items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 disabled:opacity-60 transition shadow-sm min-w-[120px]"
+                    class="inline-flex justify-center items-center gap-2 px-4 py-2 rounded-control bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 disabled:opacity-60 transition shadow-sm min-w-[120px]"
                     @click="resend"
                 >
                     <svg v-if="resendForm.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -74,7 +74,7 @@ const roleBannerText = computed(() => {
         case 'super_admin':
             return 'You can browse now; you cannot **access administrative tools** until you verify.';
         default:
-            return 'You can browse the catalog now; **checkout and wallet** stay locked until you verify.';
+            return 'You can browse the catalog now; **checkout** stays locked until you verify.';
     }
 });
 

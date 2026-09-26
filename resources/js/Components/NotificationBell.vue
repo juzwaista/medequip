@@ -2,7 +2,7 @@
     <div class="relative" ref="containerRef">
         <button
             type="button"
-            class="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition relative"
+            class="p-3 text-ink-soft hover:text-brand hover:bg-brand-tint rounded-card transition relative"
             title="Notifications"
             @click="toggleModal"
         >
@@ -11,7 +11,7 @@
             </svg>
             <span
                 v-if="count > 0"
-                class="absolute top-1 right-1 bg-rose-500 text-white text-[11px] font-black rounded-full min-w-[1.25rem] h-5 px-1 flex items-center justify-center leading-none"
+                class="absolute top-1 right-1 bg-rose-500 text-white text-[11px] font-semibold rounded-full min-w-[1.25rem] h-5 px-1 flex items-center justify-center leading-none"
             >
                 {{ count > 9 ? '9+' : count }}
             </span>
@@ -30,39 +30,39 @@
         >
             <div 
                 v-if="isOpen" 
-                class="fixed inset-0 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 w-full h-[100dvh] md:h-auto md:w-96 bg-white md:shadow-2xl ring-1 ring-black/5 md:rounded-2xl z-[100] flex flex-col max-h-[100dvh] md:max-h-[32rem] overflow-hidden"
+                class="fixed inset-0 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 w-full h-[100dvh] md:h-auto md:w-96 bg-white md:shadow-2xl ring-1 ring-black/5 md:rounded-card z-[100] flex flex-col max-h-[100dvh] md:max-h-[32rem] overflow-hidden"
             >
-                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/80 shrink-0">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-line bg-mist/80 shrink-0">
                     <div class="flex items-center gap-2">
-                        <h2 class="text-lg font-bold tracking-tight text-gray-900">Notifications</h2>
-                        <span v-if="count > 0" class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{{ count }} new</span>
+                        <h2 class="text-lg font-bold tracking-tight text-ink">Notifications</h2>
+                        <span v-if="count > 0" class="px-2 py-0.5 rounded-full bg-brand-tint text-brand-dark text-xs font-bold">{{ count }} new</span>
                     </div>
-                    <button type="button" class="text-gray-400 hover:text-gray-600 transition" @click="closeModal">
+                    <button type="button" class="text-ink-faint hover:text-ink-soft transition" @click="closeModal">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
 
                 <div class="flex-1 overflow-y-auto w-full overscroll-contain">
                     <div v-if="loading" class="py-12 flex justify-center">
-                        <svg class="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <svg class="animate-spin h-6 w-6 text-brand" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
                     <div v-else-if="items.length === 0" class="py-12 px-6 text-center">
-                        <div class="mx-auto w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        <div class="mx-auto w-12 h-12 bg-mist rounded-full flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-ink-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                         </div>
-                        <p class="text-sm font-bold text-gray-900">You're all caught up!</p>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Check back later for updates and alerts.</p>
+                        <p class="text-sm font-bold text-ink">You're all caught up!</p>
+                        <p class="text-[11px] text-ink-soft mt-0.5">Check back later for updates and alerts.</p>
                     </div>
-                    <div v-else class="divide-y divide-gray-100 pb-2">
+                    <div v-else class="divide-y divide-line pb-2">
                         <div v-for="g in displayGroups" :key="g.id">
                             <!-- Single Item -->
                             <div 
                                 v-if="!g.isGroup"
-                                class="p-4 hover:bg-gray-50/80 transition-colors group cursor-pointer"
-                                :class="{ 'bg-blue-50/40': !g.latest.read_at }"
+                                class="p-4 hover:bg-mist/80 transition-colors group cursor-pointer"
+                                :class="{ 'bg-brand-tint/40': !g.latest.read_at }"
                                 @click="handleItemClick(g.latest)"
                             >
                                 <div class="flex items-start gap-3 w-full">
@@ -73,46 +73,46 @@
                                     ></span>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex justify-between gap-1 items-start">
-                                            <p class="text-sm font-bold text-gray-900 leading-snug">
+                                            <p class="text-sm font-bold text-ink leading-snug">
                                                 {{ g.latest.data.title || 'Notification' }}
                                             </p>
-                                            <span v-if="!g.latest.read_at" class="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5"></span>
+                                            <span v-if="!g.latest.read_at" class="shrink-0 w-2 h-2 rounded-full bg-brand mt-1.5"></span>
                                         </div>
-                                        <p class="text-xs text-gray-600 mt-1 leading-relaxed line-clamp-2">
+                                        <p class="text-xs text-ink-soft mt-1 leading-relaxed line-clamp-2">
                                             {{ g.latest.data.body || g.latest.data.preview || g.latest.data.message || '' }}
                                         </p>
                                         <div class="flex items-center gap-2 mt-2">
-                                            <p class="text-[10px] text-gray-400 font-medium">{{ formatTime(g.latest.created_at) }}</p>
+                                            <p class="text-xs text-ink-faint font-medium">{{ formatTime(g.latest.created_at) }}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Grouped Items -->
-                            <div v-else class="border-y border-gray-50 bg-gray-50/30">
+                            <div v-else class="border-y border-line bg-mist/30">
                                 <div 
-                                    class="p-4 hover:bg-gray-100/50 transition cursor-pointer flex items-center justify-between"
+                                    class="p-4 hover:bg-mist/50 transition cursor-pointer flex items-center justify-between"
                                     @click="toggleGroup(g.id)"
                                 >
                                     <div class="flex items-center gap-3">
                                         <div class="relative">
-                                            <span class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm text-gray-600 group-hover:text-blue-600">
+                                            <span class="w-8 h-8 rounded-control bg-white border border-line flex items-center justify-center shadow-sm text-ink-soft group-hover:text-brand">
                                                 <svg v-if="g.type === 'order'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                                                 <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                             </span>
-                                            <span v-if="g.unreadCount > 0" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 border-2 border-gray-50 rounded-full"></span>
+                                            <span v-if="g.unreadCount > 0" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand border-2 border-line rounded-full"></span>
                                         </div>
                                         <div>
-                                            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">
+                                            <p class="text-xs font-semibold text-ink-soft   leading-none mb-1">
                                                 {{ g.type === 'order' ? 'Order' : 'Chat' }}
                                             </p>
-                                            <p class="text-xs font-bold text-gray-900 leading-tight">
-                                                {{ g.label }} <span class="text-gray-400 font-medium ml-1">({{ g.items.length }})</span>
+                                            <p class="text-xs font-bold text-ink leading-tight">
+                                                {{ g.label }} <span class="text-ink-faint font-medium ml-1">({{ g.items.length }})</span>
                                             </p>
                                         </div>
                                     </div>
                                     <svg 
-                                        class="w-4 h-4 text-gray-400 transition-transform duration-300"
+                                        class="w-4 h-4 text-ink-faint transition-transform duration-300"
                                         :class="{'rotate-180': expandedGroups.includes(g.id)}"
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                     >
@@ -121,19 +121,19 @@
                                 </div>
 
                                 <!-- Sub-items -->
-                                <div v-if="expandedGroups.includes(g.id)" class="bg-white/80 divide-y divide-gray-50 border-t border-gray-100">
+                                <div v-if="expandedGroups.includes(g.id)" class="bg-white/80 divide-y divide-line border-t border-line">
                                     <div 
                                         v-for="n in g.items" 
                                         :key="n.id"
-                                        class="p-3 pl-12 hover:bg-blue-50/30 transition cursor-pointer relative"
+                                        class="p-3 pl-12 hover:bg-brand-tint/30 transition cursor-pointer relative"
                                         @click="handleItemClick(n)"
                                     >
-                                        <div v-if="!n.read_at" class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                                        <div v-if="!n.read_at" class="absolute left-0 top-0 bottom-0 w-1 bg-brand"></div>
                                         <div class="flex justify-between items-start gap-2">
-                                            <p class="text-xs font-bold text-gray-900 leading-snug">{{ n.data.title }}</p>
-                                            <p class="text-[9px] text-gray-400 italic shrink-0">{{ formatTime(n.created_at) }}</p>
+                                            <p class="text-xs font-bold text-ink leading-snug">{{ n.data.title }}</p>
+                                            <p class="text-xs text-ink-faint italic shrink-0">{{ formatTime(n.created_at) }}</p>
                                         </div>
-                                        <p class="text-[10px] text-gray-500 mt-0.5 line-clamp-1 truncate">{{ n.data.body || n.data.preview }}</p>
+                                        <p class="text-xs text-ink-soft mt-0.5 line-clamp-1 truncate">{{ n.data.body || n.data.preview }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -141,10 +141,10 @@
                     </div>
                 </div>
 
-                <div v-if="items.length > 0" class="p-3 border-t border-gray-100 bg-gray-50/50 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+                <div v-if="items.length > 0" class="p-3 border-t border-line bg-mist/50 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
                     <button
                         type="button"
-                        class="w-full py-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold transition-colors shadow-sm"
+                        class="w-full py-2 bg-white border border-line hover:border-line hover:bg-mist text-ink rounded-card text-xs font-bold transition-colors shadow-sm"
                         @click="markAllRead"
                     >
                         Mark all as read
@@ -342,29 +342,29 @@ function iconSvg(n) {
 }
 
 const bgMap = {
-    welcome: 'bg-indigo-500',
-    order_placed: 'bg-blue-500',
-    order_accepted: 'bg-emerald-500',
+    welcome: 'bg-brand',
+    order_placed: 'bg-brand',
+    order_accepted: 'bg-brand',
     order_rejected: 'bg-red-500',
     order_packed: 'bg-amber-500',
-    order_shipped: 'bg-sky-500',
-    order_delivered: 'bg-green-600',
-    order_cancelled: 'bg-gray-500',
-    order_completed: 'bg-emerald-600',
-    payment_confirmed: 'bg-green-500',
-    prescription: 'bg-violet-500',
+    order_shipped: 'bg-brand',
+    order_delivered: 'bg-brand',
+    order_cancelled: 'bg-ink-soft',
+    order_completed: 'bg-brand',
+    payment_confirmed: 'bg-brand',
+    prescription: 'bg-brand',
     review_prompt: 'bg-yellow-500',
-    chat: 'bg-blue-500',
+    chat: 'bg-brand',
     moderation: 'bg-rose-600',
     account_warning: 'bg-rose-500',
-    system_announcement: 'bg-indigo-600',
-    dss_alert: 'bg-cyan-600',
-    default: 'bg-gray-400',
+    system_announcement: 'bg-brand',
+    dss_alert: 'bg-brand',
+    default: 'bg-ink-soft',
 };
 
 function iconBg(n) {
     const kind = n.data?.kind || '';
-    if (kind === 'distributor_suspension_lifted') return 'bg-emerald-600';
+    if (kind === 'distributor_suspension_lifted') return 'bg-brand';
     if (kind === 'distributor_warned') return 'bg-amber-500';
     if (kind.startsWith('distributor_')) return 'bg-rose-600';
     return bgMap[iconKey(n)] || bgMap.default;
@@ -395,27 +395,27 @@ const labelMap = {
 };
 
 const badgeMap = {
-    order_placed: 'bg-blue-50 text-blue-700',
-    order_accepted: 'bg-emerald-50 text-emerald-700',
+    order_placed: 'bg-brand-tint text-brand-dark',
+    order_accepted: 'bg-brand-tint text-brand-dark',
     order_rejected: 'bg-red-50 text-red-700',
     order_packed: 'bg-amber-50 text-amber-700',
-    order_shipped: 'bg-sky-50 text-sky-700',
-    order_delivered: 'bg-green-50 text-green-700',
-    order_cancelled: 'bg-gray-100 text-gray-600',
-    order_completed: 'bg-emerald-50 text-emerald-700',
-    payment_confirmed: 'bg-green-50 text-green-700',
-    order_requires_prescription: 'bg-violet-50 text-violet-700',
-    prescription_uploaded: 'bg-violet-50 text-violet-700',
-    prescription_approved: 'bg-emerald-50 text-emerald-700',
+    order_shipped: 'bg-brand-tint text-brand-dark',
+    order_delivered: 'bg-brand-tint text-brand-dark',
+    order_cancelled: 'bg-mist text-ink-soft',
+    order_completed: 'bg-brand-tint text-brand-dark',
+    payment_confirmed: 'bg-brand-tint text-brand-dark',
+    order_requires_prescription: 'bg-brand-tint text-brand-dark',
+    prescription_uploaded: 'bg-brand-tint text-brand-dark',
+    prescription_approved: 'bg-brand-tint text-brand-dark',
     prescription_rejected: 'bg-red-50 text-red-700',
     review_prompt: 'bg-yellow-50 text-yellow-700',
     distributor_warned: 'bg-amber-50 text-amber-800',
     distributor_suspended: 'bg-rose-50 text-rose-800',
-    distributor_suspension_lifted: 'bg-emerald-50 text-emerald-800',
-    distributor_banned: 'bg-gray-800 text-gray-100',
+    distributor_suspension_lifted: 'bg-brand-tint text-brand-dark',
+    distributor_banned: 'bg-ink text-white',
     account_warning: 'bg-rose-50 text-rose-800',
-    system_announcement: 'bg-indigo-50 text-indigo-800',
-    dss_alert: 'bg-cyan-50 text-cyan-800',
+    system_announcement: 'bg-brand-tint text-brand-dark',
+    dss_alert: 'bg-brand-tint text-brand-dark',
 };
 
 function kindLabel(n) {
@@ -423,7 +423,7 @@ function kindLabel(n) {
 }
 
 function kindBadge(n) {
-    return badgeMap[n.data?.kind] || 'bg-gray-100 text-gray-600';
+    return badgeMap[n.data?.kind] || 'bg-mist text-ink-soft';
 }
 
 function formatTime(iso) {

@@ -1,77 +1,71 @@
 <template>
     <MainLayout>
-        <div class="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div class="mb-8">
-                <h1 class="text-2xl font-bold text-gray-900">Upload prescription</h1>
-                <p class="text-gray-600 mt-2 text-sm leading-relaxed">
-                    Order <span class="font-mono font-semibold">{{ order.order_number }}</span> includes medicine that requires a valid prescription.
-                    Please upload a clear photo of your prescription. Your distributor will review it before you can complete payment.
+        <div class="max-w-xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+            <nav class="mb-4 text-sm text-ink-soft" aria-label="Breadcrumb">
+                <Link :href="`/orders/${order.order_number}`" class="hover:text-brand hover:underline underline-offset-2">Back to order {{ order.order_number }}</Link>
+            </nav>
+
+            <div class="mb-6">
+                <h1 class="text-2xl sm:text-[28px] font-semibold tracking-tight text-ink">Upload your prescription</h1>
+                <p class="mt-2 max-w-prose leading-relaxed text-ink-soft">
+                    Order <span class="font-medium tabular-nums text-ink">{{ order.order_number }}</span> includes medicine that requires a valid prescription.
+                    Upload a clear photo of your prescription. Your distributor will review it before you can complete payment.
                 </p>
             </div>
 
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <div v-if="$page.props.flash?.success" class="mb-4 text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                    {{ $page.props.flash.success }}
-                </div>
+            <div class="rounded-card border border-line bg-white p-5 sm:p-6">
+                <AlertBanner v-if="$page.props.flash?.success" variant="success" class="mb-5">{{ $page.props.flash.success }}</AlertBanner>
 
                 <form @submit.prevent="submit" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-2">Patient Full Name <span class="text-red-500">*</span></label>
-                        <input
-                            v-model="form.prescription_patient_name"
-                            type="text"
-                            required
-                            placeholder="Full name as written on ID"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p v-if="form.errors.prescription_patient_name" class="text-red-600 text-sm mt-2">{{ form.errors.prescription_patient_name }}</p>
-                    </div>
+                    <TextInput
+                        v-model="form.prescription_patient_name"
+                        label="Patient full name"
+                        type="text"
+                        required
+                        placeholder="Full name as written on the ID"
+                        :error="form.errors.prescription_patient_name"
+                    />
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-2">Patient Valid ID Photo <span class="text-red-500">*</span></label>
+                        <label class="mb-1 block text-sm font-medium text-ink">Patient valid ID photo</label>
                         <input
                             type="file"
                             accept="image/*"
                             required
                             @change="e => form.prescription_id_image = e.target.files[0]"
-                            class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700"
+                            class="block w-full text-sm text-ink-soft file:mr-3 file:cursor-pointer file:rounded-control file:border file:border-line file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink hover:file:bg-mist"
                         />
-                        <p class="text-xs text-gray-500 mt-1">Provide a clear photo of the patient's ID to match with the prescription.</p>
-                        <p v-if="form.errors.prescription_id_image" class="text-red-600 text-sm mt-2">{{ form.errors.prescription_id_image }}</p>
+                        <p class="mt-1 text-sm text-ink-soft">A clear photo of the patient's ID, to match against the prescription.</p>
+                        <p v-if="form.errors.prescription_id_image" class="mt-1 text-sm text-danger">{{ form.errors.prescription_id_image }}</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-2">Prescription photo <span class="text-red-500">*</span></label>
+                        <label class="mb-1 block text-sm font-medium text-ink">Prescription photo</label>
                         <input
                             ref="fileInput"
                             type="file"
                             accept="image/*"
                             required
                             @change="onFile"
-                            class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700"
+                            class="block w-full text-sm text-ink-soft file:mr-3 file:cursor-pointer file:rounded-control file:border file:border-line file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink hover:file:bg-mist"
                         />
-                        <p class="text-xs text-gray-500 mt-1">JPG or PNG, max 8MB. Ensure all details are readable.</p>
-                        <p v-if="form.errors.prescription" class="text-red-600 text-sm mt-2">{{ form.errors.prescription }}</p>
+                        <p class="mt-1 text-sm text-ink-soft">JPG or PNG, up to 8 MB. Make sure every detail is readable.</p>
+                        <p v-if="form.errors.prescription" class="mt-1 text-sm text-danger">{{ form.errors.prescription }}</p>
                     </div>
 
-                    <div v-if="previewUrl" class="rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
-                        <img :src="previewUrl" alt="Preview" class="w-full max-h-64 object-contain" />
+                    <div v-if="previewUrl" class="overflow-hidden rounded-card border border-line bg-mist">
+                        <img :src="previewUrl" alt="Preview of your prescription" class="max-h-64 w-full object-contain" />
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                        <button
+                    <div class="flex flex-col gap-3 pt-2 sm:flex-row">
+                        <BaseButton
                             type="submit"
                             :disabled="form.processing || !form.prescription || !form.prescription_patient_name || !form.prescription_id_image"
-                            class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50"
+                            class="flex-1"
                         >
                             {{ form.processing ? 'Uploading…' : 'Submit for review' }}
-                        </button>
-                        <Link
-                            :href="`/orders/${order.order_number}`"
-                            class="px-4 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 text-center"
-                        >
-                            Back to order
-                        </Link>
+                        </BaseButton>
+                        <BaseButton :href="`/orders/${order.order_number}`" variant="secondary">Back to order</BaseButton>
                     </div>
                 </form>
             </div>
@@ -80,6 +74,9 @@
 </template>
 
 <script setup>
+import BaseButton from '@/Components/ui/BaseButton.vue';
+import AlertBanner from '@/Components/ui/AlertBanner.vue';
+import TextInput from '@/Components/ui/TextInput.vue';
 import { ref } from 'vue';
 import { useForm, Link } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';

@@ -3,12 +3,12 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex justify-between items-center mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Saved Addresses</h1>
-                    <p class="text-gray-600 mt-2">Manage your delivery addresses for faster checkout</p>
+                    <h1 class="text-3xl font-bold text-ink">Saved Addresses</h1>
+                    <p class="text-ink-soft mt-2">Manage your delivery addresses for faster checkout</p>
                 </div>
                 <button 
                     @click="showAddForm = true"
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2"
+                    class="px-6 py-3 bg-brand text-white rounded-control hover:bg-brand-dark transition font-medium flex items-center gap-2"
                 >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -19,32 +19,32 @@
 
             <!-- Add/Edit Form Modal -->
             <div v-if="showAddForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">{{ editingAddress ? 'Edit Address' : 'Add New Address' }}</h2>
-                    <div v-if="Object.keys(errors).length" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <div class="bg-white rounded-card shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                    <h2 class="text-2xl font-bold text-ink mb-6">{{ editingAddress ? 'Edit Address' : 'Add New Address' }}</h2>
+                    <div v-if="Object.keys(errors).length" class="mb-4 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                         {{ Object.values(errors)[0] }}
                     </div>
                     
                     <form @submit.prevent="saveAddress" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Label (Optional)</label>
+                                <label class="block text-sm font-semibold text-ink mb-2">Label (Optional)</label>
                                 <input 
                                     v-model="form.label"
                                     type="text"
                                     placeholder="e.g., Home, Office"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                 />
                                 <p v-if="errors.label" class="text-red-500 text-sm mt-1">{{ errors.label }}</p>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Recipient Name *</label>
+                                <label class="block text-sm font-semibold text-ink mb-2">Recipient Name *</label>
                                 <input 
                                     v-model="form.recipient_name"
                                     type="text"
                                     required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                 />
                                 <p v-if="errors.recipient_name" class="text-red-500 text-sm mt-1">{{ errors.recipient_name }}</p>
                             </div>
@@ -53,12 +53,12 @@
                         <!-- City & Barangay -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">City/Municipality *</label>
+                                <label class="block text-sm font-semibold text-ink mb-2">City/Municipality *</label>
                                 <select
                                     v-model="selectedCity"
                                     @change="onCityChange"
                                     required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent bg-white"
                                 >
                                     <option value="">Select City</option>
                                     <option v-for="(data, city) in cities" :key="city" :value="city">
@@ -68,12 +68,12 @@
                                 <p v-if="errors.city" class="text-red-500 text-sm mt-1">{{ errors.city }}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Barangay *</label>
+                                <label class="block text-sm font-semibold text-ink mb-2">Barangay *</label>
                                 <select
                                     v-if="availableBarangays.length > 0"
                                     v-model="selectedBarangay"
                                     required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent bg-white"
                                 >
                                     <option value="">Select Barangay</option>
                                     <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">
@@ -87,40 +87,40 @@
                                     type="text"
                                     required
                                     placeholder="Enter barangay name"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                 />
                                 <p v-if="errors.barangay" class="text-red-500 text-sm mt-1">{{ errors.barangay }}</p>
                             </div>
                         </div>
 
                         <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Barangay Name *</label>
+                            <label class="block text-sm font-semibold text-ink mb-2">Barangay Name *</label>
                             <input
                                 v-model="manualBarangay"
                                 type="text"
                                 required
                                 placeholder="Type your barangay name"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                             />
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Complete Address *</label>
+                            <label class="block text-sm font-semibold text-ink mb-2">Complete Address *</label>
                             <input 
                                 v-model="form.address_line"
                                 type="text"
                                 required
                                 placeholder="e.g., Blk 5 Lot 10 Sampaguita St., Golden Meadows Subd."
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                             />
                             <p v-if="errors.address_line" class="text-red-500 text-sm mt-1">{{ errors.address_line }}</p>
                         </div>
 
                         <!-- Address Pin Location -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <label class="block text-sm font-semibold text-ink mb-2 flex items-center gap-2">
                                 Pin Exact Location
-                                <span class="text-xs font-normal text-gray-500 italic">(Optional — drop a pin to auto-fill City &amp; Barangay)</span>
+                                <span class="text-xs font-normal text-ink-soft italic">(Optional — drop a pin to auto-fill City &amp; Barangay)</span>
                             </label>
                             <MapPicker 
                                 v-model:lat="form.latitude" 
@@ -138,8 +138,8 @@
                                 leave-from-class="opacity-100 translate-y-0"
                                 leave-to-class="opacity-0 -translate-y-1"
                             >
-                                <p v-if="detectedLocation" class="mt-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
-                                    <svg class="h-3.5 w-3.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                <p v-if="detectedLocation" class="mt-2 text-xs text-brand-dark bg-brand-tint border border-brand-soft rounded-control px-3 py-2 flex items-center gap-1.5">
+                                    <svg class="h-3.5 w-3.5 text-brand flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
                                     {{ detectedLocation }}
                                 </p>
                             </transition>
@@ -147,18 +147,18 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Zip Code *</label>
+                                <label class="block text-sm font-semibold text-ink mb-2">Zip Code *</label>
                                 <input
                                     v-model="zipCode"
                                     type="text"
                                     readonly
-                                    class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                                    class="w-full px-4 py-3 border border-line rounded-control bg-mist text-ink-soft"
                                     placeholder="Auto-filled"
                                 />
                                 <p v-if="errors.zip_code" class="text-red-500 text-sm mt-1">{{ errors.zip_code }}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Number *</label>
+                                <label class="block text-sm font-semibold text-ink mb-2">Contact Number *</label>
                                 <input 
                                     v-model="form.contact_number"
                                     @input="sanitizeContactNumber"
@@ -168,7 +168,7 @@
                                     pattern="09[0-9]{9}"
                                     maxlength="11"
                                     placeholder="09XX XXX XXXX"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                                 />
                                 <p v-if="errors.contact_number" class="text-red-500 text-sm mt-1">{{ errors.contact_number }}</p>
                             </div>
@@ -178,22 +178,22 @@
                             <input 
                                 v-model="form.is_default"
                                 type="checkbox"
-                                class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                class="h-5 w-5 text-brand rounded border-line focus:ring-brand"
                             />
-                            <label class="ml-3 text-sm font-medium text-gray-700">Set as default address</label>
+                            <label class="ml-3 text-sm font-medium text-ink">Set as default address</label>
                         </div>
 
                         <div class="flex gap-3 pt-4">
                             <button 
                                 type="button"
                                 @click="cancelForm"
-                                class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                                class="flex-1 px-6 py-3 border-2 border-line text-ink rounded-control hover:bg-mist transition font-medium"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit"
-                                class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                                class="flex-1 px-6 py-3 bg-brand text-white rounded-control hover:bg-brand-dark transition font-medium"
                             >
                                 {{ editingAddress ? 'Update Address' : 'Save Address' }}
                             </button>
@@ -207,32 +207,32 @@
                 <div 
                     v-for="address in addresses" 
                     :key="address.id"
-                    class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition"
+                    class="bg-white rounded-card shadow-md p-6 hover:shadow-lg transition"
                 >
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">
-                                <h3 class="text-lg font-bold text-gray-900">{{ address.label || 'Address' }}</h3>
-                                <span v-if="address.is_default" class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">
+                                <h3 class="text-lg font-bold text-ink">{{ address.label || 'Address' }}</h3>
+                                <span v-if="address.is_default" class="bg-brand-tint text-brand-dark text-xs px-3 py-1 rounded-full font-semibold">
                                     Default
                                 </span>
                             </div>
-                            <p class="font-semibold text-gray-900">{{ address.recipient_name }}</p>
-                            <p class="text-gray-600">{{ address.contact_number }}</p>
-                            <p class="text-gray-700 mt-2">{{ address.full_address }}</p>
+                            <p class="font-semibold text-ink">{{ address.recipient_name }}</p>
+                            <p class="text-ink-soft">{{ address.contact_number }}</p>
+                            <p class="text-ink mt-2">{{ address.full_address }}</p>
                         </div>
 
                         <div class="flex gap-2">
                             <button 
                                 v-if="!address.is_default"
                                 @click="setAsDefault(address)"
-                                class="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                class="text-brand hover:text-brand-dark text-sm font-medium"
                             >
                                 Set Default
                             </button>
                             <button 
                                 @click="editAddress(address)"
-                                class="text-gray-600 hover:text-gray-700"
+                                class="text-ink-soft hover:text-ink"
                             >
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -252,16 +252,16 @@
             </div>
 
             <!-- Empty State -->
-            <div v-else class="bg-white rounded-xl shadow-md p-12 text-center">
-                <svg class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div v-else class="bg-white rounded-card shadow-md p-12 text-center">
+                <svg class="h-20 w-20 mx-auto text-ink-faint mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">No Saved Addresses</h3>
-                <p class="text-gray-600 mb-6">Add an address for faster checkout</p>
+                <h3 class="text-lg font-semibold text-ink mb-2">No Saved Addresses</h3>
+                <p class="text-ink-soft mb-6">Add an address for faster checkout</p>
                 <button 
                     @click="showAddForm = true"
-                    class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                    class="inline-block px-6 py-3 bg-brand text-white rounded-control hover:bg-brand-dark transition font-medium"
                 >
                     Add Your First Address
                 </button>

@@ -3,22 +3,22 @@
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Account Settings</h1>
-                <p class="text-gray-600 mt-2">Manage your account preferences and security</p>
+                <h1 class="text-3xl font-bold text-ink">Account Settings</h1>
+                <p class="text-ink-soft mt-2">Manage your account preferences and security</p>
             </div>
 
             <!-- Success/Info/Error Messages -->
-            <div v-if="$page.props.flash.success" class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center text-green-800">
+            <div v-if="$page.props.flash.success" class="mb-6 bg-brand-tint border border-brand-soft rounded-card p-4 flex items-center text-brand-dark">
                 <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                 {{ $page.props.flash.success }}
             </div>
 
-            <div v-if="$page.props.flash.info" class="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center text-blue-800 font-medium">
+            <div v-if="$page.props.flash.info" class="mb-6 bg-brand-tint border border-brand-soft rounded-card p-4 flex items-center text-brand-dark font-medium">
                 <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {{ $page.props.flash.info }}
             </div>
 
-            <div v-if="$page.props.errors && Object.keys($page.props.errors).length > 0" class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+            <div v-if="$page.props.errors && Object.keys($page.props.errors).length > 0" class="mb-6 bg-red-50 border border-red-200 rounded-card p-4">
                 <div class="flex items-start">
                     <svg class="h-5 w-5 text-red-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -37,32 +37,32 @@
                 <div class="lg:col-span-2 space-y-6">
                     
                     <!-- NEW EMAIL VERIFICATION BOX (Visible only when pending_email exists) -->
-                    <div v-if="user.pending_email" class="bg-blue-600 rounded-xl shadow-lg p-6 text-white overflow-hidden relative">
+                    <div v-if="user.pending_email" class="bg-brand rounded-card shadow-lg p-6 text-white overflow-hidden relative">
                         <div class="relative z-10">
-                            <h2 class="text-xl font-black mb-1 flex items-center">
+                            <h2 class="text-xl font-semibold mb-1 flex items-center">
                                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 Verify New Email Address
                             </h2>
-                            <p class="text-blue-100 text-sm font-medium mb-6">
+                            <p class="text-brand text-sm font-medium mb-6">
                                 We sent a 6-digit code to <span class="text-white font-bold underline decoration-blue-400 underline-offset-4">{{ user.pending_email }}</span>. Enter it below to complete the primary email change.
                             </p>
                             
                             <form @submit.prevent="verifyNewEmail" class="flex flex-col sm:flex-row gap-4 items-end">
                                 <div class="flex-1 w-full">
-                                    <label class="block text-[10px] font-black uppercase tracking-widest text-blue-200 mb-2">6-Digit Security Code</label>
+                                    <label class="block text-xs font-semibold   text-brand mb-2">6-Digit Security Code</label>
                                     <input 
                                         v-model="verificationForm.otp"
                                         type="text"
                                         maxlength="6"
                                         placeholder="000000"
-                                        class="w-full bg-blue-700/50 border-2 border-blue-500/50 rounded-xl px-4 py-3 text-center text-2xl font-black tracking-[0.5em] focus:border-white focus:ring-0 placeholder:text-blue-400 transition-all uppercase"
+                                        class="w-full bg-brand-dark/50 border-2 border-brand/50 rounded-card px-4 py-3 text-center text-2xl font-semibold tracking-[0.5em] focus:border-white focus:ring-0 placeholder:text-brand transition-all "
                                         required
                                     />
                                 </div>
                                 <button 
                                     type="submit"
                                     :disabled="verifyingEmail || verificationForm.otp.length !== 6"
-                                    class="w-full sm:w-auto h-[52px] px-8 bg-white text-blue-700 font-black rounded-xl hover:bg-blue-50 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                    class="w-full sm:w-auto h-[52px] px-8 bg-white text-brand-dark font-semibold rounded-card hover:bg-brand-tint transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                     <span v-if="verifyingEmail">Verifying...</span>
                                     <span v-else>Confirm Change</span>
@@ -70,85 +70,85 @@
                             </form>
                         </div>
                         <!-- Decorative background element -->
-                        <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
+                        <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-brand/20 rounded-full blur-3xl"></div>
                     </div>
 
                     <!-- Profile Information -->
-                    <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                            <div class="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
+                    <div class="bg-white rounded-card shadow-md p-6 border border-line">
+                        <h2 class="text-xl font-bold text-ink mb-6 flex items-center">
+                            <div class="w-2 h-6 bg-brand rounded-full mr-3"></div>
                             Profile Information
                         </h2>
                         
                         <form @submit.prevent="updateProfile">
                             <div class="space-y-5">
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Full Name</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Full Name</label>
                                     <input 
                                         v-model="profileForm.name"
                                         type="text"
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Username</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Username</label>
                                     <input
                                         v-model="profileForm.username"
                                         type="text"
                                         required
                                         autocomplete="username"
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                                     />
-                                    <p class="text-[11px] text-gray-400 mt-2 font-medium">Unique sign-in name. 4–20 characters, lowercase only.</p>
+                                    <p class="text-[11px] text-ink-faint mt-2 font-medium">Unique sign-in name. 4–20 characters, lowercase only.</p>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Current Email Address</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Current Email Address</label>
                                     <input 
                                         v-model="profileForm.email"
                                         type="email"
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        :class="{'border-blue-200 ring-2 ring-blue-50/50': user.pending_email}"
+                                        class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
+                                        :class="{'border-brand-soft ring-2 ring-brand-soft/50': user.pending_email}"
                                         required
                                     />
                                     <div class="flex items-center mt-2 gap-3">
-                                        <p v-if="user.email_verified_at" class="text-[10px] font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded-md flex items-center tracking-widest">
+                                        <p v-if="user.email_verified_at" class="text-xs font-semibold  text-brand bg-brand-tint px-2 py-1 rounded-control flex items-center ">
                                             <svg class="h-3 w-3 mr-1 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                                             Verified
                                         </p>
-                                        <p v-if="user.pending_email" class="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded-md tracking-widest animate-pulse">
+                                        <p v-if="user.pending_email" class="text-xs font-semibold  text-brand bg-brand-tint px-2 py-1 rounded-control  ">
                                             Change Pending: {{ user.pending_email }}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Tax Identification Number (TIN)</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Tax Identification Number (TIN)</label>
                                     <input 
                                         v-model="profileForm.tin"
                                         type="text"
                                         @input="formatTIN"
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                                         placeholder="000-000-000-000"
                                     />
-                                    <p class="text-[11px] text-gray-400 mt-2 font-medium italic">Philippine format: 000-000-000-000</p>
+                                    <p class="text-[11px] text-ink-faint mt-2 font-medium italic">Philippine format: 000-000-000-000</p>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Contact Number *</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Contact Number *</label>
                                     <input 
                                         v-model="profileForm.phone_number"
                                         type="tel"
                                         pattern="09[0-9]{9}"
                                         maxlength="11"
                                         @input="sanitizePhoneNumber"
-                                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                                         placeholder="09123456789"
                                         required
                                     />
-                                    <p class="text-[11px] text-gray-400 mt-2 font-medium italic">11-digit starting with 09</p>
+                                    <p class="text-[11px] text-ink-faint mt-2 font-medium italic">11-digit starting with 09</p>
                                 </div>
                             </div>
 
@@ -156,7 +156,7 @@
                                 <button 
                                     type="submit"
                                     :disabled="updatingProfile"
-                                    class="bg-slate-900 text-white px-8 py-3 rounded-xl hover:bg-black transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg active:scale-95"
+                                    class="bg-ink text-white px-8 py-3 rounded-card hover:bg-black transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg active:scale-95"
                                 >
                                     <svg v-if="updatingProfile" class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -169,26 +169,26 @@
                     </div>
 
                     <!-- Change Password -->
-                    <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                            <div class="w-2 h-6 bg-slate-400 rounded-full mr-3"></div>
+                    <div class="bg-white rounded-card shadow-md p-6 border border-line">
+                        <h2 class="text-xl font-bold text-ink mb-6 flex items-center">
+                            <div class="w-2 h-6 bg-ink-soft rounded-full mr-3"></div>
                             Change Password
                         </h2>
                         
                         <form @submit.prevent="updatePassword">
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Current Password</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Current Password</label>
                                     <div class="relative">
                                         <input 
                                             v-model="passwordForm.current_password"
                                             :type="showPw.current ? 'text' : 'password'"
                                             autocomplete="current-password"
-                                            class="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                            :class="passwordForm.errors.current_password ? 'border-red-400' : 'border-gray-200'"
+                                            class="w-full px-4 py-3 pr-12 border rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
+                                            :class="passwordForm.errors.current_password ? 'border-red-400' : 'border-line'"
                                             required
                                         />
-                                        <button type="button" @click="showPw.current = !showPw.current" :aria-label="showPw.current ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                        <button type="button" @click="showPw.current = !showPw.current" :aria-label="showPw.current ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-soft transition">
                                             <svg v-if="!showPw.current" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                         </button>
@@ -198,17 +198,17 @@
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">New Password</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">New Password</label>
                                     <div class="relative">
                                         <input 
                                             v-model="passwordForm.password"
                                             :type="showPw.new ? 'text' : 'password'"
                                             autocomplete="new-password"
-                                            class="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                            :class="passwordForm.errors.password ? 'border-red-400' : 'border-gray-200'"
+                                            class="w-full px-4 py-3 pr-12 border rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
+                                            :class="passwordForm.errors.password ? 'border-red-400' : 'border-line'"
                                             required
                                         />
-                                        <button type="button" @click="showPw.new = !showPw.new" :aria-label="showPw.new ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                        <button type="button" @click="showPw.new = !showPw.new" :aria-label="showPw.new ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-soft transition">
                                             <svg v-if="!showPw.new" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                         </button>
@@ -217,17 +217,17 @@
                                 </div>
 
                                     <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide text-[11px]">Confirm New Password</label>
+                                    <label class="block text-sm font-bold text-ink mb-2  tracking-wide text-[11px]">Confirm New Password</label>
                                     <div class="relative">
                                         <input 
                                             v-model="passwordForm.password_confirmation"
                                             :type="showPw.confirm ? 'text' : 'password'"
                                             autocomplete="new-password"
-                                            class="w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                            :class="passwordForm.errors.password_confirmation ? 'border-red-400' : 'border-gray-200'"
+                                            class="w-full px-4 py-3 pr-12 border rounded-card focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
+                                            :class="passwordForm.errors.password_confirmation ? 'border-red-400' : 'border-line'"
                                             required
                                         />
-                                        <button type="button" @click="showPw.confirm = !showPw.confirm" :aria-label="showPw.confirm ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                        <button type="button" @click="showPw.confirm = !showPw.confirm" :aria-label="showPw.confirm ? 'Hide password' : 'Show password'" class="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-soft transition">
                                             <svg v-if="!showPw.confirm" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                         </button>
@@ -237,7 +237,7 @@
                                 </div>
                             </div>
 
-                            <div v-if="passwordSaved" role="status" class="mt-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center text-green-800 text-sm font-medium">
+                            <div v-if="passwordSaved" role="status" class="mt-6 bg-brand-tint border border-brand-soft rounded-card p-4 flex items-center text-brand-dark text-sm font-medium">
                                 <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                 Your password has been updated.
                             </div>
@@ -246,7 +246,7 @@
                                 <button 
                                     type="submit"
                                     :disabled="passwordForm.processing"
-                                    class="bg-slate-100 text-slate-700 border border-slate-200 px-8 py-3 rounded-xl hover:bg-slate-200 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center active:scale-95"
+                                    class="bg-mist text-ink border border-line px-8 py-3 rounded-card hover:bg-line transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center active:scale-95"
                                 >
                                     {{ passwordForm.processing ? 'Updating...' : 'Update Password' }}
                                 </button>
@@ -255,12 +255,12 @@
                     </div>
 
                     <!-- Deactivate Account -->
-                    <div class="bg-white rounded-xl shadow-md border-2 border-amber-200 p-6 overflow-hidden relative">
+                    <div class="bg-white rounded-card shadow-md border-2 border-amber-200 p-6 overflow-hidden relative">
                         <div class="relative z-10">
                             <h2 class="text-xl font-bold text-amber-900 mb-2">Deactivate Account</h2>
-                            <p class="text-sm text-gray-600 mb-4 font-medium">Temporarily disable your account</p>
+                            <p class="text-sm text-ink-soft mb-4 font-medium">Temporarily disable your account</p>
                             
-                            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                            <div class="bg-amber-50 border border-amber-200 rounded-card p-6">
                                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                     <div class="flex-1">
                                         <h3 class="font-bold text-amber-900">Initiate Deactivation</h3>
@@ -270,7 +270,7 @@
                                     </div>
                                     <button 
                                         @click="showDeactivateConfirmation = true"
-                                        class="w-full sm:w-auto px-6 py-3 bg-white border-2 border-amber-500 text-amber-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all font-black text-[11px] uppercase tracking-widest shadow-sm"
+                                        class="w-full sm:w-auto px-6 py-3 bg-white border-2 border-amber-500 text-amber-600 rounded-card hover:bg-amber-500 hover:text-white transition-all font-semibold text-[11px]   shadow-sm"
                                     >
                                         Deactivate
                                     </button>
@@ -283,16 +283,16 @@
                 <!-- Sidebar -->
                 <div class="lg:col-span-1 space-y-6">
                     <!-- Account Info Card -->
-                    <div class="bg-gradient-to-br from-indigo-700 via-blue-700 to-blue-600 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+                    <div class="bg-gradient-to-br from-brand-dark via-brand-dark to-brand rounded-card shadow-xl p-8 text-white relative overflow-hidden">
                         <div class="relative z-10">
-                            <h3 class="font-black text-xl mb-6 tracking-tight">Account Summary</h3>
+                            <h3 class="font-semibold text-xl mb-6 tracking-tight">Account Summary</h3>
                             <div class="space-y-5">
                                 <div>
-                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200 opacity-80">Member Since</p>
-                                    <p class="font-black text-lg">{{ formatDate(user.created_at) }}</p>
+                                    <p class="text-xs font-semibold  tracking-[0.2em] text-brand opacity-80">Member Since</p>
+                                    <p class="font-semibold text-lg">{{ formatDate(user.created_at) }}</p>
                                 </div>
                                 <div class="pt-4 border-t border-white/10">
-                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200 opacity-80">Reference ID</p>
+                                    <p class="text-xs font-semibold  tracking-[0.2em] text-brand opacity-80">Reference ID</p>
                                     <p class="font-mono text-sm opacity-90">{{ user.id }}</p>
                                 </div>
                             </div>
@@ -301,23 +301,23 @@
                     </div>
 
                     <!-- Quick Links -->
-                    <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                        <h3 class="font-black text-xs uppercase tracking-widest text-gray-400 mb-4">Quick Navigation</h3>
+                    <div class="bg-white rounded-card shadow-md p-6 border border-line">
+                        <h3 class="font-semibold text-xs   text-ink-faint mb-4">Quick Navigation</h3>
                         <div class="space-y-1">
                             <Link 
                                 href="/privacy"
-                                class="flex items-center text-sm font-bold text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-3 rounded-xl transition-all group"
+                                class="flex items-center text-sm font-bold text-ink hover:text-brand hover:bg-brand-tint px-3 py-3 rounded-card transition-all group"
                             >
-                                <svg class="h-4 w-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-4 w-4 mr-3 text-ink-faint group-hover:text-brand transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                                 Privacy & Privacy
                             </Link>
                             <Link 
                                 :href="user.role === 'courier' ? '/courier/dashboard' : user.role === 'distributor' || user.role === 'staff' ? '/owner/dashboard' : '/'"
-                                class="flex items-center text-sm font-bold text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-3 rounded-xl transition-all group"
+                                class="flex items-center text-sm font-bold text-ink hover:text-brand hover:bg-brand-tint px-3 py-3 rounded-card transition-all group"
                             >
-                                <svg class="h-4 w-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-4 w-4 mr-3 text-ink-faint group-hover:text-brand transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                 </svg>
                                 {{ user.role === 'courier' ? 'Courier Fleet Dashboard' : user.role === 'distributor' || user.role === 'staff' ? 'Enterprise Dashboard' : 'MedEquip Marketplace' }}
@@ -330,28 +330,28 @@
 
         <!-- Deactivate Confirmation Modal -->
         <Teleport to="body">
-            <div v-if="showDeactivateConfirmation" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] px-4">
-                <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-100" @click.stop>
+            <div v-if="showDeactivateConfirmation" class="fixed inset-0 bg-ink/40  flex items-center justify-center z-[100] px-4">
+                <div class="bg-white rounded-card shadow-2xl max-w-md w-full p-8 border border-line" @click.stop>
                     <div class="flex flex-col items-center text-center mb-6">
-                        <div class="bg-amber-100 rounded-2xl p-4 mb-4">
+                        <div class="bg-amber-100 rounded-card p-4 mb-4">
                             <svg class="h-8 w-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
-                        <h3 class="text-2xl font-black text-slate-900 tracking-tight">Confirm Deactivation</h3>
-                        <p class="text-sm text-slate-500 mt-2 font-medium leading-relaxed px-4">
-                            You'll be logged out immediately. Your data will be kept for <span class="text-slate-900 font-black">30 days</span> before permanent deletion.
+                        <h3 class="text-2xl font-semibold text-ink tracking-tight">Confirm Deactivation</h3>
+                        <p class="text-sm text-ink-soft mt-2 font-medium leading-relaxed px-4">
+                            You'll be logged out immediately. Your data will be kept for <span class="text-ink font-semibold">30 days</span> before permanent deletion.
                         </p>
                     </div>
 
                     <form @submit.prevent="deactivateAccount">
                         <div class="mb-6">
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 text-center">Verify Identity with Password</label>
+                            <label class="block text-xs font-semibold   text-ink-faint mb-2 text-center">Verify Identity with Password</label>
                             <input 
                                 v-model="deactivateForm.password"
                                 type="password"
                                 placeholder="Enter your password"
-                                class="w-full px-6 py-4 border-2 border-slate-100 bg-slate-50 rounded-2xl focus:ring-0 focus:border-amber-500 focus:bg-white transition-all text-center font-bold"
+                                class="w-full px-6 py-4 border-2 border-line bg-mist rounded-card focus:ring-0 focus:border-amber-500 focus:bg-white transition-all text-center font-bold"
                                 required
                             />
                         </div>
@@ -360,7 +360,7 @@
                             <button 
                                 type="submit"
                                 :disabled="deactivating"
-                                class="w-full py-4 bg-amber-600 text-white rounded-2xl hover:bg-amber-700 transition-all font-black shadow-lg shadow-amber-200 active:scale-95 disabled:opacity-50"
+                                class="w-full py-4 bg-amber-600 text-white rounded-card hover:bg-amber-700 transition-all font-semibold shadow-lg shadow-amber-200 active:scale-95 disabled:opacity-50"
                             >
                                 <span v-if="deactivating">Processing...</span>
                                 <span v-else>Confirm & Deactivate</span>
@@ -368,7 +368,7 @@
                             <button 
                                 type="button"
                                 @click="showDeactivateConfirmation = false"
-                                class="w-full py-3 text-slate-400 font-bold hover:text-slate-600 transition-all"
+                                class="w-full py-3 text-ink-faint font-bold hover:text-ink-soft transition-all"
                                 :disabled="deactivating"
                             >
                                 Nevermind, go back
