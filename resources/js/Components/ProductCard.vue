@@ -3,13 +3,16 @@
         class="group relative flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-line bg-white transition-shadow hover:border-brand hover:shadow-[0_0_0_1px_#0B6E6B]"
     >
         <!-- Image -->
-        <div class="relative flex aspect-[4/3] items-center justify-center border-b border-line bg-[#F7FAFA] p-4">
+        <!-- The image is absolutely positioned so it can never size the box: with a plain
+             max-h-full inside an aspect-ratio box, a squarer photo stretches the box and
+             pushes the title and price out of line with the neighbouring cards. -->
+        <div class="relative flex aspect-[4/3] shrink-0 items-center justify-center overflow-hidden border-b border-line bg-[#F7FAFA]">
             <img
                 v-if="product.image_url"
                 :src="product.image_url"
                 :alt="product.name"
                 loading="lazy"
-                class="max-h-full max-w-full object-contain mix-blend-multiply"
+                class="absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply"
                 :class="{ 'opacity-50 grayscale': isUnavailable }"
             />
             <svg v-else class="h-12 w-12 text-ink-faint/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="No image">
