@@ -3,8 +3,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Message reports</h1>
-                    <div class="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 flex items-start gap-2 shadow-sm mb-1">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-ink">Message reports</h1>
+                    <div class="mt-2 bg-amber-50 border border-amber-200 rounded-control p-3 text-xs text-amber-900 flex items-start gap-2 shadow-sm mb-1">
                         <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         <p><strong>Strictly Confidential:</strong> You are about to view sensitive data. Unauthorized disclosure of this information is a violation of the Data Privacy Act.</p>
                     </div>
@@ -15,10 +15,10 @@
                         :key="s"
                         :href="filterHref(s)"
                         preserve-state
-                        class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition"
+                        class="px-3 py-1.5 rounded-control text-xs font-semibold border transition"
                         :class="filterActive(s)
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'"
+                            ? 'bg-brand text-white border-brand'
+                            : 'bg-white text-ink border-line hover:bg-mist'"
                     >
                         {{ s === 'all' ? 'All' : s }}
                     </Link>
@@ -29,28 +29,28 @@
                 <div
                     v-for="r in reports.data"
                     :key="'m-' + r.id"
-                    class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-3"
+                    class="bg-white rounded-card border border-line shadow-sm p-4 space-y-3"
                 >
-                    <div class="flex justify-between gap-2 text-xs text-gray-500">
+                    <div class="flex justify-between gap-2 text-xs text-ink-soft">
                         <span>#{{ r.id }}</span>
                         <span>{{ formatWhen(r.created_at) }}</span>
                     </div>
-                    <p class="text-sm text-gray-900 font-medium">{{ r.reporter?.name || '—' }}</p>
-                    <p class="text-xs text-gray-600 line-clamp-3">{{ r.message?.body_preview }}</p>
+                    <p class="text-sm text-ink font-medium">{{ r.reporter?.name || '—' }}</p>
+                    <p class="text-xs text-ink-soft line-clamp-3">{{ r.message?.body_preview }}</p>
                     <div class="flex flex-col gap-2">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Status</label>
+                        <label class="text-xs font-bold text-ink-soft ">Status</label>
                         <select
                             v-model="rowState[r.id].status"
-                            class="w-full rounded-lg border-gray-300 text-sm min-h-[44px]"
+                            class="w-full rounded-control border-line text-sm min-h-[44px]"
                             @change="saveRow(r.id)"
                         >
                             <option v-for="opt in statusValues" :key="opt" :value="opt">{{ opt }}</option>
                         </select>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Admin notes</label>
+                        <label class="text-xs font-bold text-ink-soft ">Admin notes</label>
                         <textarea
                             v-model="rowState[r.id].admin_notes"
                             rows="2"
-                            class="w-full rounded-lg border-gray-300 text-sm"
+                            class="w-full rounded-control border-line text-sm"
                             placeholder="Internal notes…"
                             @blur="saveRow(r.id)"
                         />
@@ -58,10 +58,10 @@
                 </div>
             </div>
 
-            <div class="hidden sm:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+            <div class="hidden sm:block bg-white rounded-card shadow border border-line overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <thead class="bg-mist text-left text-xs font-semibold text-ink-soft  tracking-wide">
                             <tr>
                                 <th class="px-4 py-3">ID</th>
                                 <th class="px-4 py-3">Reporter</th>
@@ -71,26 +71,26 @@
                                 <th class="px-4 py-3 min-w-[12rem]">Notes</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr v-for="r in reports.data" :key="r.id" class="hover:bg-gray-50/80 align-top">
-                                <td class="px-4 py-3 text-gray-500 tabular-nums">#{{ r.id }}</td>
+                        <tbody class="divide-y divide-line">
+                            <tr v-for="r in reports.data" :key="r.id" class="hover:bg-mist/80 align-top">
+                                <td class="px-4 py-3 text-ink-soft tabular-nums">#{{ r.id }}</td>
                                 <td class="px-4 py-3">
-                                    <p class="font-medium text-gray-900">{{ r.reporter?.name || '—' }}</p>
-                                    <p class="text-xs text-gray-500 break-all">{{ r.reporter?.email }}</p>
+                                    <p class="font-medium text-ink">{{ r.reporter?.name || '—' }}</p>
+                                    <p class="text-xs text-ink-soft break-all">{{ r.reporter?.email }}</p>
                                 </td>
                                 <td class="px-4 py-3 max-w-xs">
-                                    <p class="text-gray-800 line-clamp-3">{{ r.message?.body_preview }}</p>
-                                    <p class="text-[10px] text-gray-400 mt-1">From {{ r.message?.author }} · {{ r.reason }}</p>
+                                    <p class="text-ink line-clamp-3">{{ r.message?.body_preview }}</p>
+                                    <p class="text-xs text-ink-faint mt-1">From {{ r.message?.author }} · {{ r.reason }}</p>
                                 </td>
-                                <td class="px-4 py-3 text-xs text-gray-600">
+                                <td class="px-4 py-3 text-xs text-ink-soft">
                                     <p>Conv {{ r.message?.conversation_id ?? '—' }}</p>
                                     <p v-if="r.message?.order_id">Order {{ r.message.order_id }}</p>
-                                    <p v-if="r.message?.shop" class="mt-1 font-medium text-gray-800">{{ r.message.shop }}</p>
+                                    <p v-if="r.message?.shop" class="mt-1 font-medium text-ink">{{ r.message.shop }}</p>
                                 </td>
                                 <td class="px-4 py-3">
                                     <select
                                         v-model="rowState[r.id].status"
-                                        class="rounded-lg border-gray-300 text-sm min-w-[8rem]"
+                                        class="rounded-control border-line text-sm min-w-[8rem]"
                                         @change="saveRow(r.id)"
                                     >
                                         <option v-for="opt in statusValues" :key="opt" :value="opt">{{ opt }}</option>
@@ -100,7 +100,7 @@
                                     <textarea
                                         v-model="rowState[r.id].admin_notes"
                                         rows="2"
-                                        class="w-full rounded-lg border-gray-300 text-sm"
+                                        class="w-full rounded-control border-line text-sm"
                                         placeholder="Internal notes…"
                                         @blur="saveRow(r.id)"
                                     />
@@ -111,7 +111,7 @@
                 </div>
             </div>
 
-            <div v-if="!reports.data?.length" class="text-center py-16 text-gray-500 text-sm">
+            <div v-if="!reports.data?.length" class="text-center py-16 text-ink-soft text-sm">
                 No reports for this filter.
             </div>
 
@@ -120,9 +120,9 @@
                     v-for="link in reports.links"
                     :key="link.label"
                     :href="link.url || '#'"
-                    class="px-3 py-1 rounded-lg text-sm border"
+                    class="px-3 py-1 rounded-control text-sm border"
                     :class="[
-                        link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                        link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                         !link.url ? 'pointer-events-none opacity-50' : '',
                     ]"
                     preserve-state

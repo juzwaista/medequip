@@ -3,16 +3,16 @@
         <!-- Minimalistic thermal POS receipt -->
         <div class="text-center mb-4">
             <h1 class="font-bold text-xl">{{ order.distributor?.company_name }}</h1>
-            <p class="text-sm text-gray-600">{{ order.distributor?.address || 'Cavite, Philippines' }}</p>
-            <p class="text-xs text-gray-500 mt-2">Order: {{ order.order_number }}</p>
-            <p class="text-xs text-gray-500">Date: {{ new Date(order.created_at).toLocaleString() }}</p>
+            <p class="text-sm text-ink-soft">{{ order.distributor?.address || 'Cavite, Philippines' }}</p>
+            <p class="text-xs text-ink-soft mt-2">Order: {{ order.order_number }}</p>
+            <p class="text-xs text-ink-soft">Date: {{ new Date(order.created_at).toLocaleString() }}</p>
         </div>
 
-        <div class="border-t border-dashed border-gray-400 my-4"></div>
+        <div class="border-t border-dashed border-ink-faint my-4"></div>
 
         <table class="w-full text-sm">
             <thead>
-                <tr class="border-b border-gray-300">
+                <tr class="border-b border-line">
                     <th class="text-left font-semibold py-1">Item</th>
                     <th class="text-right font-semibold py-1">Qty</th>
                     <th class="text-right font-semibold py-1">Total</th>
@@ -27,9 +27,9 @@
             </tbody>
         </table>
 
-        <div class="border-t border-dashed border-gray-400 my-4"></div>
+        <div class="border-t border-dashed border-ink-faint my-4"></div>
 
-        <div class="flex justify-between text-sm mb-1 text-gray-600">
+        <div class="flex justify-between text-sm mb-1 text-ink-soft">
             <span>Subtotal</span>
             <span>₱{{ Number(order.subtotal).toLocaleString() }}</span>
         </div>
@@ -37,16 +37,16 @@
             <span>Total</span>
             <span>₱{{ Number(order.total_amount).toLocaleString() }}</span>
         </div>
-        <div class="flex justify-between text-sm text-gray-600">
+        <div class="flex justify-between text-sm text-ink-soft">
             <span>Payment Method</span>
-            <span class="uppercase">{{ order.payment_method }}</span>
+            <span class="">{{ order.payment_method }}</span>
         </div>
 
-        <div class="border-t border-dashed border-gray-400 my-4 inline-block w-full"></div>
-        <div class="text-center text-xs text-gray-500 pb-8 cursor-pointer no-print" @click="handlePrint">
-            <p class="font-bold text-blue-600">Tap here to print again</p>
+        <div class="border-t border-dashed border-ink-faint my-4 inline-block w-full"></div>
+        <div class="text-center text-xs text-ink-soft pb-8 cursor-pointer no-print" @click="handlePrint">
+            <p class="font-bold text-brand">Tap here to print again</p>
         </div>
-        <div class="text-center text-xs text-gray-500">
+        <div class="text-center text-xs text-ink-soft">
             <p>Thank you for your purchase!</p>
             <p>Please come again.</p>
         </div>

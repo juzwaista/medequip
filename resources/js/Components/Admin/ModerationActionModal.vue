@@ -1,17 +1,17 @@
 <template>
     <Teleport to="body">
-        <div v-if="open" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm" @click.self="emit('close')">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
-                <div class="px-6 py-5 border-b border-gray-100" :class="config.headerBg">
-                    <h3 class="text-lg font-bold text-gray-900">{{ config.title }}</h3>
+        <div v-if="open" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/75 " @click.self="emit('close')">
+            <div class="bg-white rounded-card shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
+                <div class="px-6 py-5 border-b border-line" :class="config.headerBg">
+                    <h3 class="text-lg font-bold text-ink">{{ config.title }}</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <!-- Warn -->
                     <template v-if="action === 'warn'">
-                        <p class="text-sm text-gray-600">Send a warning to <strong>{{ targetName }}</strong>.</p>
+                        <p class="text-sm text-ink-soft">Send a warning to <strong>{{ targetName }}</strong>.</p>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
-                            <select v-model="presetReason" class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm">
+                            <label class="block text-sm font-semibold text-ink mb-1">Reason</label>
+                            <select v-model="presetReason" class="w-full border border-line rounded-control py-2 px-3 text-sm">
                                 <option value="" disabled>Select a reason...</option>
                                 <option value="High Cancellation Rate">High Cancellation Rate</option>
                                 <option value="Fulfillment Delays (>48 hours)">Fulfillment Delays (>48 hours)</option>
@@ -20,15 +20,15 @@
                                 <option value="Other">Other</option>
                             </select>
                         </div>
-                        <textarea v-model="reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Optional message..."></textarea>
+                        <textarea v-model="reason" rows="3" class="w-full border border-line rounded-card text-sm p-3" placeholder="Optional message..."></textarea>
                     </template>
 
                     <!-- Suspend -->
                     <template v-if="action === 'suspend'">
-                        <p class="text-sm text-gray-600">Temporarily suspend <strong>{{ targetName }}</strong>. They will not be able to accept orders until it ends.</p>
+                        <p class="text-sm text-ink-soft">Temporarily suspend <strong>{{ targetName }}</strong>. They will not be able to accept orders until it ends.</p>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
-                            <select v-model="reason" class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm">
+                            <label class="block text-sm font-semibold text-ink mb-1">Reason</label>
+                            <select v-model="reason" class="w-full border border-line rounded-control py-2 px-3 text-sm">
                                 <option value="" disabled>Select a reason...</option>
                                 <option value="Sustained High Cancellation Rate">Repeated Cancellations</option>
                                 <option value="Severe Fulfillment Delays">Fulfillment Delays</option>
@@ -39,36 +39,36 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Duration (days)</label>
-                            <input type="number" min="1" max="365" v-model="days" class="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm" />
+                            <label class="block text-sm font-semibold text-ink mb-1">Duration (days)</label>
+                            <input type="number" min="1" max="365" v-model="days" class="w-full border border-line rounded-control py-2 px-3 text-sm" />
                         </div>
                     </template>
 
                     <!-- Ban distributor -->
                     <template v-if="action === 'ban'">
-                        <p class="text-sm text-gray-600">Permanently ban <strong>{{ targetName }}</strong>? All products will be hidden.</p>
-                        <textarea v-model="reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Reason for ban (required)..."></textarea>
+                        <p class="text-sm text-ink-soft">Permanently ban <strong>{{ targetName }}</strong>? All products will be hidden.</p>
+                        <textarea v-model="reason" rows="3" class="w-full border border-line rounded-card text-sm p-3" placeholder="Reason for ban (required)..."></textarea>
                     </template>
 
                     <!-- Lift suspension -->
-                    <p v-if="action === 'lift'" class="text-sm text-gray-600">
+                    <p v-if="action === 'lift'" class="text-sm text-ink-soft">
                         Lift the suspension for <strong>{{ targetName }}</strong>? They will be able to accept orders immediately.
                     </p>
 
                     <!-- Ban user -->
                     <template v-if="action === 'ban_user'">
-                        <p class="text-sm text-gray-600">Ban user <strong>{{ targetName }}</strong>? They will be signed out and unable to log in.</p>
-                        <textarea v-model="reason" rows="3" class="w-full border border-gray-200 rounded-xl text-sm p-3" placeholder="Reason for ban (required)..."></textarea>
+                        <p class="text-sm text-ink-soft">Ban user <strong>{{ targetName }}</strong>? They will be signed out and unable to log in.</p>
+                        <textarea v-model="reason" rows="3" class="w-full border border-line rounded-card text-sm p-3" placeholder="Reason for ban (required)..."></textarea>
                     </template>
 
                     <!-- Unban user -->
-                    <p v-if="action === 'unban_user'" class="text-sm text-gray-600">
+                    <p v-if="action === 'unban_user'" class="text-sm text-ink-soft">
                         Unban <strong>{{ targetName }}</strong>? They will be able to log in again.
                     </p>
                 </div>
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-                    <button type="button" @click="emit('close')" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
-                    <button type="button" @click="submit" :disabled="!canSubmit || processing" :class="config.confirmClass" class="px-4 py-2 text-sm font-bold text-white rounded-lg transition disabled:opacity-50">
+                <div class="px-6 py-4 bg-mist border-t border-line flex justify-end gap-2">
+                    <button type="button" @click="emit('close')" class="px-4 py-2 text-sm font-semibold text-ink bg-white border border-line rounded-control hover:bg-mist transition">Cancel</button>
+                    <button type="button" @click="submit" :disabled="!canSubmit || processing" :class="config.confirmClass" class="px-4 py-2 text-sm font-bold text-white rounded-control transition disabled:opacity-50">
                         {{ config.confirmLabel }}
                     </button>
                 </div>
@@ -110,15 +110,15 @@ watch(() => [props.open, props.action], () => {
 });
 
 const CONFIGS = {
-    warn: { title: 'Issue Warning', headerBg: 'bg-blue-50', confirmClass: 'bg-blue-600 hover:bg-blue-700', confirmLabel: 'Send Warning' },
+    warn: { title: 'Issue Warning', headerBg: 'bg-brand-tint', confirmClass: 'bg-brand hover:bg-brand-dark', confirmLabel: 'Send Warning' },
     suspend: { title: 'Suspend Distributor', headerBg: 'bg-orange-50', confirmClass: 'bg-orange-600 hover:bg-orange-700', confirmLabel: 'Suspend' },
     ban: { title: 'Permanently Ban Distributor', headerBg: 'bg-rose-50', confirmClass: 'bg-rose-700 hover:bg-rose-800', confirmLabel: 'Confirm Ban' },
-    lift: { title: 'Lift Suspension', headerBg: 'bg-emerald-50', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', confirmLabel: 'Lift Suspension' },
+    lift: { title: 'Lift Suspension', headerBg: 'bg-brand-tint', confirmClass: 'bg-brand hover:bg-brand-dark', confirmLabel: 'Lift Suspension' },
     ban_user: { title: 'Ban User', headerBg: 'bg-red-50', confirmClass: 'bg-red-600 hover:bg-red-700', confirmLabel: 'Confirm Ban' },
-    unban_user: { title: 'Unban User', headerBg: 'bg-emerald-50', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', confirmLabel: 'Unban' },
+    unban_user: { title: 'Unban User', headerBg: 'bg-brand-tint', confirmClass: 'bg-brand hover:bg-brand-dark', confirmLabel: 'Unban' },
 };
 
-const config = computed(() => CONFIGS[props.action] || { title: '', headerBg: '', confirmClass: 'bg-blue-600', confirmLabel: 'Confirm' });
+const config = computed(() => CONFIGS[props.action] || { title: '', headerBg: '', confirmClass: 'bg-brand', confirmLabel: 'Confirm' });
 
 const canSubmit = computed(() => {
     if (props.action === 'ban' || props.action === 'ban_user') return reason.value.trim().length > 0;

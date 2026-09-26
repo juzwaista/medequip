@@ -5,16 +5,16 @@
         <template #header>
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center gap-3">
-                    <Link :href="route('owner.procurement.index')" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <Link :href="route('owner.procurement.index')" class="text-ink-faint hover:text-ink-soft transition-colors">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     </Link>
-                    <h2 class="text-xl font-bold text-gray-900">Purchase Order: {{ po.po_number }}</h2>
+                    <h2 class="text-xl font-bold text-ink">Purchase Order: {{ po.po_number }}</h2>
                     <span class="ml-2 px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full" 
                         :class="{
-                            'bg-gray-100 text-gray-800': po.status === 'draft',
-                            'bg-blue-100 text-blue-800': po.status === 'sent',
+                            'bg-mist text-ink': po.status === 'draft',
+                            'bg-brand-tint text-brand-dark': po.status === 'sent',
                             'bg-yellow-100 text-yellow-800': po.status === 'partially_received',
-                            'bg-green-100 text-green-800': po.status === 'completed',
+                            'bg-brand-tint text-brand-dark': po.status === 'completed',
                             'bg-rose-100 text-rose-800': po.status === 'cancelled',
                         }">
                         {{ po.status.toUpperCase().replace('_', ' ') }}
@@ -23,17 +23,17 @@
                 
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
-                    <button v-if="po.status === 'draft'" @click="updateStatus('sent')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
+                    <button v-if="po.status === 'draft'" @click="updateStatus('sent')" class="bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-control font-medium shadow-sm transition-colors flex items-center gap-2">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Send to Supplier
                     </button>
                     
-                    <button v-if="['sent', 'partially_received'].includes(po.status)" @click="updateStatus('completed')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
+                    <button v-if="['sent', 'partially_received'].includes(po.status)" @click="updateStatus('completed')" class="bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-control font-medium shadow-sm transition-colors flex items-center gap-2">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         Receive All Remaining
                     </button>
 
-                    <button v-if="['draft', 'sent', 'partially_received'].includes(po.status)" @click="updateStatus('cancelled')" class="bg-white border border-gray-300 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors">
+                    <button v-if="['draft', 'sent', 'partially_received'].includes(po.status)" @click="updateStatus('cancelled')" class="bg-white border border-line text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-control font-medium shadow-sm transition-colors">
                         Cancel PO
                     </button>
                 </div>
@@ -44,37 +44,37 @@
             <!-- Left Column: Details -->
             <div class="lg:col-span-2 space-y-6">
                 <!-- Items Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                        <h3 class="text-lg font-bold text-gray-900">Order Items</h3>
+                <div class="bg-white rounded-card shadow-sm border border-line overflow-hidden">
+                    <div class="px-6 py-4 border-b border-line bg-mist flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-ink">Order Items</h3>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="min-w-full divide-y divide-line">
+                            <thead class="bg-mist">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Product</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Unit Cost</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty Ordered</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Qty Received</th>
-                                    <th v-if="canReceive" scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Receive now</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-ink-soft ">Product</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-ink-soft ">Unit Cost</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-ink-soft ">Qty Ordered</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-ink-soft ">Qty Received</th>
+                                    <th v-if="canReceive" scope="col" class="px-6 py-3 text-right text-xs font-semibold text-ink-soft ">Receive now</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-ink-soft ">Total</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white divide-y divide-line">
                                 <tr v-for="item in po.items" :key="item.id">
-                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                    <td class="px-6 py-4 text-sm font-medium text-ink">
                                         {{ item.product.name }}
-                                        <p v-if="item.product_variation" class="text-xs font-normal text-blue-700">{{ item.product_variation.display_label }}</p>
-                                        <p v-if="item.units_per_pack > 1" class="text-xs font-normal text-gray-500">Ordered per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each</p>
+                                        <p v-if="item.product_variation" class="text-xs font-normal text-brand-dark">{{ item.product_variation.display_label }}</p>
+                                        <p v-if="item.units_per_pack > 1" class="text-xs font-normal text-ink-soft">Ordered per {{ item.unit_label }} · {{ item.units_per_pack }} pcs each</p>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-soft text-right">
                                         ₱{{ Number(item.unit_cost).toLocaleString(undefined, {minimumFractionDigits: 2}) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold text-right">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-ink font-bold text-right">
                                         {{ item.quantity_ordered }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                                        <span v-if="po.status === 'completed'" class="text-green-600 font-bold">{{ item.quantity_received }}</span>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-ink-soft text-right">
+                                        <span v-if="po.status === 'completed'" class="text-brand font-bold">{{ item.quantity_received }}</span>
                                         <span v-else>{{ item.quantity_received }}</span>
                                     </td>
                                     <td v-if="canReceive" class="px-6 py-4 whitespace-nowrap text-sm text-right">
@@ -84,19 +84,19 @@
                                             min="0"
                                             :max="remaining(item)"
                                             :disabled="remaining(item) === 0"
-                                            class="w-24 rounded-md border-gray-300 text-sm text-right disabled:bg-gray-100"
+                                            class="w-24 rounded-control border-line text-sm text-right disabled:bg-mist"
                                         />
-                                        <p class="text-[10px] text-gray-400 mt-0.5">{{ remaining(item) }} {{ plural(item.unit_label, remaining(item)) }} outstanding</p>
+                                        <p class="text-xs text-ink-faint mt-0.5">{{ remaining(item) }} {{ plural(item.unit_label, remaining(item)) }} outstanding</p>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-ink text-right">
                                         ₱{{ (item.unit_cost * item.quantity_ordered).toLocaleString(undefined, {minimumFractionDigits: 2}) }}
                                     </td>
                                 </tr>
                             </tbody>
-                            <tfoot class="bg-gray-50">
+                            <tfoot class="bg-mist">
                                 <tr>
-                                    <td :colspan="canReceive ? 5 : 4" class="px-6 py-4 text-right text-sm font-bold text-gray-900 uppercase">Grand Total</td>
-                                    <td class="px-6 py-4 text-right text-lg font-bold text-blue-600">
+                                    <td :colspan="canReceive ? 5 : 4" class="px-6 py-4 text-right text-sm font-bold text-ink ">Grand Total</td>
+                                    <td class="px-6 py-4 text-right text-lg font-bold text-brand">
                                         ₱{{ Number(po.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) }}
                                     </td>
                                 </tr>
@@ -106,58 +106,58 @@
                 </div>
 
                 <div v-if="canReceive" class="flex justify-end -mt-2">
-                    <button @click="receiveDelivery" :disabled="!hasDelivery" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button @click="receiveDelivery" :disabled="!hasDelivery" class="bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-control font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         Record delivery
                     </button>
                 </div>
 
                 <!-- Notes -->
-                <div v-if="po.notes" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-6">
-                    <h3 class="text-sm font-bold text-gray-900 mb-2">Notes & Instructions</h3>
-                    <p class="text-gray-600 text-sm whitespace-pre-wrap">{{ po.notes }}</p>
+                <div v-if="po.notes" class="bg-white rounded-card shadow-sm border border-line overflow-hidden p-6">
+                    <h3 class="text-sm font-bold text-ink mb-2">Notes & Instructions</h3>
+                    <p class="text-ink-soft text-sm whitespace-pre-wrap">{{ po.notes }}</p>
                 </div>
             </div>
 
             <!-- Right Column: Info Sidebar -->
             <div class="space-y-6">
                 <!-- Supplier Info -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-6">
-                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Supplier Details</h3>
+                <div class="bg-white rounded-card shadow-sm border border-line overflow-hidden p-6">
+                    <h3 class="text-sm font-bold text-ink   mb-4">Supplier Details</h3>
                     <div class="space-y-3">
                         <div>
-                            <p class="text-xs text-gray-500">Company Name</p>
-                            <p class="font-medium text-gray-900">{{ po.supplier.name }}</p>
+                            <p class="text-xs text-ink-soft">Company Name</p>
+                            <p class="font-medium text-ink">{{ po.supplier.name }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Contact Person</p>
-                            <p class="text-gray-900">{{ po.supplier.contact_person || 'N/A' }}</p>
+                            <p class="text-xs text-ink-soft">Contact Person</p>
+                            <p class="text-ink">{{ po.supplier.contact_person || 'N/A' }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Email Address</p>
-                            <p class="text-blue-600">{{ po.supplier.email || 'N/A' }}</p>
+                            <p class="text-xs text-ink-soft">Email Address</p>
+                            <p class="text-brand">{{ po.supplier.email || 'N/A' }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Phone</p>
-                            <p class="text-gray-900">{{ po.supplier.phone || 'N/A' }}</p>
+                            <p class="text-xs text-ink-soft">Phone</p>
+                            <p class="text-ink">{{ po.supplier.phone || 'N/A' }}</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Order Info -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-6">
-                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Order Information</h3>
+                <div class="bg-white rounded-card shadow-sm border border-line overflow-hidden p-6">
+                    <h3 class="text-sm font-bold text-ink   mb-4">Order Information</h3>
                     <div class="space-y-3">
                         <div>
-                            <p class="text-xs text-gray-500">PO Number</p>
-                            <p class="font-bold text-gray-900">{{ po.po_number }}</p>
+                            <p class="text-xs text-ink-soft">PO Number</p>
+                            <p class="font-bold text-ink">{{ po.po_number }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Created At</p>
-                            <p class="text-gray-900">{{ new Date(po.created_at).toLocaleString() }}</p>
+                            <p class="text-xs text-ink-soft">Created At</p>
+                            <p class="text-ink">{{ new Date(po.created_at).toLocaleString() }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Expected Delivery Date</p>
-                            <p class="text-gray-900 font-medium">{{ po.expected_delivery_date ? new Date(po.expected_delivery_date).toLocaleDateString() : 'TBD' }}</p>
+                            <p class="text-xs text-ink-soft">Expected Delivery Date</p>
+                            <p class="text-ink font-medium">{{ po.expected_delivery_date ? new Date(po.expected_delivery_date).toLocaleDateString() : 'TBD' }}</p>
                         </div>
                     </div>
                 </div>

@@ -2,10 +2,10 @@
     <AdminLayout>
         <template #header>
             <div class="flex items-center space-x-4">
-                <Link href="/admin/couriers" class="text-gray-500 hover:text-gray-700">
+                <Link href="/admin/couriers" class="text-ink-soft hover:text-ink">
                     &larr; Back to Couriers
                 </Link>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight border-l pl-4 border-gray-300">Platform Deliveries Oversight</h2>
+                <h2 class="font-semibold text-xl text-ink leading-tight border-l pl-4 border-line">Platform Deliveries Oversight</h2>
             </div>
         </template>
 
@@ -13,10 +13,10 @@
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
                 <!-- Filters -->
-                <div class="bg-white p-4 shadow-sm sm:rounded-lg flex justify-between items-center">
+                <div class="bg-white p-4 shadow-sm sm:rounded-control flex justify-between items-center">
                     <div class="flex items-center space-x-4">
-                        <span class="text-sm font-medium text-gray-700">Filter by Status:</span>
-                        <select v-model="statusFilter" @change="applyFilter" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                        <span class="text-sm font-medium text-ink">Filter by Status:</span>
+                        <select v-model="statusFilter" @change="applyFilter" class="rounded-control border-line shadow-sm focus:border-brand-soft focus:ring focus:ring-brand-soft focus:ring-opacity-50 text-sm">
                             <option value="">All Deliveries</option>
                             <option value="pending">Pending</option>
                             <option value="picked_up">Picked Up</option>
@@ -28,10 +28,10 @@
                 </div>
 
                 <!-- Deliveries List -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-control">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                        <table class="w-full text-sm text-left text-ink-soft">
+                            <thead class="text-xs text-ink  bg-mist border-b border-line">
                                 <tr>
                                     <th scope="col" class="px-6 py-4">Tracking # / Order</th>
                                     <th scope="col" class="px-6 py-4">Courier Assigned</th>
@@ -40,42 +40,42 @@
                                     <th scope="col" class="px-6 py-4 text-right">Last Updated</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <tr v-for="delivery in deliveries.data" :key="delivery.id" class="hover:bg-gray-50">
+                            <tbody class="divide-y divide-line">
+                                <tr v-for="delivery in deliveries.data" :key="delivery.id" class="hover:bg-mist">
                                     <td class="px-6 py-4">
-                                        <div class="font-mono font-bold text-gray-900">{{ delivery.tracking_number }}</div>
-                                        <div class="text-xs text-gray-500 mt-1">Order #{{ (delivery.order_id || '000').toString().padStart(6, '0') }}</div>
+                                        <div class="font-mono font-bold text-ink">{{ delivery.tracking_number }}</div>
+                                        <div class="text-xs text-ink-soft mt-1">Order #{{ (delivery.order_id || '000').toString().padStart(6, '0') }}</div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div v-if="delivery.courier" class="font-medium text-gray-900">
+                                        <div v-if="delivery.courier" class="font-medium text-ink">
                                             {{ delivery.courier.user.name }}
                                         </div>
-                                        <span v-else class="text-xs italic text-gray-400">Unassigned</span>
+                                        <span v-else class="text-xs italic text-ink-faint">Unassigned</span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="font-medium text-gray-900">{{ delivery.order?.customer?.name || 'Unknown' }}</div>
-                                        <div class="text-xs text-gray-500 truncate max-w-[200px]" :title="delivery.order?.shipping_address">{{ delivery.order?.shipping_address }}</div>
+                                        <div class="font-medium text-ink">{{ delivery.order?.customer?.name || 'Unknown' }}</div>
+                                        <div class="text-xs text-ink-soft truncate max-w-[200px]" :title="delivery.order?.shipping_address">{{ delivery.order?.shipping_address }}</div>
                                     </td>
                                     <td class="px-6 py-4 border-l">
                                         <span 
                                             :class="{
-                                                'bg-gray-100 text-gray-800': delivery.status === 'pending',
+                                                'bg-mist text-ink': delivery.status === 'pending',
                                                 'bg-yellow-100 text-yellow-800': delivery.status === 'picked_up',
-                                                'bg-blue-100 text-blue-800': delivery.status === 'in_transit',
-                                                'bg-green-100 text-green-800': delivery.status === 'delivered',
+                                                'bg-brand-tint text-brand-dark': delivery.status === 'in_transit',
+                                                'bg-brand-tint text-brand-dark': delivery.status === 'delivered',
                                                 'bg-red-100 text-red-800': delivery.status === 'failed',
                                             }"
-                                            class="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider"
+                                            class="px-2.5 py-1 rounded-control text-xs font-semibold  "
                                         >
                                             {{ delivery.status.replace('_', ' ') }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right text-gray-400 text-xs">
+                                    <td class="px-6 py-4 text-right text-ink-faint text-xs">
                                         {{ new Date(delivery.updated_at).toLocaleString() }}
                                     </td>
                                 </tr>
                                 <tr v-if="deliveries.data.length === 0">
-                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">No deliveries found matching the criteria.</td>
+                                    <td colspan="5" class="px-6 py-12 text-center text-ink-soft">No deliveries found matching the criteria.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -84,25 +84,25 @@
 
                 <!-- Pagination -->
                 <div v-if="deliveries.links && deliveries.links.length > 3" class="flex justify-center mt-6">
-                    <div class="flex shadow-sm rounded-md bg-white">
+                    <div class="flex shadow-sm rounded-control bg-white">
                         <template v-for="(link, i) in deliveries.links" :key="i">
                             <Link 
                                 v-if="link.url"
                                 :href="link.url"
                                 :class="[
                                     'px-4 py-2 border text-sm font-medium',
-                                    link.active ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
-                                    i === 0 ? 'rounded-l-md' : '',
-                                    i === deliveries.links.length - 1 ? 'rounded-r-md' : ''
+                                    link.active ? 'z-10 bg-brand-tint border-brand text-brand' : 'bg-white border-line text-ink-soft hover:bg-mist',
+                                    i === 0 ? 'rounded-l-control' : '',
+                                    i === deliveries.links.length - 1 ? 'rounded-r-control' : ''
                                 ]"
                                 v-html="link.label"
                             />
                             <span 
                                 v-else
                                 :class="[
-                                    'px-4 py-2 border text-sm font-medium bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed',
-                                    i === 0 ? 'rounded-l-md' : '',
-                                    i === deliveries.links.length - 1 ? 'rounded-r-md' : ''
+                                    'px-4 py-2 border text-sm font-medium bg-mist border-line text-ink-faint cursor-not-allowed',
+                                    i === 0 ? 'rounded-l-control' : '',
+                                    i === deliveries.links.length - 1 ? 'rounded-r-control' : ''
                                 ]"
                                 v-html="link.label"
                             />

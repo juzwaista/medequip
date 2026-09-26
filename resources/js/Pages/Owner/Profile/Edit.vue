@@ -1,76 +1,76 @@
 <template>
     <OwnerLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Business Profile</h2>
+            <h2 class="font-semibold text-xl text-ink leading-tight">Edit Business Profile</h2>
         </template>
 
         <div class="py-6">
             <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-control">
                     <div class="p-6 lg:p-8">
                         <form @submit.prevent="submit" class="space-y-8">
 
                             <!-- Basic Information -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                                <h3 class="text-lg font-medium text-ink mb-4">Basic Information</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Company Name</label>
-                                        <input v-model="form.company_name" type="text" disabled class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-600 shadow-sm cursor-not-allowed" />
-                                        <p class="text-xs text-gray-500 mt-1">Verified against business permits. Contact support to change.</p>
+                                        <label class="block text-sm font-medium text-ink">Company Name</label>
+                                        <input v-model="form.company_name" type="text" disabled class="mt-1 block w-full rounded-control border-line bg-mist text-ink-soft shadow-sm cursor-not-allowed" />
+                                        <p class="text-xs text-ink-soft mt-1">Verified against business permits. Contact support to change.</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Profile URL</label>
+                                        <label class="block text-sm font-medium text-ink">Profile URL</label>
                                         <div class="flex mt-1">
-                                            <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">/seller/</span>
-                                            <input v-model="form.slug" @input="checkSlug" type="text" required class="block w-full rounded-none rounded-r-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                                            <span class="inline-flex items-center px-3 rounded-l-control border border-r-0 border-line bg-mist text-ink-soft text-sm">/seller/</span>
+                                            <input v-model="form.slug" @input="checkSlug" type="text" required class="block w-full rounded-none rounded-r-control border-line focus:border-brand focus:ring-brand sm:text-sm" />
                                         </div>
-                                        <p v-if="slugStatus" :class="slugStatus.available ? 'text-green-600' : 'text-red-600'" class="text-xs mt-1">{{ slugStatus.message }}</p>
+                                        <p v-if="slugStatus" :class="slugStatus.available ? 'text-brand' : 'text-red-600'" class="text-xs mt-1">{{ slugStatus.message }}</p>
                                         <p v-if="form.errors.slug" class="text-red-500 text-xs mt-1">{{ form.errors.slug }}</p>
                                     </div>
                                 </div>
                                 <div class="mt-4">
-                                    <label class="block text-sm font-medium text-gray-700">Description</label>
-                                    <textarea v-model="form.description" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Tell customers about your business..." />
+                                    <label class="block text-sm font-medium text-ink">Description</label>
+                                    <textarea v-model="form.description" rows="4" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand" placeholder="Tell customers about your business..." />
                                     <p v-if="form.errors.description" class="text-red-500 text-xs mt-1">{{ form.errors.description }}</p>
                                 </div>
                             </section>
 
                             <!-- Contact Information -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+                                <h3 class="text-lg font-medium text-ink mb-4">Contact Information</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Phone</label>
-                                        <input v-model="form.phone" @input="sanitizePhoneNumber" type="tel" inputmode="numeric" pattern="09[0-9]{9}" maxlength="11" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                        <label class="block text-sm font-medium text-ink">Phone</label>
+                                        <input v-model="form.phone" @input="sanitizePhoneNumber" type="tel" inputmode="numeric" pattern="09[0-9]{9}" maxlength="11" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand" />
                                         <p v-if="form.errors.phone" class="text-red-500 text-xs mt-1">{{ form.errors.phone }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Email</label>
-                                        <input v-model="form.email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="shop@example.com" />
+                                        <label class="block text-sm font-medium text-ink">Email</label>
+                                        <input v-model="form.email" type="email" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand" placeholder="shop@example.com" />
                                         <p v-if="form.errors.email" class="text-red-500 text-xs mt-1">{{ form.errors.email }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Website</label>
-                                        <input v-model="form.website" type="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                        <label class="block text-sm font-medium text-ink">Website</label>
+                                        <input v-model="form.website" type="url" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand" />
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Maximum COD Amount (₱)</label>
-                                        <input v-model="form.max_cod_amount" type="number" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0.00 (Leave empty for no limit)" />
-                                        <p class="text-xs text-gray-500 mt-1">Orders exceeding this amount will not have COD as a payment option.</p>
+                                        <label class="block text-sm font-medium text-ink">Maximum COD Amount (₱)</label>
+                                        <input v-model="form.max_cod_amount" type="number" step="0.01" min="0" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand" placeholder="0.00 (Leave empty for no limit)" />
+                                        <p class="text-xs text-ink-soft mt-1">Orders exceeding this amount will not have COD as a payment option.</p>
                                     </div>
                                     <div class="md:col-span-2">
-                                        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <label class="block text-sm font-medium text-ink mb-2 flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                             </svg>
                                             Pick-up Instructions
                                         </label>
-                                        <p class="text-xs text-gray-500 mb-2 italic">Provide clear details for customers who choose the "Store Pick-up" option (e.g., precise directions, look for a specific person/stall, or items required like an ID/receipt).</p>
+                                        <p class="text-xs text-ink-soft mb-2 italic">Provide clear details for customers who choose the "Store Pick-up" option (e.g., precise directions, look for a specific person/stall, or items required like an ID/receipt).</p>
                                         <textarea 
                                             v-model="form.pickup_instructions" 
                                             rows="4" 
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm" 
+                                            class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" 
                                             placeholder="Example: We are located on the 2nd floor, beside the staircase. Please present your Order ID to the cashier." 
                                         />
                                         <p v-if="form.errors.pickup_instructions" class="text-red-500 text-xs mt-1">{{ form.errors.pickup_instructions }}</p>
@@ -80,59 +80,59 @@
 
                             <!-- Business Address -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-1">Business Address</h3>
-                                <p class="text-sm text-gray-500 mb-4">Shown publicly on your shop profile. Used for delivery routing.</p>
+                                <h3 class="text-lg font-medium text-ink mb-1">Business Address</h3>
+                                <p class="text-sm text-ink-soft mb-4">Shown publicly on your shop profile. Used for delivery routing.</p>
 
                                 <div class="space-y-4">
                                     <!-- Street -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Street / Building / Unit</label>
-                                        <input v-model="streetAddress" type="text" placeholder="e.g. Blk 5 Lot 10 Sampaguita St., Golden Meadows" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Street / Building / Unit</label>
+                                        <input v-model="streetAddress" type="text" placeholder="e.g. Blk 5 Lot 10 Sampaguita St., Golden Meadows" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand sm:text-sm" />
                                     </div>
 
                                     <!-- City + Barangay -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700">City / Municipality</label>
-                                            <select v-model="selectedCity" @change="onCityChange" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                            <label class="block text-sm font-medium text-ink">City / Municipality</label>
+                                            <select v-model="selectedCity" @change="onCityChange" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand sm:text-sm">
                                                 <option value="">Select city</option>
                                                 <option v-for="(data, city) in cities" :key="city" :value="city">{{ city }}</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700">Barangay</label>
-                                            <select v-if="availableBarangays.length > 0" v-model="selectedBarangay" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                            <label class="block text-sm font-medium text-ink">Barangay</label>
+                                            <select v-if="availableBarangays.length > 0" v-model="selectedBarangay" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand sm:text-sm">
                                                 <option value="">Select barangay</option>
                                                 <option v-for="brgy in availableBarangays" :key="brgy" :value="brgy">{{ brgy }}</option>
                                                 <option value="other">Other (type manually)</option>
                                             </select>
-                                            <input v-else v-model="manualBarangay" type="text" placeholder="Enter barangay name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                                            <input v-else v-model="manualBarangay" type="text" placeholder="Enter barangay name" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand sm:text-sm" />
                                         </div>
                                     </div>
 
                                     <!-- Manual barangay input if 'other' selected -->
                                     <div v-if="selectedBarangay === 'other' && availableBarangays.length > 0">
-                                        <label class="block text-sm font-medium text-gray-700">Barangay Name</label>
-                                        <input v-model="manualBarangay" type="text" placeholder="Type your barangay name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Barangay Name</label>
+                                        <input v-model="manualBarangay" type="text" placeholder="Type your barangay name" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand sm:text-sm" />
                                     </div>
 
                                     <!-- Zip code (auto-filled) -->
                                     <div class="max-w-[180px]">
-                                        <label class="block text-sm font-medium text-gray-700">Zip Code</label>
-                                        <input v-model="zipCode" type="text" readonly placeholder="Auto-filled" class="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-500 sm:text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Zip Code</label>
+                                        <input v-model="zipCode" type="text" readonly placeholder="Auto-filled" class="mt-1 block w-full rounded-control border-line bg-mist text-ink-soft sm:text-sm" />
                                     </div>
 
                                     <!-- Composed full address preview -->
-                                    <div v-if="form.address" class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
-                                        <span class="font-semibold text-slate-500 uppercase tracking-wider mr-1">Full address:</span>{{ form.address }}
+                                    <div v-if="form.address" class="rounded-control bg-mist border border-line px-3 py-2 text-xs text-ink-soft">
+                                        <span class="font-semibold text-ink-soft   mr-1">Full address:</span>{{ form.address }}
                                     </div>
                                     <p v-if="form.errors.address" class="text-red-500 text-xs">{{ form.errors.address }}</p>
 
                                     <!-- Map pin -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                        <label class="block text-sm font-medium text-ink mb-2 flex items-center gap-2">
                                             Pin Exact Location
-                                            <span class="text-xs font-normal text-gray-500 italic">(Drop a pin to auto-fill City &amp; Barangay)</span>
+                                            <span class="text-xs font-normal text-ink-soft italic">(Drop a pin to auto-fill City &amp; Barangay)</span>
                                         </label>
                                         <MapPicker 
                                             v-model:lat="form.latitude" 
@@ -149,8 +149,8 @@
                                             leave-from-class="opacity-100 translate-y-0"
                                             leave-to-class="opacity-0 -translate-y-1"
                                         >
-                                            <p v-if="detectedLocation" class="mt-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-1.5">
-                                                <svg class="h-3.5 w-3.5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                            <p v-if="detectedLocation" class="mt-2 text-xs text-brand-dark bg-brand-tint border border-brand-soft rounded-control px-3 py-2 flex items-center gap-1.5">
+                                                <svg class="h-3.5 w-3.5 text-brand flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
                                                 {{ detectedLocation }}
                                             </p>
                                         </transition>
@@ -161,18 +161,18 @@
 
                             <!-- Documents & Compliance -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Documents & Compliance</h3>
-                                <p class="text-sm text-gray-500 mb-4">Manage your business documents and track expiration dates for compliance.</p>
+                                <h3 class="text-lg font-medium text-ink mb-2">Documents & Compliance</h3>
+                                <p class="text-sm text-ink-soft mb-4">Manage your business documents and track expiration dates for compliance.</p>
                                 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div v-for="doc in distributorDocuments" :key="doc.key" 
-                                        class="rounded-xl border p-4 bg-gray-50 flex flex-col justify-between"
+                                        class="rounded-card border p-4 bg-mist flex flex-col justify-between"
                                         :class="{'border-amber-200 bg-amber-50': isNearExpiry(doc.expiry)}"
                                     >
                                         <div class="flex items-start justify-between mb-3">
                                             <div>
-                                                <h4 class="text-sm font-semibold text-gray-800">{{ doc.label }}</h4>
-                                                <p v-if="doc.expiry" class="text-xs mt-0.5" :class="isNearExpiry(doc.expiry) ? 'text-amber-700 font-bold' : 'text-gray-500'">
+                                                <h4 class="text-sm font-semibold text-ink">{{ doc.label }}</h4>
+                                                <p v-if="doc.expiry" class="text-xs mt-0.5" :class="isNearExpiry(doc.expiry) ? 'text-amber-700 font-bold' : 'text-ink-soft'">
                                                     Expires: {{ formatDate(doc.expiry) }}
                                                 </p>
                                                 <p v-else class="text-xs text-red-500 mt-0.5 italic">No expiration date set</p>
@@ -185,7 +185,7 @@
                                         </div>
 
                                         <div class="space-y-3">
-                                            <div v-if="scanningFields[doc.key]" class="text-[10px] text-blue-600 font-bold italic animate-pulse flex items-center gap-1">
+                                            <div v-if="scanningFields[doc.key]" class="text-xs text-brand font-bold italic  flex items-center gap-1">
                                                 <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -194,19 +194,19 @@
                                             </div>
                                             
                                             <div class="flex items-center gap-2">
-                                                <label :for="`update-${doc.key}`" class="flex-1 text-center bg-white border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                                                <label :for="`update-${doc.key}`" class="flex-1 text-center bg-white border border-line text-ink text-xs font-semibold px-3 py-1.5 rounded-control hover:bg-mist transition cursor-pointer">
                                                     Update Document
                                                 </label>
                                                 <input :id="`update-${doc.key}`" type="file" class="sr-only" @change="e => onUpdateDoc(doc.key, e.target.files[0])" accept="image/*" />
                                                 
-                                                <a :href="`/storage/${doc.path}`" target="_blank" class="p-1.5 text-gray-400 hover:text-blue-600 transition" title="View Current">
+                                                <a :href="`/storage/${doc.path}`" target="_blank" class="p-1.5 text-ink-faint hover:text-brand transition" title="View Current">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 </a>
                                             </div>
                                             
-                                            <div v-if="form[doc.updateKey]" class="animate-in fade-in slide-in-from-top-1">
-                                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">New Expiry (from OCR)</label>
-                                                <input type="date" v-model="form[doc.expiryKey]" class="w-full px-2 py-1 border border-blue-200 rounded text-xs bg-blue-50 focus:ring-1 focus:ring-blue-500" />
+                                            <div v-if="form[doc.updateKey]" class="  ">
+                                                <label class="block text-xs font-bold text-ink-faint   mb-1">New Expiry (from OCR)</label>
+                                                <input type="date" v-model="form[doc.expiryKey]" class="w-full px-2 py-1 border border-brand-soft rounded text-xs bg-brand-tint focus:ring-1 focus:ring-brand" />
                                             </div>
                                         </div>
                                     </div>
@@ -215,22 +215,22 @@
 
                             <!-- Payout Information -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Automated Payout Information</h3>
-                                <p class="text-sm text-gray-500 mb-4">A one-time linking to receive your earnings automatically upon order completion.</p>
+                                <h3 class="text-lg font-medium text-ink mb-2">Automated Payout Information</h3>
+                                <p class="text-sm text-ink-soft mb-4">A one-time linking to receive your earnings automatically upon order completion.</p>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Bank / E-Wallet Name</label>
-                                        <input v-model="form.payout_bank" type="text" placeholder="e.g. GCash, BDO, UnionBank" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Bank / E-Wallet Name</label>
+                                        <input v-model="form.payout_bank" type="text" placeholder="e.g. GCash, BDO, UnionBank" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                         <p v-if="form.errors.payout_bank" class="text-red-500 text-xs mt-1">{{ form.errors.payout_bank }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Account Name</label>
-                                        <input v-model="form.payout_account_name" type="text" placeholder="e.g. Juan Dela Cruz" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Account Name</label>
+                                        <input v-model="form.payout_account_name" type="text" placeholder="e.g. Juan Dela Cruz" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                         <p v-if="form.errors.payout_account_name" class="text-red-500 text-xs mt-1">{{ form.errors.payout_account_name }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Account Number</label>
-                                        <input v-model="form.payout_account_number" type="text" placeholder="e.g. 09123456789" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Account Number</label>
+                                        <input v-model="form.payout_account_number" type="text" placeholder="e.g. 09123456789" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                         <p v-if="form.errors.payout_account_number" class="text-red-500 text-xs mt-1">{{ form.errors.payout_account_number }}</p>
                                     </div>
                                 </div>
@@ -238,84 +238,84 @@
 
                             <!-- Social Links -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media</h3>
+                                <h3 class="text-lg font-medium text-ink mb-4">Social Media</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Facebook</label>
-                                        <input v-model="form.social_links.facebook" type="url" placeholder="https://facebook.com/..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Facebook</label>
+                                        <input v-model="form.social_links.facebook" type="url" placeholder="https://facebook.com/..." class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Instagram</label>
-                                        <input v-model="form.social_links.instagram" type="url" placeholder="https://instagram.com/..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <label class="block text-sm font-medium text-ink">Instagram</label>
+                                        <input v-model="form.social_links.instagram" type="url" placeholder="https://instagram.com/..." class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">TikTok</label>
-                                        <input v-model="form.social_links.tiktok" type="url" placeholder="https://tiktok.com/@..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                        <label class="block text-sm font-medium text-ink">TikTok</label>
+                                        <input v-model="form.social_links.tiktok" type="url" placeholder="https://tiktok.com/@..." class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                     </div>
                                 </div>
                             </section>
 
                             <!-- Business Hours -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Business Hours</h3>
-                                <p class="text-sm text-gray-500 mb-4">Set your regular operating hours. These are shown on your public shop profile.</p>
+                                <h3 class="text-lg font-medium text-ink mb-4">Business Hours</h3>
+                                <p class="text-sm text-ink-soft mb-4">Set your regular operating hours. These are shown on your public shop profile.</p>
                                 <div class="space-y-3">
                                     <div v-for="(entry, idx) in form.business_hours" :key="idx" class="flex items-center gap-3">
-                                        <span class="w-24 text-sm font-medium text-gray-700">{{ entry.day }}</span>
-                                        <label class="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
-                                            <input type="checkbox" v-model="entry.closed" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                        <span class="w-24 text-sm font-medium text-ink">{{ entry.day }}</span>
+                                        <label class="flex items-center gap-1.5 text-sm text-ink-soft cursor-pointer">
+                                            <input type="checkbox" v-model="entry.closed" class="rounded border-line text-brand focus:ring-brand" />
                                             Closed
                                         </label>
                                         <template v-if="!entry.closed">
-                                            <input v-model="entry.open" type="time" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                                            <span class="text-gray-400">to</span>
-                                            <input v-model="entry.close" type="time" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                                            <input v-model="entry.open" type="time" class="rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
+                                            <span class="text-ink-faint">to</span>
+                                            <input v-model="entry.close" type="time" class="rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" />
                                         </template>
-                                        <span v-else class="text-sm text-gray-400 italic">Closed</span>
+                                        <span v-else class="text-sm text-ink-faint italic">Closed</span>
                                     </div>
                                 </div>
                             </section>
 
                             <!-- Images -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Profile Images</h3>
+                                <h3 class="text-lg font-medium text-ink mb-4">Profile Images</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Logo</label>
+                                        <label class="block text-sm font-medium text-ink mb-2">Logo</label>
                                         <div class="flex items-center space-x-4">
-                                            <div class="h-24 w-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+                                            <div class="h-24 w-24 rounded-full overflow-hidden bg-mist border-2 border-line">
                                                 <img v-if="logoPreview" :src="logoPreview" class="h-full w-full object-cover" />
                                                 <img v-else-if="distributor.logo_path" :src="`/storage/${distributor.logo_path}`" class="h-full w-full object-cover" />
-                                                <div v-else class="h-full w-full flex items-center justify-center text-gray-400">
+                                                <div v-else class="h-full w-full flex items-center justify-center text-ink-faint">
                                                     <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                 </div>
                                             </div>
-                                            <input type="file" @change="handleLogoUpload" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                                            <input type="file" @change="handleLogoUpload" accept="image/*" class="text-sm text-ink-soft file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-tint file:text-brand-dark hover:file:bg-brand-tint" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Cover Photo</label>
-                                        <div class="w-full h-32 rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 mb-2">
+                                        <label class="block text-sm font-medium text-ink mb-2">Cover Photo</label>
+                                        <div class="w-full h-32 rounded-control overflow-hidden bg-mist border-2 border-line mb-2">
                                             <img v-if="coverPreview" :src="coverPreview" class="h-full w-full object-cover" />
                                             <img v-else-if="distributor.cover_photo_path" :src="`/storage/${distributor.cover_photo_path}`" class="h-full w-full object-cover" />
-                                            <div v-else class="h-full w-full flex items-center justify-center text-gray-400"><span class="text-sm">No cover photo</span></div>
+                                            <div v-else class="h-full w-full flex items-center justify-center text-ink-faint"><span class="text-sm">No cover photo</span></div>
                                         </div>
-                                        <input type="file" @change="handleCoverUpload" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                                        <input type="file" @change="handleCoverUpload" accept="image/*" class="text-sm text-ink-soft file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-tint file:text-brand-dark hover:file:bg-brand-tint" />
                                     </div>
                                 </div>
                             </section>
 
                             <!-- Featured Products -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Featured Products</h3>
-                                <p class="text-sm text-gray-500 mb-4">Pick up to 8 products to highlight in the "Recommended" section of your shop page. If none are selected, we'll show your highest-rated products. Only <strong>active</strong> items appear on your public shop.</p>
-                                <div v-if="products.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto border rounded-lg p-3">
+                                <h3 class="text-lg font-medium text-ink mb-2">Featured Products</h3>
+                                <p class="text-sm text-ink-soft mb-4">Pick up to 8 products to highlight in the "Recommended" section of your shop page. If none are selected, we'll show your highest-rated products. Only <strong>active</strong> items appear on your public shop.</p>
+                                <div v-if="products.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto border rounded-control p-3">
                                     <label
                                         v-for="p in products"
                                         :key="p.id"
                                         :class="[
-                                            'flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition text-sm',
-                                            form.featured_product_ids.includes(p.id) ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50 border border-transparent'
+                                            'flex items-center gap-2 px-3 py-2 rounded-control cursor-pointer transition text-sm',
+                                            form.featured_product_ids.includes(p.id) ? 'bg-brand-tint border border-brand-soft' : 'hover:bg-mist border border-transparent'
                                         ]"
                                     >
                                         <input
@@ -323,62 +323,62 @@
                                             :value="p.id"
                                             v-model="form.featured_product_ids"
                                             :disabled="!form.featured_product_ids.includes(p.id) && form.featured_product_ids.length >= 8"
-                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            class="rounded border-line text-brand focus:ring-brand"
                                         />
                                         <span class="truncate flex-1 min-w-0">{{ p.name }}</span>
-                                        <span v-if="p.is_active === false" class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Inactive</span>
+                                        <span v-if="p.is_active === false" class="shrink-0 text-xs font-semibold  tracking-wide text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Inactive</span>
                                     </label>
                                 </div>
-                                <p v-else class="text-sm text-gray-400 italic">No products in your catalog yet. Add products under Inventory first.</p>
-                                <p class="text-xs text-gray-500 mt-2">{{ form.featured_product_ids.length }}/8 selected</p>
+                                <p v-else class="text-sm text-ink-faint italic">No products in your catalog yet. Add products under Inventory first.</p>
+                                <p class="text-xs text-ink-soft mt-2">{{ form.featured_product_ids.length }}/8 selected</p>
                             </section>
 
                             <!-- Automated Messages -->
                             <section class="border-b pb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Automated Messages</h3>
+                                <h3 class="text-lg font-medium text-ink mb-2">Automated Messages</h3>
 
                                 <!-- Shop greeting -->
                                 <div class="mb-6">
-                                    <label class="block text-sm font-medium text-gray-700">Shop greeting</label>
-                                    <p class="text-xs text-gray-500 mb-2">Sent automatically when a customer starts a new conversation with your shop.</p>
+                                    <label class="block text-sm font-medium text-ink">Shop greeting</label>
+                                    <p class="text-xs text-ink-soft mb-2">Sent automatically when a customer starts a new conversation with your shop.</p>
                                     <textarea
                                         v-model="form.chat_auto_reply"
                                         rows="3"
-                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        class="block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm"
                                         placeholder="Custom greeting (optional)"
                                     />
                                     <p v-if="form.errors.chat_auto_reply" class="text-red-500 text-xs mt-1">{{ form.errors.chat_auto_reply }}</p>
-                                    <div class="mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                                        <p class="text-xs font-medium text-gray-700 mb-1">If you leave this empty, we use:</p>
-                                        <p class="text-xs text-gray-600 whitespace-pre-wrap break-words leading-relaxed">{{ previewShopGreeting }}</p>
-                                        <p class="text-xs text-gray-500 mt-2">You can use <code class="bg-white px-1 rounded border">{shop_name}</code> and <code class="bg-white px-1 rounded border">{customer_name}</code> in your message.</p>
+                                    <div class="mt-2 rounded-control border border-line bg-mist p-3">
+                                        <p class="text-xs font-medium text-ink mb-1">If you leave this empty, we use:</p>
+                                        <p class="text-xs text-ink-soft whitespace-pre-wrap break-words leading-relaxed">{{ previewShopGreeting }}</p>
+                                        <p class="text-xs text-ink-soft mt-2">You can use <code class="bg-white px-1 rounded border">{shop_name}</code> and <code class="bg-white px-1 rounded border">{customer_name}</code> in your message.</p>
                                     </div>
                                 </div>
 
                                 <!-- Order chat templates -->
                                 <div>
-                                    <h4 class="text-sm font-medium text-gray-700 mb-1">Order chat templates</h4>
-                                    <p class="text-xs text-gray-500 mb-3">
+                                    <h4 class="text-sm font-medium text-ink mb-1">Order chat templates</h4>
+                                    <p class="text-xs text-ink-soft mb-3">
                                         Posted into the order thread when you accept or ship an order.
-                                        Placeholders: <code class="bg-gray-100 px-1 rounded">{shop_name}</code>,
-                                        <code class="bg-gray-100 px-1 rounded">{order_number}</code>,
-                                        <code class="bg-gray-100 px-1 rounded">{customer_name}</code>
+                                        Placeholders: <code class="bg-mist px-1 rounded">{shop_name}</code>,
+                                        <code class="bg-mist px-1 rounded">{order_number}</code>,
+                                        <code class="bg-mist px-1 rounded">{customer_name}</code>
                                     </p>
                                     <div class="space-y-4">
                                         <div>
-                                            <label class="block text-sm text-gray-600">After order is accepted</label>
-                                            <textarea v-model="form.chat_template_order_accepted" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="Custom message (optional)" />
-                                            <div class="mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                                                <p class="text-xs font-medium text-gray-700 mb-1">If empty, default (example):</p>
-                                                <p class="text-xs text-gray-600 whitespace-pre-wrap break-words leading-relaxed">{{ previewOrderAccepted }}</p>
+                                            <label class="block text-sm text-ink-soft">After order is accepted</label>
+                                            <textarea v-model="form.chat_template_order_accepted" rows="3" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" placeholder="Custom message (optional)" />
+                                            <div class="mt-2 rounded-control border border-line bg-mist p-3">
+                                                <p class="text-xs font-medium text-ink mb-1">If empty, default (example):</p>
+                                                <p class="text-xs text-ink-soft whitespace-pre-wrap break-words leading-relaxed">{{ previewOrderAccepted }}</p>
                                             </div>
                                         </div>
                                         <div>
-                                            <label class="block text-sm text-gray-600">When order is shipped</label>
-                                            <textarea v-model="form.chat_template_order_shipped" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" placeholder="Custom message (optional)" />
-                                            <div class="mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-                                                <p class="text-xs font-medium text-gray-700 mb-1">If empty, default (example):</p>
-                                                <p class="text-xs text-gray-600 whitespace-pre-wrap break-words leading-relaxed">{{ previewOrderShipped }}</p>
+                                            <label class="block text-sm text-ink-soft">When order is shipped</label>
+                                            <textarea v-model="form.chat_template_order_shipped" rows="3" class="mt-1 block w-full rounded-control border-line shadow-sm focus:border-brand focus:ring-brand text-sm" placeholder="Custom message (optional)" />
+                                            <div class="mt-2 rounded-control border border-line bg-mist p-3">
+                                                <p class="text-xs font-medium text-ink mb-1">If empty, default (example):</p>
+                                                <p class="text-xs text-ink-soft whitespace-pre-wrap break-words leading-relaxed">{{ previewOrderShipped }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -390,14 +390,14 @@
                                 <Link
                                     :href="`/seller/${form.slug || distributor.slug}`"
                                     target="_blank"
-                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+                                    class="px-4 py-2 bg-mist text-ink rounded-control hover:bg-line transition text-sm"
                                 >
                                     View Public Profile
                                 </Link>
                                 <button
                                     type="submit"
                                     :disabled="form.processing"
-                                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
+                                    class="px-6 py-2 bg-brand text-white rounded-control hover:bg-brand-dark transition disabled:opacity-50 text-sm font-medium"
                                 >
                                     {{ form.processing ? 'Saving...' : 'Save Changes' }}
                                 </button>

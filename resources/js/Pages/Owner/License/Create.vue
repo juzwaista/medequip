@@ -2,18 +2,18 @@
     <OwnerLayout>
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">Upload License / Accreditation</h1>
-                <p class="text-gray-600 mt-2">Add a license or accreditation document to your profile</p>
+                <h1 class="text-3xl font-bold text-ink">Upload License / Accreditation</h1>
+                <p class="text-ink-soft mt-2">Add a license or accreditation document to your profile</p>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="bg-white rounded-card shadow-md p-6">
                 <form @submit.prevent="submit" class="space-y-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">License Type *</label>
+                        <label class="block text-sm font-semibold text-ink mb-2">License Type *</label>
                         <select
                             v-model="form.type"
                             required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                         >
                             <option value="">Select type</option>
                             <option value="fda">FDA License</option>
@@ -26,10 +26,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Document File *</label>
+                        <label class="block text-sm font-semibold text-ink mb-2">Document File *</label>
                         <div 
-                            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition"
-                            :class="{'border-blue-400 bg-blue-50': isScanning}"
+                            class="border-2 border-dashed border-line rounded-control p-6 text-center hover:bg-mist transition"
+                            :class="{'border-brand bg-brand-tint': isScanning}"
                         >
                             <input
                                 type="file"
@@ -38,8 +38,8 @@
                                 required
                                 class="w-full"
                             />
-                            <p v-if="!isScanning" class="text-xs text-gray-500 mt-2">JPG, PNG (Max 5MB)</p>
-                            <div v-else class="mt-2 flex items-center justify-center text-blue-600 font-medium">
+                            <p v-if="!isScanning" class="text-xs text-ink-soft mt-2">JPG, PNG (Max 5MB)</p>
+                            <div v-else class="mt-2 flex items-center justify-center text-brand font-medium">
                                 <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -51,14 +51,14 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Expiration Date *</label>
+                        <label class="block text-sm font-semibold text-ink mb-2">Expiration Date *</label>
                         <input
                             type="date"
                             v-model="form.expires_at"
                             required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-3 border border-line rounded-control focus:ring-2 focus:ring-brand focus:border-transparent"
                         />
-                        <p class="text-xs text-gray-500 mt-2">OCR will attempt to pre-fill this based on your document.</p>
+                        <p class="text-xs text-ink-soft mt-2">OCR will attempt to pre-fill this based on your document.</p>
                         <p v-if="form.errors.expires_at" class="text-red-500 text-sm mt-1">{{ form.errors.expires_at }}</p>
                     </div>
 
@@ -66,13 +66,13 @@
                         <button
                             type="submit"
                             :disabled="form.processing || isScanning"
-                            class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg disabled:opacity-50"
+                            class="flex-1 bg-brand text-white px-6 py-3 rounded-card font-bold hover:bg-brand-dark transition shadow-lg disabled:opacity-50"
                         >
                             {{ form.processing ? 'Uploading...' : 'Upload License' }}
                         </button>
                         <Link
                             href="/owner/distributors"
-                            class="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-700 hover:bg-gray-50 transition"
+                            class="px-6 py-3 border-2 border-line rounded-card font-bold text-ink hover:bg-mist transition"
                         >
                             Cancel
                         </Link>

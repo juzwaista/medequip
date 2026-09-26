@@ -2,27 +2,27 @@
     <AdminLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div class="mb-6">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Reports hub</h1>
-                <p class="text-sm text-gray-600 mt-1">
+                <h1 class="text-2xl sm:text-3xl font-bold text-ink">Reports hub</h1>
+                <p class="text-sm text-ink-soft mt-1">
                     Flagged content and user reports awaiting review.
                 </p>
             </div>
 
-            <div class="flex flex-wrap gap-2 mb-4 border-b border-gray-200 pb-4">
+            <div class="flex flex-wrap gap-2 mb-4 border-b border-line pb-4">
                 <Link
                     v-for="t in tabDefs"
                     :key="t.key"
                     :href="tabHref(t.key)"
                     preserve-state
-                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold border transition"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-control text-xs sm:text-sm font-semibold border transition"
                     :class="tab === t.key
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'"
+                        ? 'bg-brand text-white border-brand'
+                        : 'bg-white text-ink border-line hover:bg-mist'"
                 >
                     {{ t.label }}
                     <span
                         v-if="t.badge != null && t.badge > 0"
-                        class="text-[10px] font-black rounded-full min-w-[1.25rem] px-1.5 py-0.5 text-center leading-none"
+                        class="text-xs font-semibold rounded-full min-w-[1.25rem] px-1.5 py-0.5 text-center leading-none"
                         :class="tab === t.key ? 'bg-white/20 text-white' : 'bg-rose-500 text-white'"
                     >
                         {{ t.badge > 99 ? '99+' : t.badge }}
@@ -36,10 +36,10 @@
                     :key="s"
                     :href="statusHref(s)"
                     preserve-state
-                    class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition"
+                    class="px-3 py-1.5 rounded-control text-xs font-semibold border transition"
                     :class="status === s
-                        ? 'bg-slate-800 text-white border-slate-800'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'"
+                        ? 'bg-ink text-white border-ink-faint'
+                        : 'bg-white text-ink border-line hover:bg-mist'"
                 >
                     {{ s === 'all' ? 'All statuses' : s }}
                 </Link>
@@ -52,25 +52,25 @@
                         v-for="r in messageReports.data"
                         :key="'m-' + r.id"
                         :href="showHref('message', r.id)"
-                        class="block bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2 active:bg-gray-50"
+                        class="block bg-white rounded-card border border-line shadow-sm p-4 space-y-2 active:bg-mist"
                     >
-                        <div class="flex justify-between gap-2 text-xs text-gray-500">
+                        <div class="flex justify-between gap-2 text-xs text-ink-soft">
                             <span>#{{ r.id }}</span>
                             <span>{{ formatWhen(r.created_at) }}</span>
                         </div>
-                        <p class="text-sm font-medium text-gray-900">{{ r.reporter?.name || '—' }}</p>
-                        <p class="text-xs text-gray-600 line-clamp-3">{{ r.summary?.preview || '—' }}</p>
-                        <div class="flex flex-wrap gap-2 text-[10px]">
-                            <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-bold uppercase">{{ r.status }}</span>
-                            <span v-if="r.summary?.shop" class="text-gray-500">{{ r.summary.shop }}</span>
+                        <p class="text-sm font-medium text-ink">{{ r.reporter?.name || '—' }}</p>
+                        <p class="text-xs text-ink-soft line-clamp-3">{{ r.summary?.preview || '—' }}</p>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span class="px-2 py-0.5 rounded-full bg-mist text-ink font-bold ">{{ r.status }}</span>
+                            <span v-if="r.summary?.shop" class="text-ink-soft">{{ r.summary.shop }}</span>
                         </div>
                     </Link>
                 </div>
 
-                <div class="hidden sm:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+                <div class="hidden sm:block bg-white rounded-card shadow border border-line overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <thead class="bg-mist text-left text-xs font-semibold text-ink-soft  tracking-wide">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
                                     <th class="px-4 py-3">Reporter</th>
@@ -79,28 +79,28 @@
                                     <th class="px-4 py-3">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-line">
                                 <tr
                                     v-for="r in messageReports.data"
                                     :key="r.id"
-                                    class="hover:bg-gray-50/80 cursor-pointer"
+                                    class="hover:bg-mist/80 cursor-pointer"
                                     @click="goShow('message', r.id)"
                                 >
-                                    <td class="px-4 py-3 text-gray-500 tabular-nums">#{{ r.id }}</td>
+                                    <td class="px-4 py-3 text-ink-soft tabular-nums">#{{ r.id }}</td>
                                     <td class="px-4 py-3">
-                                        <p class="font-medium text-gray-900">{{ r.reporter?.name || '—' }}</p>
-                                        <p class="text-xs text-gray-500 break-all">{{ r.reporter?.email }}</p>
+                                        <p class="font-medium text-ink">{{ r.reporter?.name || '—' }}</p>
+                                        <p class="text-xs text-ink-soft break-all">{{ r.reporter?.email }}</p>
                                     </td>
                                     <td class="px-4 py-3 max-w-sm">
-                                        <p class="text-gray-800 line-clamp-2">{{ r.summary?.preview || '—' }}</p>
-                                        <p class="text-[10px] text-gray-400 mt-1">{{ r.reason }}</p>
+                                        <p class="text-ink line-clamp-2">{{ r.summary?.preview || '—' }}</p>
+                                        <p class="text-xs text-ink-faint mt-1">{{ r.reason }}</p>
                                     </td>
-                                    <td class="px-4 py-3 text-xs text-gray-600">
-                                        <p v-if="r.summary?.shop" class="font-medium text-gray-800">{{ r.summary.shop }}</p>
+                                    <td class="px-4 py-3 text-xs text-ink-soft">
+                                        <p v-if="r.summary?.shop" class="font-medium text-ink">{{ r.summary.shop }}</p>
                                         <p>Role: {{ r.summary?.author_role || '—' }}</p>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span class="inline-flex px-2 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-800">{{ r.status }}</span>
+                                        <span class="inline-flex px-2 py-1 rounded-control text-xs font-bold bg-mist text-ink">{{ r.status }}</span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -113,16 +113,16 @@
                         v-for="link in messageReports.links"
                         :key="link.label"
                         :href="link.url || '#'"
-                        class="px-3 py-1 rounded-lg text-sm border"
+                        class="px-3 py-1 rounded-control text-sm border"
                         :class="[
-                            link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                            link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                             !link.url ? 'pointer-events-none opacity-50' : '',
                         ]"
                         preserve-scroll
                         v-html="link.label"
                     />
                 </div>
-                <p v-if="!messageReports.data?.length" class="text-center py-12 text-gray-500 text-sm">Nothing in this queue for the current filters.</p>
+                <p v-if="!messageReports.data?.length" class="text-center py-12 text-ink-soft text-sm">Nothing in this queue for the current filters.</p>
             </template>
 
             <!-- User reports -->
@@ -132,22 +132,22 @@
                         v-for="r in userReports.data"
                         :key="'u-' + r.id"
                         :href="showHref('user', r.id)"
-                        class="block bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2"
+                        class="block bg-white rounded-card border border-line shadow-sm p-4 space-y-2"
                     >
-                        <div class="flex justify-between text-xs text-gray-500">
+                        <div class="flex justify-between text-xs text-ink-soft">
                             <span>#{{ r.id }}</span>
                             <span>{{ formatWhen(r.created_at) }}</span>
                         </div>
-                        <p class="text-sm text-gray-900"><span class="font-medium">Subject:</span> {{ r.summary?.subject_name || '—' }}</p>
-                        <p class="text-xs text-gray-600">{{ r.reason }}</p>
-                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-100">{{ r.status }}</span>
+                        <p class="text-sm text-ink"><span class="font-medium">Subject:</span> {{ r.summary?.subject_name || '—' }}</p>
+                        <p class="text-xs text-ink-soft">{{ r.reason }}</p>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold  bg-mist">{{ r.status }}</span>
                     </Link>
                 </div>
 
-                <div class="hidden sm:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+                <div class="hidden sm:block bg-white rounded-card shadow border border-line overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <thead class="bg-mist text-left text-xs font-semibold text-ink-soft  tracking-wide">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
                                     <th class="px-4 py-3">Reporter</th>
@@ -156,25 +156,25 @@
                                     <th class="px-4 py-3">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-line">
                                 <tr
                                     v-for="r in userReports.data"
                                     :key="r.id"
-                                    class="hover:bg-gray-50/80 cursor-pointer"
+                                    class="hover:bg-mist/80 cursor-pointer"
                                     @click="goShow('user', r.id)"
                                 >
-                                    <td class="px-4 py-3 text-gray-500">#{{ r.id }}</td>
+                                    <td class="px-4 py-3 text-ink-soft">#{{ r.id }}</td>
                                     <td class="px-4 py-3">
                                         <p class="font-medium">{{ r.reporter?.name }}</p>
-                                        <p class="text-xs text-gray-500 break-all">{{ r.reporter?.email }}</p>
+                                        <p class="text-xs text-ink-soft break-all">{{ r.reporter?.email }}</p>
                                     </td>
                                     <td class="px-4 py-3">
                                         <p class="font-medium">{{ r.summary?.subject_name }}</p>
-                                        <p class="text-xs text-gray-500">{{ r.summary?.subject_email }}</p>
-                                        <p class="text-[10px] text-gray-400">{{ r.summary?.subject_role }} · banned: {{ r.summary?.banned ? 'yes' : 'no' }}</p>
+                                        <p class="text-xs text-ink-soft">{{ r.summary?.subject_email }}</p>
+                                        <p class="text-xs text-ink-faint">{{ r.summary?.subject_role }} · banned: {{ r.summary?.banned ? 'yes' : 'no' }}</p>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700 max-w-xs">{{ r.reason }}</td>
-                                    <td class="px-4 py-3"><span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg">{{ r.status }}</span></td>
+                                    <td class="px-4 py-3 text-ink max-w-xs">{{ r.reason }}</td>
+                                    <td class="px-4 py-3"><span class="text-xs font-bold bg-mist px-2 py-1 rounded-control">{{ r.status }}</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -186,16 +186,16 @@
                         v-for="link in userReports.links"
                         :key="link.label"
                         :href="link.url || '#'"
-                        class="px-3 py-1 rounded-lg text-sm border"
+                        class="px-3 py-1 rounded-control text-sm border"
                         :class="[
-                            link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                            link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                             !link.url ? 'pointer-events-none opacity-50' : '',
                         ]"
                         preserve-scroll
                         v-html="link.label"
                     />
                 </div>
-                <p v-if="!userReports.data?.length" class="text-center py-12 text-gray-500 text-sm">Nothing in this queue for the current filters.</p>
+                <p v-if="!userReports.data?.length" class="text-center py-12 text-ink-soft text-sm">Nothing in this queue for the current filters.</p>
             </template>
 
             <!-- Product listing reports -->
@@ -205,22 +205,22 @@
                         v-for="r in productReports.data"
                         :key="'p-' + r.id"
                         :href="showHref('product', r.id)"
-                        class="block bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2"
+                        class="block bg-white rounded-card border border-line shadow-sm p-4 space-y-2"
                     >
-                        <div class="flex justify-between text-xs text-gray-500">
+                        <div class="flex justify-between text-xs text-ink-soft">
                             <span>#{{ r.id }}</span>
                             <span>{{ formatWhen(r.created_at) }}</span>
                         </div>
-                        <p class="text-sm font-medium text-gray-900">{{ r.summary?.product_name || 'Product' }}</p>
-                        <p class="text-xs text-gray-600">{{ r.reason }}</p>
-                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-100">{{ r.status }}</span>
+                        <p class="text-sm font-medium text-ink">{{ r.summary?.product_name || 'Product' }}</p>
+                        <p class="text-xs text-ink-soft">{{ r.reason }}</p>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold  bg-mist">{{ r.status }}</span>
                     </Link>
                 </div>
 
-                <div class="hidden sm:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+                <div class="hidden sm:block bg-white rounded-card shadow border border-line overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <thead class="bg-mist text-left text-xs font-semibold text-ink-soft  tracking-wide">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
                                     <th class="px-4 py-3">Reporter</th>
@@ -229,24 +229,24 @@
                                     <th class="px-4 py-3">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-line">
                                 <tr
                                     v-for="r in productReports.data"
                                     :key="r.id"
-                                    class="hover:bg-gray-50/80 cursor-pointer"
+                                    class="hover:bg-mist/80 cursor-pointer"
                                     @click="goShow('product', r.id)"
                                 >
-                                    <td class="px-4 py-3 text-gray-500">#{{ r.id }}</td>
+                                    <td class="px-4 py-3 text-ink-soft">#{{ r.id }}</td>
                                     <td class="px-4 py-3">
                                         <p class="font-medium">{{ r.reporter?.name }}</p>
-                                        <p class="text-xs text-gray-500 break-all">{{ r.reporter?.email }}</p>
+                                        <p class="text-xs text-ink-soft break-all">{{ r.reporter?.email }}</p>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <p class="font-medium text-gray-900">{{ r.summary?.product_name || '—' }}</p>
-                                        <p class="text-[10px] text-gray-400">#{{ r.summary?.product_id }}</p>
+                                        <p class="font-medium text-ink">{{ r.summary?.product_name || '—' }}</p>
+                                        <p class="text-xs text-ink-faint">#{{ r.summary?.product_id }}</p>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700 max-w-xs">{{ r.reason }}</td>
-                                    <td class="px-4 py-3"><span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg">{{ r.status }}</span></td>
+                                    <td class="px-4 py-3 text-ink max-w-xs">{{ r.reason }}</td>
+                                    <td class="px-4 py-3"><span class="text-xs font-bold bg-mist px-2 py-1 rounded-control">{{ r.status }}</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -258,25 +258,25 @@
                         v-for="link in productReports.links"
                         :key="link.label"
                         :href="link.url || '#'"
-                        class="px-3 py-1 rounded-lg text-sm border"
+                        class="px-3 py-1 rounded-control text-sm border"
                         :class="[
-                            link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                            link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                             !link.url ? 'pointer-events-none opacity-50' : '',
                         ]"
                         preserve-scroll
                         v-html="link.label"
                     />
                 </div>
-                <p v-if="!productReports.data?.length" class="text-center py-12 text-gray-500 text-sm">Nothing in this queue for the current filters.</p>
+                <p v-if="!productReports.data?.length" class="text-center py-12 text-ink-soft text-sm">Nothing in this queue for the current filters.</p>
             </template>
 
             <!-- Couriers + delivery flags -->
             <template v-else-if="tab === 'couriers' && courierReports && deliveryFlags">
-                <h2 class="text-lg font-semibold text-gray-900 mb-3">Courier reports</h2>
-                <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-10">
+                <h2 class="text-lg font-semibold text-ink mb-3">Courier reports</h2>
+                <div class="bg-white rounded-card shadow border border-line overflow-hidden mb-10">
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <thead class="bg-mist text-left text-xs font-semibold text-ink-soft  tracking-wide">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
                                     <th class="px-4 py-3">Reporter</th>
@@ -285,18 +285,18 @@
                                     <th class="px-4 py-3">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-line">
                                 <tr
                                     v-for="r in courierReports.data"
                                     :key="'c-' + r.id"
-                                    class="hover:bg-gray-50/80 cursor-pointer"
+                                    class="hover:bg-mist/80 cursor-pointer"
                                     @click="goShow('courier', r.id)"
                                 >
-                                    <td class="px-4 py-3 text-gray-500">#{{ r.id }}</td>
+                                    <td class="px-4 py-3 text-ink-soft">#{{ r.id }}</td>
                                     <td class="px-4 py-3">{{ r.reporter?.name }}</td>
                                     <td class="px-4 py-3">{{ r.summary?.courier_name || '—' }}</td>
                                     <td class="px-4 py-3 tabular-nums">{{ r.summary?.order_number || '—' }}</td>
-                                    <td class="px-4 py-3"><span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg">{{ r.status }}</span></td>
+                                    <td class="px-4 py-3"><span class="text-xs font-bold bg-mist px-2 py-1 rounded-control">{{ r.status }}</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -307,27 +307,27 @@
                         v-for="link in courierReports.links"
                         :key="link.label"
                         :href="link.url || '#'"
-                        class="px-3 py-1 rounded-lg text-sm border"
+                        class="px-3 py-1 rounded-control text-sm border"
                         :class="[
-                            link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                            link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                             !link.url ? 'pointer-events-none opacity-50' : '',
                         ]"
                         preserve-scroll
                         v-html="link.label"
                     />
                 </div>
-                <p v-if="!courierReports.data?.length" class="text-sm text-gray-500 mb-8">No courier reports for this filter.</p>
+                <p v-if="!courierReports.data?.length" class="text-sm text-ink-soft mb-8">No courier reports for this filter.</p>
 
-                <h2 class="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-1">
+                <h2 class="text-lg font-semibold text-ink mb-1 flex items-center gap-1">
                     Low delivery ratings (≤2
                     <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                     )
                 </h2>
-                <p class="text-sm text-gray-600 mb-3">Queued until cleared or acted on.</p>
-                <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+                <p class="text-sm text-ink-soft mb-3">Queued until cleared or acted on.</p>
+                <div class="bg-white rounded-card shadow border border-line overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <thead class="bg-mist text-left text-xs font-semibold text-ink-soft  tracking-wide">
                                 <tr>
                                     <th class="px-4 py-3">ID</th>
                                     <th class="px-4 py-3">Customer</th>
@@ -336,14 +336,14 @@
                                     <th class="px-4 py-3">Order</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-line">
                                 <tr
                                     v-for="r in deliveryFlags.data"
                                     :key="'d-' + r.id"
-                                    class="hover:bg-gray-50/80 cursor-pointer"
+                                    class="hover:bg-mist/80 cursor-pointer"
                                     @click="goShow('delivery', r.id)"
                                 >
-                                    <td class="px-4 py-3 text-gray-500">#{{ r.id }}</td>
+                                    <td class="px-4 py-3 text-ink-soft">#{{ r.id }}</td>
                                     <td class="px-4 py-3">{{ r.reporter?.name }}</td>
                                     <td class="px-4 py-3 font-bold text-amber-700 flex items-center gap-0.5">
                                         {{ r.summary?.stars }}
@@ -361,9 +361,9 @@
                         v-for="link in deliveryFlags.links"
                         :key="link.label"
                         :href="link.url || '#'"
-                        class="px-3 py-1 rounded-lg text-sm border"
+                        class="px-3 py-1 rounded-control text-sm border"
                         :class="[
-                            link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                            link.active ? 'bg-brand text-white border-brand' : 'border-line text-ink hover:bg-mist',
                             !link.url ? 'pointer-events-none opacity-50' : '',
                         ]"
                         preserve-scroll
@@ -372,7 +372,7 @@
                 </div>
                 <p
                     v-if="!deliveryFlags.data?.length"
-                    class="text-center py-8 text-gray-500 text-sm"
+                    class="text-center py-8 text-ink-soft text-sm"
                 >
                     No low ratings in queue.
                 </p>

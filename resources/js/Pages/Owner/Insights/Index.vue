@@ -1,86 +1,86 @@
 <template>
     <OwnerLayout>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-ink">
             <div class="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Insights</h1>
-                    <p class="text-sm text-slate-500 mt-1 font-medium">Sales trends, product performance, and inventory analytics.</p>
+                    <h1 class="text-2xl sm:text-3xl font-semibold text-ink tracking-tight">Insights</h1>
+                    <p class="text-sm text-ink-soft mt-1 font-medium">Sales trends, product performance, and inventory analytics.</p>
                 </div>
-                <Link href="/owner/dashboard" class="text-sm font-bold text-cyan-700 hover:text-cyan-800 hover:underline decoration-cyan-300 underline-offset-4">&larr; Back to Dashboard</Link>
+                <Link href="/owner/dashboard" class="text-sm font-bold text-brand-dark hover:text-brand-dark hover:underline decoration-cyan-300 underline-offset-4">&larr; Back to Dashboard</Link>
             </div>
 
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Unread Alerts</p>
-                    <p class="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{{ insights.counts.unread_alerts }}</p>
+                <div class="bg-white rounded-card border border-line shadow-sm p-5">
+                    <p class="text-[11px] font-bold   text-ink-soft">Unread Alerts</p>
+                    <p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ insights.counts.unread_alerts }}</p>
                 </div>
-                <div class="bg-white rounded-2xl border border-rose-200 shadow-sm p-5">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Critical Alerts</p>
-                    <p class="text-2xl font-extrabold text-rose-600 mt-1 tabular-nums">{{ insights.counts.critical_alerts }}</p>
+                <div class="bg-white rounded-card border border-rose-200 shadow-sm p-5">
+                    <p class="text-[11px] font-bold   text-rose-700">Critical Alerts</p>
+                    <p class="text-2xl font-semibold text-rose-600 mt-1 tabular-nums">{{ insights.counts.critical_alerts }}</p>
                 </div>
-                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm p-5">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Pending Reorders</p>
-                    <p class="text-2xl font-extrabold text-amber-600 mt-1 tabular-nums">{{ insights.counts.pending_recommendations }}</p>
+                <div class="bg-white rounded-card border border-amber-200 shadow-sm p-5">
+                    <p class="text-[11px] font-bold   text-amber-700">Pending Reorders</p>
+                    <p class="text-2xl font-semibold text-amber-600 mt-1 tabular-nums">{{ insights.counts.pending_recommendations }}</p>
                 </div>
             </div>
 
             <!-- Demand Forecast -->
             <section class="mb-8">
-                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="rounded-card border border-line bg-white p-6 shadow-sm">
                     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
                         <div>
-                            <h2 class="font-bold text-slate-900">{{ analytics.demand_forecast?.mode === 'yoy' ? 'Sales History — Past 12 Months' : 'Expected Sales — This Month' }}</h2>
-                            <p class="text-xs font-medium text-slate-500 mt-1">{{ analytics.demand_forecast?.value_label }}</p>
+                            <h2 class="font-bold text-ink">{{ analytics.demand_forecast?.mode === 'yoy' ? 'Sales History — Past 12 Months' : 'Expected Sales — This Month' }}</h2>
+                            <p class="text-xs font-medium text-ink-soft mt-1">{{ analytics.demand_forecast?.value_label }}</p>
                         </div>
-                        <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-inner">
-                            <button type="button" class="px-4 py-2 text-xs font-bold rounded-lg transition-all" :class="trendScope === 'mtd' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-800'" @click="setTrendScope('mtd')">This Month</button>
-                            <button type="button" class="px-4 py-2 text-xs font-bold rounded-lg transition-all" :class="trendScope === 'yoy' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-800'" @click="setTrendScope('yoy')">vs. Last Year</button>
+                        <div class="inline-flex rounded-card border border-line bg-mist p-1 shadow-inner">
+                            <button type="button" class="px-4 py-2 text-xs font-bold rounded-control transition-all" :class="trendScope === 'mtd' ? 'bg-white text-ink shadow-sm border border-line/50' : 'text-ink-soft hover:text-ink'" @click="setTrendScope('mtd')">This Month</button>
+                            <button type="button" class="px-4 py-2 text-xs font-bold rounded-control transition-all" :class="trendScope === 'yoy' ? 'bg-white text-ink shadow-sm border border-line/50' : 'text-ink-soft hover:text-ink'" @click="setTrendScope('yoy')">vs. Last Year</button>
                         </div>
                     </div>
                     <div v-show="analytics.demand_forecast?.labels?.length" class="h-52 sm:h-72 -mx-1 px-1 min-w-0">
                         <canvas ref="demandForecastRef" />
                     </div>
-                    <div v-show="!analytics.demand_forecast?.labels?.length" class="h-52 sm:h-72 flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
-                        <p class="text-sm font-medium text-slate-500">Not enough data to predict sales yet.</p>
+                    <div v-show="!analytics.demand_forecast?.labels?.length" class="h-52 sm:h-72 flex items-center justify-center border-2 border-dashed border-line rounded-card bg-mist/50">
+                        <p class="text-sm font-medium text-ink-soft">Not enough data to predict sales yet.</p>
                     </div>
-                    <p class="text-[11px] font-medium text-slate-400 mt-4 text-center">Solid: Actual Sales | Dashed: Projected</p>
+                    <p class="text-[11px] font-medium text-ink-faint mt-4 text-center">Solid: Actual Sales | Dashed: Projected</p>
                 </div>
             </section>
 
             <!-- Heatmap + Gauge Row -->
             <section class="grid xl:grid-cols-3 gap-6 mb-8">
-                <div class="xl:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden flex flex-col">
+                <div class="xl:col-span-2 rounded-card border border-line bg-white p-6 shadow-sm overflow-hidden flex flex-col">
                     <div class="mb-6">
-                        <h2 class="font-bold text-slate-900">Fastest Moving Products</h2>
-                        <p class="text-xs font-medium text-slate-500 mt-1">Weekly sales activity for your top sellers.</p>
+                        <h2 class="font-bold text-ink">Fastest Moving Products</h2>
+                        <p class="text-xs font-medium text-ink-soft mt-1">Weekly sales activity for your top sellers.</p>
                     </div>
                     <div v-if="heatmap.rows?.length" class="overflow-x-auto flex-1">
                         <div class="min-w-[520px]">
                             <div class="grid gap-1.5" :style="{ gridTemplateColumns: `minmax(140px,1.2fr) repeat(${heatmap.week_labels.length}, minmax(36px,1fr))` }">
-                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider py-2">Product</div>
-                                <div v-for="(wl, wi) in heatmap.week_labels" :key="wi" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider py-2 text-center">{{ wl }}</div>
+                                <div class="text-xs font-bold text-ink-faint   py-2">Product</div>
+                                <div v-for="(wl, wi) in heatmap.week_labels" :key="wi" class="text-xs font-bold text-ink-faint   py-2 text-center">{{ wl }}</div>
                                 <template v-for="row in heatmap.rows" :key="row.product_id">
-                                    <div class="text-xs font-semibold text-slate-700 py-2 truncate pr-2">{{ row.name }}</div>
-                                    <div v-for="(cell, ci) in row.cells" :key="ci" class="h-8 rounded-md border border-slate-900/5 hover:border-slate-400 hover:scale-105 hover:shadow-sm transition-all duration-200" :style="{ background: heatColor(cell) }" :title="`${row.name}: ${row.units[ci]} units`" />
+                                    <div class="text-xs font-semibold text-ink py-2 truncate pr-2">{{ row.name }}</div>
+                                    <div v-for="(cell, ci) in row.cells" :key="ci" class="h-8 rounded-control border border-ink-faint/5 hover:border-ink-faint hover:scale-105 hover:shadow-sm transition-all duration-200" :style="{ background: heatColor(cell) }" :title="`${row.name}: ${row.units[ci]} units`" />
                                 </template>
                             </div>
                         </div>
                     </div>
-                    <div v-else class="flex-1 flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 py-10">
-                        <p class="text-sm font-medium text-slate-500">No recent sales to display.</p>
+                    <div v-else class="flex-1 flex items-center justify-center border-2 border-dashed border-line rounded-card bg-mist/50 py-10">
+                        <p class="text-sm font-medium text-ink-soft">No recent sales to display.</p>
                     </div>
-                    <div v-if="heatmap.rows?.length" class="flex items-center justify-end gap-3 mt-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <div v-if="heatmap.rows?.length" class="flex items-center justify-end gap-3 mt-6 text-xs font-bold   text-ink-faint">
                         <span class="inline-block h-2 w-4 rounded-sm" :style="{ background: heatColor(0.15) }" /> Cold
                         <span class="inline-block h-2 w-4 rounded-sm" :style="{ background: heatColor(0.5) }" /> Mid
                         <span class="inline-block h-2 w-4 rounded-sm" :style="{ background: heatColor(1) }" /> Hot
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
-                    <div class="absolute inset-0 opacity-[0.03] pointer-events-none" :class="{ 'bg-emerald-500': gauge.zone === 'balanced', 'bg-amber-500': gauge.zone === 'overstock', 'bg-rose-500': gauge.zone === 'understock' }"></div>
-                    <h2 class="font-bold text-slate-900 self-start w-full relative z-10">Stock Health</h2>
-                    <p class="text-xs font-medium text-slate-500 mt-1 self-start w-full relative z-10">Estimated days until current stock runs out.</p>
+                <div class="rounded-card border border-line bg-white p-6 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-[0.03] pointer-events-none" :class="{ 'bg-brand': gauge.zone === 'balanced', 'bg-amber-500': gauge.zone === 'overstock', 'bg-rose-500': gauge.zone === 'understock' }"></div>
+                    <h2 class="font-bold text-ink self-start w-full relative z-10">Stock Health</h2>
+                    <p class="text-xs font-medium text-ink-soft mt-1 self-start w-full relative z-10">Estimated days until current stock runs out.</p>
                     <div class="relative w-56 h-32 mt-8 z-10">
                         <svg viewBox="0 0 200 120" class="w-full h-full drop-shadow-sm">
                             <defs>
@@ -100,60 +100,60 @@
                         </svg>
                     </div>
                     <div class="text-center mt-2 relative z-10">
-                        <p class="text-sm font-bold text-slate-800">{{ gauge.headline }}</p>
-                        <p v-if="gauge.days_cover != null" class="text-xs font-medium text-slate-500 mt-1 bg-slate-50 px-2 py-1 rounded-md inline-block">~{{ gauge.days_cover }} days remaining</p>
-                        <p v-else class="text-[10px] font-medium text-slate-400 mt-1">Need more sales data to calculate this.</p>
+                        <p class="text-sm font-bold text-ink">{{ gauge.headline }}</p>
+                        <p v-if="gauge.days_cover != null" class="text-xs font-medium text-ink-soft mt-1 bg-mist px-2 py-1 rounded-control inline-block">~{{ gauge.days_cover }} days remaining</p>
+                        <p v-else class="text-xs font-medium text-ink-faint mt-1">Need more sales data to calculate this.</p>
                     </div>
                 </div>
             </section>
 
             <!-- Orders Over Time + Top Performers -->
             <section class="grid xl:grid-cols-2 gap-6 mb-8">
-                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col h-full">
+                <div class="rounded-card border border-line bg-white p-6 shadow-sm flex flex-col h-full">
                     <div class="flex flex-col sm:flex-row justify-between gap-3 mb-6">
                         <div>
-                            <h2 class="font-bold text-slate-900">Orders Over Time</h2>
-                            <p class="text-xs font-medium text-slate-500">{{ charts.orders_period_label }}</p>
+                            <h2 class="font-bold text-ink">Orders Over Time</h2>
+                            <p class="text-xs font-medium text-ink-soft">{{ charts.orders_period_label }}</p>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <input v-model="ordFrom" type="date" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 focus:ring-cyan-500 py-2" />
-                            <span class="text-slate-400 text-xs">–</span>
-                            <input v-model="ordTo" type="date" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 focus:ring-cyan-500 py-2" />
-                            <button type="button" class="rounded-xl bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 hover:bg-slate-200 transition-colors" @click="applyOrders">Apply</button>
+                            <input v-model="ordFrom" type="date" class="rounded-card border-line text-xs font-medium text-ink-soft focus:ring-brand py-2" />
+                            <span class="text-ink-faint text-xs">–</span>
+                            <input v-model="ordTo" type="date" class="rounded-card border-line text-xs font-medium text-ink-soft focus:ring-brand py-2" />
+                            <button type="button" class="rounded-card bg-mist text-ink text-xs font-bold px-4 py-2 hover:bg-line transition-colors" @click="applyOrders">Apply</button>
                         </div>
                     </div>
                     <div v-show="charts.orders_series?.length" class="h-[220px] sm:h-[280px] -mx-1 min-w-0">
                         <canvas ref="dailyChartRef" />
                     </div>
-                    <div v-show="!charts.orders_series?.length" class="h-[220px] sm:h-[280px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
-                        <p class="text-sm font-medium text-slate-400">No order data for this period.</p>
+                    <div v-show="!charts.orders_series?.length" class="h-[220px] sm:h-[280px] flex items-center justify-center border-2 border-dashed border-line rounded-card bg-mist/50">
+                        <p class="text-sm font-medium text-ink-faint">No order data for this period.</p>
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col h-full">
+                <div class="rounded-card border border-line bg-white p-6 shadow-sm flex flex-col h-full">
                     <div class="flex flex-col lg:flex-row justify-between gap-4 mb-6">
                         <div class="min-w-0 pr-4">
-                            <h2 class="font-bold text-slate-900 truncate">Top Performers</h2>
-                            <p class="text-xs font-medium text-slate-500 mt-1 truncate" :title="charts.top_period_label + ' \u00B7 ' + topMetricDescription">{{ charts.top_period_label }} &middot; {{ topMetricDescription }}</p>
+                            <h2 class="font-bold text-ink truncate">Top Performers</h2>
+                            <p class="text-xs font-medium text-ink-soft mt-1 truncate" :title="charts.top_period_label + ' \u00B7 ' + topMetricDescription">{{ charts.top_period_label }} &middot; {{ topMetricDescription }}</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 shrink-0">
-                            <select v-if="canViewFinancials" v-model="topMetric" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 py-2 focus:ring-cyan-500">
+                            <select v-if="canViewFinancials" v-model="topMetric" class="rounded-card border-line text-xs font-medium text-ink-soft py-2 focus:ring-brand">
                                 <option value="revenue">By Revenue</option>
                                 <option value="units">By Units Sold</option>
                                 <option value="orders">By Total Orders</option>
                             </select>
-                            <select v-else v-model="topMetric" class="rounded-xl border-slate-200 text-xs font-medium text-slate-600 py-2 focus:ring-cyan-500">
+                            <select v-else v-model="topMetric" class="rounded-card border-line text-xs font-medium text-ink-soft py-2 focus:ring-brand">
                                 <option value="units">By Units Sold</option>
                                 <option value="orders">By Total Orders</option>
                             </select>
-                            <button type="button" class="rounded-xl bg-slate-100 text-slate-700 text-xs font-bold px-4 py-2 flex items-center gap-1 hover:bg-slate-200 transition-colors" @click="applyTop">Sort</button>
+                            <button type="button" class="rounded-card bg-mist text-ink text-xs font-bold px-4 py-2 flex items-center gap-1 hover:bg-line transition-colors" @click="applyTop">Sort</button>
                         </div>
                     </div>
                     <div v-show="charts.top_products?.length" class="h-[220px] sm:h-[280px] -mx-1 min-w-0">
                         <canvas ref="topProductsChartRef" />
                     </div>
-                    <div v-show="!charts.top_products?.length" class="h-[220px] sm:h-[280px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
-                        <p class="text-sm font-medium text-slate-400">No performance data available.</p>
+                    <div v-show="!charts.top_products?.length" class="h-[220px] sm:h-[280px] flex items-center justify-center border-2 border-dashed border-line rounded-card bg-mist/50">
+                        <p class="text-sm font-medium text-ink-faint">No performance data available.</p>
                     </div>
                 </div>
             </section>
@@ -161,34 +161,34 @@
             <!-- DSS Settings + Alerts -->
             <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                        <h2 class="font-bold text-slate-900 mb-4">Reorder Recommendations</h2>
-                        <div v-if="!insights.recommendations.length" class="text-sm text-slate-500">No current recommendations.</div>
+                    <div class="bg-white rounded-card border border-line shadow-sm p-6">
+                        <h2 class="font-bold text-ink mb-4">Reorder Recommendations</h2>
+                        <div v-if="!insights.recommendations.length" class="text-sm text-ink-soft">No current recommendations.</div>
                         <div v-else class="space-y-3">
-                            <div v-for="item in insights.recommendations" :key="item.id" class="border border-slate-200 rounded-xl p-4">
+                            <div v-for="item in insights.recommendations" :key="item.id" class="border border-line rounded-card p-4">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <p class="font-semibold text-slate-900">{{ item.product?.name }}</p>
-                                        <p class="text-sm text-slate-600">Current: {{ item.current_stock }} | Suggested: {{ item.recommended_quantity }} | {{ item.days_until_stockout }} days until stockout</p>
+                                        <p class="font-semibold text-ink">{{ item.product?.name }}</p>
+                                        <p class="text-sm text-ink-soft">Current: {{ item.current_stock }} | Suggested: {{ item.recommended_quantity }} | {{ item.days_until_stockout }} days until stockout</p>
                                     </div>
-                                    <button @click="markActioned(item.id)" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-bold shrink-0 transition-colors">Done</button>
+                                    <button @click="markActioned(item.id)" class="text-xs px-3 py-1.5 rounded-control bg-brand text-white hover:bg-brand-dark font-bold shrink-0 transition-colors">Done</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                        <h2 class="font-bold text-slate-900 mb-4">Alerts</h2>
-                        <div v-if="!insights.alerts.length" class="text-sm text-slate-500">No alerts.</div>
+                    <div class="bg-white rounded-card border border-line shadow-sm p-6">
+                        <h2 class="font-bold text-ink mb-4">Alerts</h2>
+                        <div v-if="!insights.alerts.length" class="text-sm text-ink-soft">No alerts.</div>
                         <div v-else class="space-y-3 max-h-[460px] overflow-y-auto">
-                            <div v-for="alert in insights.alerts" :key="alert.id" class="border border-slate-200 rounded-xl p-4">
+                            <div v-for="alert in insights.alerts" :key="alert.id" class="border border-line rounded-card p-4">
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
-                                        <p class="font-semibold text-slate-900">{{ alert.title }}</p>
-                                        <p class="text-sm text-slate-600">{{ alert.message }}</p>
-                                        <p class="text-xs text-slate-400 mt-1">{{ new Date(alert.created_at).toLocaleString() }}</p>
+                                        <p class="font-semibold text-ink">{{ alert.title }}</p>
+                                        <p class="text-sm text-ink-soft">{{ alert.message }}</p>
+                                        <p class="text-xs text-ink-faint mt-1">{{ new Date(alert.created_at).toLocaleString() }}</p>
                                     </div>
-                                    <button v-if="!alert.is_read" @click="markRead(alert.id)" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-bold shrink-0 transition-colors">Read</button>
+                                    <button v-if="!alert.is_read" @click="markRead(alert.id)" class="text-xs px-3 py-1.5 rounded-control bg-brand text-white hover:bg-brand-dark font-bold shrink-0 transition-colors">Read</button>
                                 </div>
                             </div>
                         </div>
@@ -196,39 +196,39 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                        <h2 class="font-bold text-slate-900 mb-4">Alert Settings</h2>
+                    <div class="bg-white rounded-card border border-line shadow-sm p-6">
+                        <h2 class="font-bold text-ink mb-4">Alert Settings</h2>
                         <form @submit.prevent="saveSettings" class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-800 mb-1">Low Stock Threshold (days)</label>
-                                <input v-model.number="settings.low_stock_threshold_days" type="number" min="1" max="90" class="w-full rounded-xl border-slate-300 text-sm py-2.5" />
+                                <label class="block text-sm font-semibold text-ink mb-1">Low Stock Threshold (days)</label>
+                                <input v-model.number="settings.low_stock_threshold_days" type="number" min="1" max="90" class="w-full rounded-card border-line text-sm py-2.5" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-800 mb-1">Expiry Warning (days)</label>
-                                <input v-model.number="settings.expiry_warning_days" type="number" min="1" max="365" class="w-full rounded-xl border-slate-300 text-sm py-2.5" />
+                                <label class="block text-sm font-semibold text-ink mb-1">Expiry Warning (days)</label>
+                                <input v-model.number="settings.expiry_warning_days" type="number" min="1" max="365" class="w-full rounded-card border-line text-sm py-2.5" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-800 mb-1">Dead Stock Threshold (days)</label>
-                                <input v-model.number="settings.dead_stock_days" type="number" min="1" max="365" class="w-full rounded-xl border-slate-300 text-sm py-2.5" />
+                                <label class="block text-sm font-semibold text-ink mb-1">Dead Stock Threshold (days)</label>
+                                <input v-model.number="settings.dead_stock_days" type="number" min="1" max="365" class="w-full rounded-card border-line text-sm py-2.5" />
                             </div>
-                            <label class="flex items-center gap-2 text-sm font-medium text-slate-800">
-                                <input v-model="settings.enable_auto_alerts" type="checkbox" class="rounded border-slate-300 text-blue-600" />
+                            <label class="flex items-center gap-2 text-sm font-medium text-ink">
+                                <input v-model="settings.enable_auto_alerts" type="checkbox" class="rounded border-line text-brand" />
                                 Enable Auto Alerts
                             </label>
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-bold text-sm transition-colors">Save Settings</button>
+                            <button type="submit" class="w-full bg-brand text-white py-2.5 rounded-card hover:bg-brand-dark font-bold text-sm transition-colors">Save Settings</button>
                         </form>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                        <h2 class="font-bold text-slate-900 mb-4">Monthly Summary</h2>
-                        <div v-if="!insights.analytics" class="text-sm text-slate-500">No analytics yet.</div>
+                    <div class="bg-white rounded-card border border-line shadow-sm p-6">
+                        <h2 class="font-bold text-ink mb-4">Monthly Summary</h2>
+                        <div v-if="!insights.analytics" class="text-sm text-ink-soft">No analytics yet.</div>
                         <div v-else class="space-y-3 text-sm">
-                            <p><span class="text-slate-500">Orders:</span> <strong>{{ insights.analytics.total_orders }}</strong></p>
-                            <p><span class="text-slate-500">Revenue:</span> <strong>PHP {{ Number(insights.analytics.total_revenue).toLocaleString() }}</strong></p>
-                            <p><span class="text-slate-500">Avg Order Value:</span> <strong>PHP {{ Number(insights.analytics.average_order_value).toLocaleString() }}</strong></p>
+                            <p><span class="text-ink-soft">Orders:</span> <strong>{{ insights.analytics.total_orders }}</strong></p>
+                            <p><span class="text-ink-soft">Revenue:</span> <strong>PHP {{ Number(insights.analytics.total_revenue).toLocaleString() }}</strong></p>
+                            <p><span class="text-ink-soft">Avg Order Value:</span> <strong>PHP {{ Number(insights.analytics.average_order_value).toLocaleString() }}</strong></p>
                             <div>
-                                <p class="text-slate-500 mb-1">Top Products</p>
-                                <ul class="list-disc list-inside text-slate-800">
+                                <p class="text-ink-soft mb-1">Top Products</p>
+                                <ul class="list-disc list-inside text-ink">
                                     <li v-for="p in (insights.analytics.top_products || [])" :key="`${p.product_id}-${p.name}`">{{ p.name }} ({{ p.sold_qty }})</li>
                                 </ul>
                             </div>

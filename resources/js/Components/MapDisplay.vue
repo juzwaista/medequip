@@ -1,17 +1,17 @@
 <template>
-    <div class="relative w-full rounded-xl overflow-hidden shadow-sm border border-gray-300">
+    <div class="relative w-full rounded-card overflow-hidden shadow-sm border border-line">
         <!-- Container for leaflet map -->
         <div ref="mapContainer" :style="{ height: height }" class="w-full relative z-0"></div>
 
         <!-- Coordinates Overlay (Optional) -->
         <div class="absolute bottom-2 left-2 right-2 z-[400] flex justify-center pointer-events-none" v-if="lat && lng">
-            <p class="text-[10px] sm:text-xs text-gray-700 bg-white/90 backdrop-blur px-2 py-1 rounded shadow-sm text-center font-mono">
+            <p class="text-xs sm:text-xs text-ink bg-white/90  px-2 py-1 rounded shadow-sm text-center font-mono">
                 {{ Number(lat).toFixed(6) }}, {{ Number(lng).toFixed(6) }}
             </p>
         </div>
 
-        <div v-if="!lat || !lng" class="absolute inset-0 bg-gray-100 flex items-center justify-center z-[500]">
-            <p class="text-sm text-gray-500">Location coordinates unavailable.</p>
+        <div v-if="!lat || !lng" class="absolute inset-0 bg-mist flex items-center justify-center z-[500]">
+            <p class="text-sm text-ink-soft">Location coordinates unavailable.</p>
         </div>
     </div>
 </template>

@@ -7,13 +7,13 @@
         <div
             v-if="showHeader"
             class="shrink-0 px-3 sm:px-4 py-3 border-b"
-            :class="fillViewport ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50'"
+            :class="fillViewport ? 'border-line bg-white' : 'border-line bg-gradient-to-r from-slate-50 to-gray-50'"
         >
             <div class="flex items-start gap-2 min-w-0">
                 <Link
                     v-if="backHref"
                     :href="backHref"
-                    class="shrink-0 mt-0.5 p-1.5 -ml-1 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-gray-100 transition"
+                    class="shrink-0 mt-0.5 p-1.5 -ml-1 rounded-control text-ink-soft hover:text-brand hover:bg-mist transition"
                     :aria-label="backLabel"
                 >
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -24,16 +24,16 @@
                     <component
                         :is="titleHref ? Link : 'h2'"
                         v-bind="titleHref ? { href: titleHref } : {}"
-                        class="text-lg font-bold text-gray-900 truncate block"
-                        :class="titleHref ? 'hover:text-blue-600 transition' : ''"
+                        class="text-lg font-bold text-ink truncate block"
+                        :class="titleHref ? 'hover:text-brand transition' : ''"
                     >
                         {{ displayTitle }}
                     </component>
-                    <p v-if="showSubtitle" class="text-xs mt-0.5 text-gray-600">{{ displaySubtitle }}</p>
+                    <p v-if="showSubtitle" class="text-xs mt-0.5 text-ink-soft">{{ displaySubtitle }}</p>
                     <p
                         v-if="presenceLine"
                         class="text-xs mt-1 font-medium"
-                        :class="presenceLine === 'Online' ? 'text-emerald-600' : 'text-gray-500'"
+                        :class="presenceLine === 'Online' ? 'text-brand' : 'text-ink-soft'"
                     >
                         {{ presenceLine }}
                     </p>
@@ -46,12 +46,12 @@
             class="flex-1 overflow-y-auto space-y-3 min-h-[12rem]"
             :class="scrollAreaClass"
         >
-            <p v-if="!loading && messages.length === 0" class="text-sm text-gray-500 text-center py-8">
+            <p v-if="!loading && messages.length === 0" class="text-sm text-ink-soft text-center py-8">
                 No messages yet. Say hello or ask about delivery.
             </p>
             <template v-for="seg in timelineSegments" :key="seg.key">
                 <div v-if="seg.type === 'divider'" class="flex justify-center py-1">
-                    <span class="text-[11px] font-semibold text-gray-500 bg-white/90 border border-gray-200/80 shadow-sm px-3 py-1 rounded-full">
+                    <span class="text-[11px] font-semibold text-ink-soft bg-white/90 border border-line/80 shadow-sm px-3 py-1 rounded-full">
                         {{ seg.label }}
                     </span>
                 </div>
@@ -75,71 +75,71 @@
                         </component>
                         <span
                             v-if="presenceLine === 'Online'"
-                            class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white"
+                            class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand ring-2 ring-white"
                             aria-hidden="true"
                         />
                     </span>
                     <div class="flex flex-col min-w-0 max-w-full lg:max-w-xl" :class="seg.message.is_mine ? 'items-end' : ''">
                         <div
                             class="px-3 py-2 text-sm shadow-sm"
-                            :class="[bubbleClass(seg.message), fillViewport ? 'rounded-[20px]' : 'rounded-2xl']"
+                            :class="[bubbleClass(seg.message), fillViewport ? 'rounded-[20px]' : 'rounded-card']"
                         >
                             <div v-if="!seg.message.is_mine" class="flex items-center justify-between gap-2 mb-1">
-                                <p class="text-[11px] font-semibold text-gray-500 truncate">
+                                <p class="text-[11px] font-semibold text-ink-soft truncate">
                                     {{ headerLabel(seg.message) }}
-                                    <span v-if="seg.message.is_automated" class="text-violet-600 font-bold"> · Auto</span>
+                                    <span v-if="seg.message.is_automated" class="text-brand font-bold"> · Auto</span>
                                     <span v-else-if="seg.message.is_prescription && seg.message.rx?.event !== 'uploaded'" class="text-amber-700 font-bold"> · Rx</span>
                                 </p>
                                 <button
                                     v-if="canReport(seg.message)"
                                     type="button"
-                                    class="text-[10px] font-semibold text-rose-600 hover:text-rose-800 shrink-0"
+                                    class="text-xs font-semibold text-rose-600 hover:text-rose-800 shrink-0"
                                     @click="openReport(seg.message)"
                                 >
                                     Report
                                 </button>
                             </div>
                             <!-- RFQ Request Bubble -->
-                            <div v-if="seg.message.kind === 'rfq_request'" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 my-1">
+                            <div v-if="seg.message.kind === 'rfq_request'" class="bg-brand-tint border border-brand-soft rounded-control p-3 my-1">
                                 <div class="flex items-center gap-2 mb-2">
-                                    <svg class="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    <span class="text-xs font-bold text-indigo-900 uppercase tracking-wide">Request for Quote</span>
+                                    <svg class="h-4 w-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span class="text-xs font-bold text-brand-dark  tracking-wide">Request for Quote</span>
                                 </div>
-                                <div class="text-sm font-semibold text-gray-900">{{ seg.message.meta?.product_name }}</div>
-                                <div class="text-xs text-gray-700 mt-1">Requested Qty: <span class="font-bold">{{ seg.message.meta?.requested_quantity }}</span> pcs</div>
-                                <div v-if="seg.message.meta?.target_price" class="text-xs text-gray-700">Target Price: <span class="font-bold">₱{{ Number(seg.message.meta?.target_price).toLocaleString() }}</span></div>
-                                <p v-if="seg.message.body" class="text-sm italic text-gray-600 mt-2 border-t border-indigo-100 pt-2">"{{ seg.message.body }}"</p>
+                                <div class="text-sm font-semibold text-ink">{{ seg.message.meta?.product_name }}</div>
+                                <div class="text-xs text-ink mt-1">Requested Qty: <span class="font-bold">{{ seg.message.meta?.requested_quantity }}</span> pcs</div>
+                                <div v-if="seg.message.meta?.target_price" class="text-xs text-ink">Target Price: <span class="font-bold">₱{{ Number(seg.message.meta?.target_price).toLocaleString() }}</span></div>
+                                <p v-if="seg.message.body" class="text-sm italic text-ink-soft mt-2 border-t border-brand-soft pt-2">"{{ seg.message.body }}"</p>
 
                                 <div v-if="isShopViewer && seg.message.meta?.rfq_status === 'pending'" class="mt-3">
-                                    <button @click="openQuoteModal(seg.message)" type="button" class="w-full rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 shadow-sm transition-colors">
+                                    <button @click="openQuoteModal(seg.message)" type="button" class="w-full rounded-control bg-brand hover:bg-brand-dark text-white text-xs font-bold py-2 shadow-sm transition-colors">
                                         Send Formal Quote
                                     </button>
                                 </div>
-                                <div v-else-if="seg.message.meta?.rfq_status === 'quoted'" class="mt-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                                <div v-else-if="seg.message.meta?.rfq_status === 'quoted'" class="mt-2 text-xs font-semibold text-brand-dark bg-brand-tint px-2 py-1 rounded">
                                     Quote sent
                                 </div>
                             </div>
 
                             <!-- RFQ Quote Bubble -->
-                            <div v-else-if="seg.message.kind === 'rfq_quote'" class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 my-1 shadow-sm">
+                            <div v-else-if="seg.message.kind === 'rfq_quote'" class="bg-brand-tint border border-brand-soft rounded-control p-3 my-1 shadow-sm">
                                 <div class="flex items-center gap-2 mb-2">
-                                    <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span class="text-xs font-bold text-emerald-900 uppercase tracking-wide">Formal Quote</span>
+                                    <svg class="h-4 w-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-xs font-bold text-brand-dark  tracking-wide">Formal Quote</span>
                                 </div>
-                                <div class="text-sm font-semibold text-gray-900">{{ seg.message.meta?.product_name }}</div>
-                                <div class="text-xs text-gray-700 mt-1">Offered Qty: <span class="font-bold">{{ seg.message.meta?.quoted_quantity }}</span> pcs</div>
-                                <div class="text-sm font-bold text-emerald-700 mt-1">Price per unit: ₱{{ Number(seg.message.meta?.quoted_price).toLocaleString() }}</div>
-                                <p v-if="seg.message.body" class="text-sm text-gray-700 mt-2 border-t border-emerald-100 pt-2">{{ seg.message.body }}</p>
+                                <div class="text-sm font-semibold text-ink">{{ seg.message.meta?.product_name }}</div>
+                                <div class="text-xs text-ink mt-1">Offered Qty: <span class="font-bold">{{ seg.message.meta?.quoted_quantity }}</span> pcs</div>
+                                <div class="text-sm font-bold text-brand-dark mt-1">Price per unit: ₱{{ Number(seg.message.meta?.quoted_price).toLocaleString() }}</div>
+                                <p v-if="seg.message.body" class="text-sm text-ink mt-2 border-t border-brand-soft pt-2">{{ seg.message.body }}</p>
 
                                 <div v-if="!isShopViewer && seg.message.meta?.rfq_status === 'pending_buyer'" class="mt-3 flex gap-2">
-                                    <button @click="acceptQuote(seg.message)" :disabled="rxActionLoading" type="button" class="flex-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 shadow-sm transition-colors disabled:opacity-50">
+                                    <button @click="acceptQuote(seg.message)" :disabled="rxActionLoading" type="button" class="flex-1 rounded-control bg-brand hover:bg-brand-dark text-white text-xs font-bold py-2 shadow-sm transition-colors disabled:opacity-50">
                                         Accept Quote
                                     </button>
-                                    <button @click="openCounterOfferModal(seg.message)" type="button" class="flex-1 rounded-md bg-white border border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-bold py-2 shadow-sm transition-colors">
+                                    <button @click="openCounterOfferModal(seg.message)" type="button" class="flex-1 rounded-control bg-white border border-brand text-brand-dark hover:bg-brand-tint text-xs font-bold py-2 shadow-sm transition-colors">
                                         Counter Offer
                                     </button>
                                 </div>
-                                <div v-else-if="seg.message.meta?.rfq_status === 'accepted'" class="mt-2 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-1 rounded text-center">
+                                <div v-else-if="seg.message.meta?.rfq_status === 'accepted'" class="mt-2 text-xs font-semibold text-brand-dark bg-brand-tint px-2 py-1 rounded text-center">
                                     Quote Accepted
                                 </div>
                             </div>
@@ -153,12 +153,12 @@
                             <p v-else-if="seg.message.body" class="whitespace-pre-wrap break-words">{{ seg.message.body }}</p>
                             <div
                                 v-if="seg.message.image_url"
-                                class="block mt-2 rounded-lg overflow-hidden border border-black/10 max-w-xs cursor-pointer group relative"
+                                class="block mt-2 rounded-control overflow-hidden border border-black/10 max-w-xs cursor-pointer group relative"
                                 @click="imageModalUrl = seg.message.image_url"
                             >
                                 <img :src="seg.message.image_url" alt="Prescription or attachment" class="w-full h-auto max-h-48 object-cover group-hover:opacity-90 transition" loading="lazy" />
                                 <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                    <span class="bg-black/50 text-white p-2 rounded-full backdrop-blur-sm shadow">
+                                    <span class="bg-black/50 text-white p-2 rounded-full  shadow">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
                                     </span>
                                 </div>
@@ -169,7 +169,7 @@
                             >
                                 <button
                                     type="button"
-                                    class="flex-1 min-h-[44px] rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 px-3 py-2"
+                                    class="flex-1 min-h-[44px] rounded-control bg-brand text-white text-xs font-bold hover:bg-brand-dark px-3 py-2"
                                     :disabled="rxActionLoading"
                                     @click="approvePrescriptionChat(seg.message)"
                                 >
@@ -177,14 +177,14 @@
                                 </button>
                                 <button
                                     type="button"
-                                    class="flex-1 min-h-[44px] rounded-lg border border-rose-300 text-rose-700 text-xs font-bold hover:bg-rose-50 px-3 py-2"
+                                    class="flex-1 min-h-[44px] rounded-control border border-rose-300 text-rose-700 text-xs font-bold hover:bg-rose-50 px-3 py-2"
                                     :disabled="rxActionLoading"
                                     @click="openRxReject(seg.message)"
                                 >
                                     Reject
                                 </button>
                             </div>
-                            <p v-if="seg.message.is_prescription && seg.message.rx?.prescription_status === 'rejected' && seg.message.rx?.review_note" class="mt-2 text-xs text-rose-800 bg-rose-50/80 rounded-lg px-2 py-1">
+                            <p v-if="seg.message.is_prescription && seg.message.rx?.prescription_status === 'rejected' && seg.message.rx?.review_note" class="mt-2 text-xs text-rose-800 bg-rose-50/80 rounded-control px-2 py-1">
                                 {{ seg.message.rx.review_note }}
                             </p>
                         </div>
@@ -192,10 +192,10 @@
                             class="mt-1 px-0.5 min-w-0"
                             :class="seg.message.is_mine ? 'text-right' : 'text-left'"
                         >
-                            <span class="text-[11px] tabular-nums text-gray-400">{{ formatClock(seg.message.created_at) }}</span>
+                            <span class="text-[11px] tabular-nums text-ink-faint">{{ formatClock(seg.message.created_at) }}</span>
                             <span
                                 v-if="outgoingDeliveryStatus(seg.message)"
-                                class="text-[11px] text-gray-400"
+                                class="text-[11px] text-ink-faint"
                             >
                                 · {{ outgoingDeliveryStatus(seg.message) }}
                             </span>
@@ -212,13 +212,13 @@
 
         <form
             class="shrink-0 p-2 sm:p-3 border-t flex flex-row flex-nowrap items-end gap-1.5 sm:gap-2"
-            :class="fillViewport ? 'border-gray-200 bg-white' : 'border-gray-100 bg-white'"
+            :class="fillViewport ? 'border-line bg-white' : 'border-line bg-white'"
             @submit.prevent="send"
         >
             <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile" />
             <button
                 type="button"
-                class="shrink-0 w-10 h-10 sm:w-11 sm:h-11 inline-flex items-center justify-center rounded-xl border-2 border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 transition"
+                class="shrink-0 w-10 h-10 sm:w-11 sm:h-11 inline-flex items-center justify-center rounded-card border-2 border-line bg-white text-ink-soft hover:bg-mist hover:border-ink-faint disabled:opacity-50 transition"
                 :disabled="sending"
                 title="Attach photo"
                 @click="fileInput?.click()"
@@ -232,7 +232,7 @@
                 rows="1"
                 maxlength="5000"
                 placeholder="Message…"
-                class="flex-1 min-w-0 resize-y max-h-32 rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px] leading-snug"
+                class="flex-1 min-w-0 resize-y max-h-32 rounded-card border border-line px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-transparent min-h-[44px] leading-snug"
                 :disabled="sending"
                 @keydown.enter.exact.prevent="send"
                 @input="onDraftInput"
@@ -240,7 +240,7 @@
             <button
                 type="submit"
                 :disabled="sending || !canSend || profanityHint"
-                class="shrink-0 h-10 sm:h-11 min-w-[3.5rem] sm:min-w-[4.5rem] px-3 sm:px-4 inline-flex items-center justify-center rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="shrink-0 h-10 sm:h-11 min-w-[3.5rem] sm:min-w-[4.5rem] px-3 sm:px-4 inline-flex items-center justify-center rounded-card bg-brand text-white text-sm font-semibold hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {{ sending ? '…' : 'Send' }}
             </button>
@@ -252,12 +252,12 @@
                 class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
                 @click.self="reportTarget = null"
             >
-                <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5" @click.stop>
-                    <h3 class="font-bold text-gray-900">Report message</h3>
-                    <p class="text-xs text-gray-600 mt-1">Our team reviews reports about harassment, scams, or inappropriate content. <strong>To ensure community safety, reported chats may be reviewed by MedEquip administrators.</strong></p>
+                <div class="bg-white rounded-card shadow-xl max-w-md w-full p-5" @click.stop>
+                    <h3 class="font-bold text-ink">Report message</h3>
+                    <p class="text-xs text-ink-soft mt-1">Our team reviews reports about harassment, scams, or inappropriate content. <strong>To ensure community safety, reported chats may be reviewed by MedEquip administrators.</strong></p>
                     <div class="mt-4 space-y-3">
-                        <label class="block text-xs font-semibold text-gray-700">Reason</label>
-                        <select v-model="reportReason" class="w-full rounded-lg border-gray-300 text-sm">
+                        <label class="block text-xs font-semibold text-ink">Reason</label>
+                        <select v-model="reportReason" class="w-full rounded-control border-line text-sm">
                             <option value="spam">Spam</option>
                             <option value="harassment">Harassment</option>
                             <option value="inappropriate">Inappropriate</option>
@@ -269,17 +269,17 @@
                             rows="2"
                             maxlength="2000"
                             placeholder="Optional details"
-                            class="w-full rounded-lg border-gray-300 text-sm"
+                            class="w-full rounded-control border-line text-sm"
                         />
                     </div>
                     <div class="flex gap-2 mt-5">
-                        <button type="button" class="flex-1 py-2 rounded-lg border border-gray-300 text-sm font-semibold" @click="reportTarget = null">
+                        <button type="button" class="flex-1 py-2 rounded-control border border-line text-sm font-semibold" @click="reportTarget = null">
                             Cancel
                         </button>
                         <button
                             type="button"
                             :disabled="reporting"
-                            class="flex-1 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold disabled:opacity-50"
+                            class="flex-1 py-2 rounded-control bg-rose-600 text-white text-sm font-semibold disabled:opacity-50"
                             @click="submitReport"
                         >
                             {{ reporting ? '…' : 'Submit' }}
@@ -295,23 +295,23 @@
                 class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
                 @click.self="rxRejectTarget = null"
             >
-                <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5" @click.stop>
-                    <h3 class="font-bold text-gray-900">Reject prescription</h3>
-                    <p class="text-xs text-gray-600 mt-1">This will also cancel the associated order.</p>
+                <div class="bg-white rounded-card shadow-xl max-w-md w-full p-5" @click.stop>
+                    <h3 class="font-bold text-ink">Reject prescription</h3>
+                    <p class="text-xs text-ink-soft mt-1">This will also cancel the associated order.</p>
                     <textarea
                         v-model="rxRejectReason"
                         rows="3"
                         maxlength="500"
-                        class="mt-3 w-full rounded-lg border-gray-300 text-sm"
+                        class="mt-3 w-full rounded-control border-line text-sm"
                         placeholder="Reason for the customer…"
                     />
                     <div class="flex gap-2 mt-4">
-                        <button type="button" class="flex-1 py-2 rounded-lg border border-gray-300 text-sm font-semibold" @click="rxRejectTarget = null">
+                        <button type="button" class="flex-1 py-2 rounded-control border border-line text-sm font-semibold" @click="rxRejectTarget = null">
                             Cancel
                         </button>
                         <button
                             type="button"
-                            class="flex-1 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold disabled:opacity-50"
+                            class="flex-1 py-2 rounded-control bg-rose-600 text-white text-sm font-semibold disabled:opacity-50"
                             :disabled="rxActionLoading || !rxRejectReason.trim()"
                             @click="submitRxReject"
                         >
@@ -328,34 +328,34 @@
                 class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
                 @click.self="quoteTarget = null"
             >
-                <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5" @click.stop>
-                    <h3 class="font-bold text-gray-900">Send Formal Quote</h3>
-                    <p class="text-xs text-gray-600 mt-1">Provide your final price for {{ quoteTarget.meta?.product_name }}.</p>
+                <div class="bg-white rounded-card shadow-xl max-w-md w-full p-5" @click.stop>
+                    <h3 class="font-bold text-ink">Send Formal Quote</h3>
+                    <p class="text-xs text-ink-soft mt-1">Provide your final price for {{ quoteTarget.meta?.product_name }}.</p>
                     <div class="mt-4 space-y-3">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Quoted Price (₱)</label>
-                            <input type="number" step="0.01" v-model="quotePrice" class="w-full rounded-lg border-gray-300 text-sm" required />
+                            <label class="block text-xs font-semibold text-ink mb-1">Quoted Price (₱)</label>
+                            <input type="number" step="0.01" v-model="quotePrice" class="w-full rounded-control border-line text-sm" required />
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Quoted Quantity</label>
-                            <input type="number" v-model="quoteQuantity" class="w-full rounded-lg border-gray-300 text-sm" required />
+                            <label class="block text-xs font-semibold text-ink mb-1">Quoted Quantity</label>
+                            <input type="number" v-model="quoteQuantity" class="w-full rounded-control border-line text-sm" required />
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Message to Buyer</label>
+                            <label class="block text-xs font-semibold text-ink mb-1">Message to Buyer</label>
                             <textarea
                                 v-model="quoteNote"
                                 rows="3"
-                                class="w-full rounded-lg border-gray-300 text-sm"
+                                class="w-full rounded-control border-line text-sm"
                             ></textarea>
                         </div>
                     </div>
                     <div class="flex gap-2 mt-4">
-                        <button type="button" class="flex-1 py-2 rounded-lg border border-gray-300 text-sm font-semibold" @click="quoteTarget = null">
+                        <button type="button" class="flex-1 py-2 rounded-control border border-line text-sm font-semibold" @click="quoteTarget = null">
                             Cancel
                         </button>
                         <button
                             type="button"
-                            class="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-50"
+                            class="flex-1 py-2 rounded-control bg-brand text-white text-sm font-semibold disabled:opacity-50"
                             :disabled="rxActionLoading"
                             @click="submitQuote"
                         >
@@ -378,12 +378,12 @@
             >
                 <div
                     v-if="imageModalUrl"
-                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 "
                     @click="imageModalUrl = null"
                 >
                     <button
                         type="button"
-                        class="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[160]"
+                        class="absolute top-4 right-4 text-white hover:text-ink-faint p-2 z-[160]"
                         @click="imageModalUrl = null"
                         aria-label="Close"
                     >
@@ -466,13 +466,13 @@ const presenceLine = computed(() => counterpartPresenceLive.value || '');
 const panelRootClass = computed(() =>
     props.fillViewport
         ? 'flex-1 min-h-0 max-h-none h-full rounded-none shadow-none border-0'
-        : 'rounded-xl shadow-md border border-gray-100 max-h-[min(36rem,calc(100dvh-12rem))] sm:max-h-[36rem] lg:max-h-[min(44rem,calc(100dvh-6rem))]'
+        : 'rounded-xl shadow-md border border-line max-h-[min(36rem,calc(100dvh-12rem))] sm:max-h-[36rem] lg:max-h-[min(44rem,calc(100dvh-6rem))]'
 );
 
 const scrollAreaClass = computed(() =>
     props.fillViewport
         ? 'flex-1 min-h-0 max-h-none px-2 sm:px-4 py-2 bg-gradient-to-br from-slate-50 to-gray-100'
-        : 'px-3 sm:px-4 py-3 max-h-[min(20rem,calc(100dvh-20rem))] sm:max-h-[20rem] lg:min-h-[16rem] lg:max-h-[min(30rem,calc(100dvh-12rem))] bg-gray-50/50'
+        : 'px-3 sm:px-4 py-3 max-h-[min(20rem,calc(100dvh-20rem))] sm:max-h-[20rem] lg:min-h-[16rem] lg:max-h-[min(30rem,calc(100dvh-12rem))] bg-mist/50'
 );
 
 function mergePresenceFromPayload(data) {
@@ -547,15 +547,15 @@ function avatarToneClass(m) {
         return 'bg-amber-100 text-amber-900 border-amber-200';
     }
     if (m.is_automated) {
-        return 'bg-violet-100 text-violet-800 border-violet-200';
+        return 'bg-brand-tint text-brand-dark border-brand-soft';
     }
     if (m.kind === 'rfq_request' && !m.is_mine) {
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        return 'bg-brand-tint text-brand-dark border-brand-soft';
     }
     if (m.kind === 'rfq_quote' && !m.is_mine) {
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'bg-brand-tint text-brand-dark border-brand-soft';
     }
-    return 'bg-white text-gray-700 border-gray-200';
+    return 'bg-white text-ink border-line';
 }
 
 function prescriptionAvatarIcon(m) {
@@ -595,18 +595,18 @@ function headerLabel(m) {
 
 function bubbleClass(m) {
     if (m.kind === 'rfq_request' || m.kind === 'rfq_quote') {
-        return 'bg-transparent text-gray-900'; // Special bubbles handle their own backgrounds
+        return 'bg-transparent text-ink'; // Special bubbles handle their own backgrounds
     }
     if (m.is_mine) {
-        return 'bg-blue-600 text-white rounded-br-md';
+        return 'bg-brand text-white rounded-br-md';
     }
     if (m.is_prescription) {
         return 'bg-amber-50 border border-amber-200 text-amber-950 rounded-bl-md';
     }
     if (m.is_automated) {
-        return 'bg-violet-50 border border-violet-200 text-violet-950 rounded-bl-md';
+        return 'bg-brand-tint border border-brand-soft text-brand-dark rounded-bl-md';
     }
-    return 'bg-white border border-gray-200 text-gray-900 rounded-bl-md';
+    return 'bg-white border border-line text-ink rounded-bl-md';
 }
 
 function avatarLinkTag(m) {
@@ -670,7 +670,7 @@ async function submitQuote() {
     try {
         if (isShopViewer.value) {
             // Seller is quoting
-            await window.axios.post(`/messages/${quoteTarget.value.id}/quote`, {
+            await window.axios.post(`/rfq/${quoteTarget.value.id}/respond`, {
                 quoted_price: quotePrice.value,
                 quoted_quantity: quoteQuantity.value,
                 seller_note: quoteNote.value
@@ -714,7 +714,8 @@ async function acceptQuote(m) {
 }
 
 async function approvePrescriptionChat(m) {
-    const oid = m.rx?.order_id;
+    // Order routes bind by order_number, not the numeric id (a numeric id 404s).
+    const oid = m.rx?.order_number;
     if (!oid) {
         return;
     }
@@ -738,7 +739,8 @@ function openRxReject(m) {
 
 async function submitRxReject() {
     const m = rxRejectTarget.value;
-    const oid = m?.rx?.order_id;
+    // Order routes bind by order_number, not the numeric id (a numeric id 404s).
+    const oid = m?.rx?.order_number;
     if (!oid || !rxRejectReason.value.trim()) {
         return;
     }

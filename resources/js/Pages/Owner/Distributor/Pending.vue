@@ -2,9 +2,9 @@
     <Head :title="status === 'rejected' ? 'Application Rejected' : 'Application Pending'" />
     <OnboardingLayout :title="status === 'rejected' ? 'Application Rejected' : 'Application Under Review'">
         <div class="max-w-2xl mx-auto py-16 px-4">
-            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-10 text-center relative overflow-hidden">
+            <div class="bg-white rounded-card shadow-xl border border-line p-10 text-center relative overflow-hidden">
                 <!-- Background Icon -->
-                <div class="absolute -top-10 -right-10 text-blue-50 opacity-50 pointer-events-none">
+                <div class="absolute -top-10 -right-10 text-brand-tint opacity-80 pointer-events-none">
                     <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
@@ -19,10 +19,10 @@
                             </svg>
                         </div>
 
-                        <h1 class="text-3xl font-bold text-gray-900 mb-4">Portal Locked</h1>
+                        <h1 class="text-3xl font-bold text-ink mb-4">Portal Locked</h1>
                         
-                        <p class="text-lg text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
-                            Your documents are currently under review by the MedEquip Compliance Team. Please allow <span class="font-bold text-gray-900">1-2 business days</span>.
+                        <p class="text-lg text-ink-soft mb-8 max-w-lg mx-auto leading-relaxed">
+                            Your documents are currently under review by the MedEquip Compliance Team. Please allow <span class="font-bold text-ink">1-2 business days</span>.
                         </p>
                     </template>
 
@@ -34,20 +34,20 @@
                             </svg>
                         </div>
 
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Application Rejected</h1>
+                        <h1 class="text-3xl font-bold text-ink mb-2">Application Rejected</h1>
                         
-                        <div v-if="inCooldown" class="mb-8 p-5 bg-orange-50 border-2 border-orange-200 rounded-xl">
+                        <div v-if="inCooldown" class="mb-8 p-5 bg-orange-50 border-2 border-orange-200 rounded-card">
                             <svg class="w-8 h-8 text-orange-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <h2 class="text-lg font-bold text-orange-800 mb-1">Cooldown Active</h2>
                             <p class="text-sm text-orange-700">You must wait before re-applying. Your portal will unlock on:</p>
                             <p class="text-md font-bold text-orange-900 mt-2">{{ cooldownEndsAt }}</p>
                         </div>
-                        <p v-else class="text-lg text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">
+                        <p v-else class="text-lg text-ink-soft mb-6 max-w-lg mx-auto leading-relaxed">
                             Unfortunately, your distributor application was not approved. Please review the feedback below and update your documents.
                         </p>
 
-                        <div v-if="distributor?.rejection_reason" class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6 text-left shadow-sm">
-                            <p class="text-xs font-bold text-red-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <div v-if="distributor?.rejection_reason" class="bg-red-50 border border-red-200 rounded-card p-5 mb-6 text-left shadow-sm">
+                            <p class="text-xs font-bold text-red-800   mb-2 flex items-center gap-1.5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                 Reason for Rejection
                             </p>
@@ -56,19 +56,19 @@
                     </template>
 
                     <!-- Status Details -->
-                    <div class="bg-gray-50 rounded-xl p-6 mb-8 text-left border border-gray-200">
+                    <div class="bg-mist rounded-card p-6 mb-8 text-left border border-line">
                          <div class="flex justify-between items-center text-sm mb-3">
-                            <span class="text-gray-500 font-semibold">Company</span>
-                            <span class="text-gray-900 font-bold">{{ distributor?.company_name || '—' }}</span>
+                            <span class="text-ink-soft font-semibold">Company</span>
+                            <span class="text-ink font-bold">{{ distributor?.company_name || '—' }}</span>
                         </div>
                         <div class="flex justify-between items-center text-sm mb-3">
-                            <span class="text-gray-500 font-semibold">Submitted</span>
-                            <span class="text-gray-900 font-bold">{{ formatDate(distributor?.created_at) }}</span>
+                            <span class="text-ink-soft font-semibold">Submitted</span>
+                            <span class="text-ink font-bold">{{ formatDate(distributor?.created_at) }}</span>
                         </div>
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500 font-semibold">Status</span>
+                            <span class="text-ink-soft font-semibold">Status</span>
                             <span :class="[
-                                'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide',
+                                'px-3 py-1 rounded-full text-xs font-bold  tracking-wide',
                                 status === 'pending'
                                     ? 'bg-amber-100 text-amber-800'
                                     : 'bg-red-100 text-red-800'
@@ -80,20 +80,20 @@
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button v-if="status === 'rejected' && !inCooldown"
                             @click="goResubmit"
-                            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition">
+                            class="w-full sm:w-auto bg-brand hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-card transition">
                             Update Documents & Re-apply
                         </button>
 
                         <div v-else-if="inCooldown" class="text-center w-full">
-                             <p class="text-sm text-gray-500 font-medium">Re-application portal will unlock automatically once the cooldown period ends.</p>
+                             <p class="text-sm text-ink-soft font-medium">Re-application portal will unlock automatically once the cooldown period ends.</p>
                         </div>
 
                         <Link v-if="status === 'pending'" href="/products"
-                            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition">
+                            class="w-full sm:w-auto bg-brand hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-card transition">
                             Browse Products
                         </Link>
                         
-                        <button @click="logout" class="w-full text-gray-500 hover:text-gray-900 font-bold py-3 px-4 transition">
+                        <button @click="logout" class="w-full text-ink-soft hover:text-ink font-bold py-3 px-4 transition">
                             Sign Out
                         </button>
                     </div>

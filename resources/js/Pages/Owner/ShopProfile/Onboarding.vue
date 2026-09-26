@@ -2,23 +2,23 @@
     <OnboardingLayout title="Set up your shop — MedEquip">
         <div class="w-full max-w-lg">
             <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold text-gray-900">You’re approved — open your shop</h1>
-                <p class="text-sm text-gray-600 mt-2 max-w-md mx-auto">
+                <h1 class="text-2xl font-bold text-ink">You’re approved — open your shop</h1>
+                <p class="text-sm text-ink-soft mt-2 max-w-md mx-auto">
                     A few details so customers can find you. You can add hours, social links, and more later in Business profile.
                 </p>
             </div>
 
-            <div v-if="Object.keys(form.errors).length" class="mb-5 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+            <div v-if="Object.keys(form.errors).length" class="mb-5 bg-red-50 border border-red-200 rounded-card p-4 text-sm text-red-700">
                 <ul class="list-disc list-inside space-y-0.5">
                     <li v-for="(err, key) in form.errors" :key="key">{{ err }}</li>
                 </ul>
             </div>
 
-            <form @submit.prevent="submit" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 space-y-6">
+            <form @submit.prevent="submit" class="bg-white rounded-card shadow-lg border border-line p-6 sm:p-8 space-y-6">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1">Public shop link</label>
-                    <div class="flex rounded-xl border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                        <span class="px-3 py-2.5 bg-gray-50 text-gray-500 text-sm border-r border-gray-200 shrink-0">/seller/</span>
+                    <label class="block text-sm font-semibold text-ink mb-1">Public shop link</label>
+                    <div class="flex rounded-card border border-line overflow-hidden focus-within:ring-2 focus-within:ring-brand focus-within:border-brand">
+                        <span class="px-3 py-2.5 bg-mist text-ink-soft text-sm border-r border-line shrink-0">/seller/</span>
                         <input
                             v-model="form.slug"
                             type="text"
@@ -29,55 +29,55 @@
                             @input="onSlugInput"
                         />
                     </div>
-                    <p v-if="slugHint" class="text-xs mt-1" :class="slugHint.ok ? 'text-emerald-600' : 'text-amber-700'">{{ slugHint.text }}</p>
+                    <p v-if="slugHint" class="text-xs mt-1" :class="slugHint.ok ? 'text-brand' : 'text-amber-700'">{{ slugHint.text }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1">Short description <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-semibold text-ink mb-1">Short description <span class="text-red-500">*</span></label>
                     <textarea
                         v-model="form.description"
                         rows="5"
                         required
                         maxlength="2000"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y min-h-[120px]"
+                        class="w-full px-4 py-3 border border-line rounded-card text-sm focus:ring-2 focus:ring-brand focus:border-transparent resize-y min-h-[120px]"
                         placeholder="What do you sell? Who do you serve? Keep it friendly — at least a few sentences."
                     />
-                    <p class="text-xs text-gray-500 mt-1">{{ form.description.length }}/2000 · minimum 30 characters</p>
+                    <p class="text-xs text-ink-soft mt-1">{{ form.description.length }}/2000 · minimum 30 characters</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1">Shop phone <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-semibold text-ink mb-1">Shop phone <span class="text-red-500">*</span></label>
                     <input
                         v-model="form.phone"
                         type="tel"
                         required
                         inputmode="numeric"
                         maxlength="11"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full px-4 py-3 border border-line rounded-card text-sm focus:ring-2 focus:ring-brand focus:border-transparent"
                         placeholder="09XXXXXXXXX"
                         @input="form.phone = String(form.phone || '').replace(/\D/g, '').slice(0, 11)"
                     />
-                    <p class="text-xs text-gray-500 mt-1">Shown on your public shop. You can change this anytime.</p>
+                    <p class="text-xs text-ink-soft mt-1">Shown on your public shop. You can change this anytime.</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1">Pick-up Instructions <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <label class="block text-sm font-semibold text-ink mb-1">Pick-up Instructions <span class="text-ink-faint font-normal">(optional)</span></label>
                     <textarea
                         v-model="form.pickup_instructions"
                         rows="3"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                        class="w-full px-4 py-3 border border-line rounded-card text-sm focus:ring-2 focus:ring-brand focus:border-transparent resize-y"
                         placeholder="Directions for customers who pick up orders in person."
                     />
-                    <p class="text-xs text-gray-500 mt-1">Provide clear collection details for customers choosing "Store Pick-up."</p>
+                    <p class="text-xs text-ink-soft mt-1">Provide clear collection details for customers choosing "Store Pick-up."</p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Logo <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-semibold text-ink mb-1">Logo <span class="text-red-500">*</span></label>
                         <input type="file" required accept="image/*" class="text-sm w-full" @change="form.logo = $event.target.files[0]" />
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Cover image <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-semibold text-ink mb-1">Cover image <span class="text-red-500">*</span></label>
                         <input type="file" required accept="image/*" class="text-sm w-full" @change="form.cover_photo = $event.target.files[0]" />
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                 <button
                     type="submit"
                     :disabled="form.processing"
-                    class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    class="w-full bg-brand text-white font-bold py-3.5 rounded-card hover:bg-brand-dark transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     <svg v-if="form.processing" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

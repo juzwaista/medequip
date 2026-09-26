@@ -2,15 +2,15 @@
     <OwnerLayout>
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Add product</h1>
-                <p class="text-gray-600 mt-2">Fill in the details below to list a new product in your shop.</p>
+                <h1 class="text-3xl font-bold text-ink">Add product</h1>
+                <p class="text-ink-soft mt-2">Fill in the details below to list a new product in your shop.</p>
             </div>
 
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- Media -->
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Product images</h2>
-                    <p class="text-sm text-gray-600 mb-4">
+                <section class="rounded-card border border-line bg-white shadow-sm p-6 sm:p-8">
+                    <h2 class="text-xs font-bold   text-ink-soft mb-4">Product images</h2>
+                    <p class="text-sm text-ink-soft mb-4">
                         Add up to <strong>12</strong> images. The <strong>first</strong> image is used as the main photo in listings.
                     </p>
                     <input
@@ -18,14 +18,14 @@
                         multiple
                         accept="image/*"
                         @change="onImagesPick"
-                        class="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        class="block w-full text-sm text-ink-soft file:mr-4 file:py-2.5 file:px-4 file:rounded-control file:border-0 file:text-sm file:font-semibold file:bg-brand-tint file:text-brand-dark hover:file:bg-brand-tint"
                     />
                     <p v-if="form.errors.images" class="text-red-600 text-sm mt-2">{{ form.errors.images }}</p>
                     <div v-if="imagePreviews.length" class="mt-4 flex flex-wrap gap-3">
                         <div
                             v-for="(p, idx) in imagePreviews"
                             :key="p.key"
-                            class="relative w-24 h-24 rounded-xl border border-gray-200 overflow-hidden group"
+                            class="relative w-24 h-24 rounded-card border border-line overflow-hidden group"
                         >
                             <img :src="p.url" alt="" class="w-full h-full object-cover" />
                             <button
@@ -37,7 +37,7 @@
                             </button>
                             <span
                                 v-if="idx === 0"
-                                class="absolute bottom-1 left-1 right-1 text-center text-[10px] font-bold bg-blue-600 text-white rounded px-1 py-0.5"
+                                class="absolute bottom-1 left-1 right-1 text-center text-xs font-bold bg-brand text-white rounded px-1 py-0.5"
                             >
                                 Main
                             </span>
@@ -46,25 +46,25 @@
                 </section>
 
                 <!-- Basics -->
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Basic information</h2>
+                <section class="rounded-card border border-line bg-white shadow-sm p-6 sm:p-8">
+                    <h2 class="text-xs font-bold   text-ink-soft mb-4">Basic information</h2>
                     <div class="grid grid-cols-1 gap-5">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-800 mb-1.5">Product name <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-semibold text-ink mb-1.5">Product name <span class="text-red-500">*</span></label>
                             <input
                                 v-model="form.name"
                                 type="text"
                                 required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-brand"
                             />
                             <p v-if="form.errors.name" class="text-red-600 text-sm mt-1">{{ form.errors.name }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-800 mb-1.5">Category <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-semibold text-ink mb-1.5">Category <span class="text-red-500">*</span></label>
                             <select
                                 v-model="form.category_id"
                                 required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand focus:border-brand bg-white"
                             >
                                 <option value="">Select a category</option>
                                 <template v-for="group in categoryGroups" :key="group.parent.id">
@@ -78,24 +78,24 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-800 mb-1.5">Brand <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-semibold text-ink mb-1.5">Brand <span class="text-red-500">*</span></label>
                                 <input
                                     v-model="form.brand"
                                     type="text"
                                     required
                                     placeholder="e.g. Omron"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand"
                                 />
                                 <p v-if="form.errors.brand" class="text-red-600 text-sm mt-1">{{ form.errors.brand }}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-800 mb-1.5">Model <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-semibold text-ink mb-1.5">Model <span class="text-red-500">*</span></label>
                                 <input
                                     v-model="form.model"
                                     type="text"
                                     required
                                     placeholder="e.g. HEM-7120"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand"
                                 />
                                 <p v-if="form.errors.model" class="text-red-600 text-sm mt-1">{{ form.errors.model }}</p>
                             </div>
@@ -106,10 +106,10 @@
                 <!-- Medicine -->
                 <section
                     v-if="isMedicineCategory"
-                    class="rounded-2xl border border-indigo-200 bg-indigo-50/40 shadow-sm p-6 sm:p-8"
+                    class="rounded-card border border-brand-soft bg-brand-tint/40 shadow-sm p-6 sm:p-8"
                 >
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-800 mb-2">Medicine compliance</h2>
-                    <p class="text-sm text-indigo-900/80 mb-4">
+                    <h2 class="text-xs font-bold   text-brand-dark mb-2">Medicine compliance</h2>
+                    <p class="text-sm text-brand-dark/80 mb-4">
                         For prescription-only items, customers will upload a prescription photo after checkout. You approve or reject before they can pay.
                     </p>
                     <div class="space-y-4">
@@ -117,15 +117,15 @@
                             <input
                                 v-model="form.requires_prescription"
                                 type="checkbox"
-                                class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                class="mt-1 h-5 w-5 rounded border-line text-brand focus:ring-brand"
                             />
-                            <span class="text-sm font-medium text-gray-900">Requires a valid prescription to purchase</span>
+                            <span class="text-sm font-medium text-ink">Requires a valid prescription to purchase</span>
                         </label>
                     </div>
                 </section>
 
-                <section class="rounded-2xl border border-amber-200 bg-amber-50/40 shadow-sm p-6 sm:p-8">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-amber-800 mb-2">Tax compliance</h2>
+                <section class="rounded-card border border-amber-200 bg-amber-50/40 shadow-sm p-6 sm:p-8">
+                    <h2 class="text-xs font-bold   text-amber-800 mb-2">Tax compliance</h2>
                     <p class="text-sm text-amber-900/80 mb-4">
                         Identify items that are exempt from the standard 12% VAT in the Philippines.
                     </p>
@@ -133,108 +133,108 @@
                         <input
                             v-model="form.is_vat_exempt"
                             type="checkbox"
-                            class="mt-1 h-5 w-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                            class="mt-1 h-5 w-5 rounded border-line text-amber-600 focus:ring-amber-500"
                         />
                         <div class="flex flex-col">
-                            <span class="text-sm font-bold text-gray-900">VAT Exempt</span>
-                            <span class="text-xs text-gray-600">This product will be calculated without the 12% VAT extraction.</span>
+                            <span class="text-sm font-bold text-ink">VAT Exempt</span>
+                            <span class="text-xs text-ink-soft">This product will be calculated without the 12% VAT extraction.</span>
                         </div>
                     </label>
                 </section>
 
                 <!-- Description -->
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Description</h2>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1.5">Details <span class="text-red-500">*</span></label>
+                <section class="rounded-card border border-line bg-white shadow-sm p-6 sm:p-8">
+                    <h2 class="text-xs font-bold   text-ink-soft mb-4">Description</h2>
+                    <label class="block text-sm font-semibold text-ink mb-1.5">Details <span class="text-red-500">*</span></label>
                     <textarea
                         v-model="form.description"
                         rows="5"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-4 py-3 border border-line rounded-card focus:ring-2 focus:ring-brand"
                         placeholder="Specifications, inclusions, usage…"
                     />
                     <p v-if="form.errors.description" class="text-red-600 text-sm mt-1">{{ form.errors.description }}</p>
                 </section>
 
                 <!-- Pricing -->
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Pricing</h2>
+                <section class="rounded-card border border-line bg-white shadow-sm p-6 sm:p-8">
+                    <h2 class="text-xs font-bold   text-ink-soft mb-4">Pricing</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-800 mb-1.5">Retail price (₱) <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-semibold text-ink mb-1.5">Retail price (₱) <span class="text-red-500">*</span></label>
                             <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft">₱</span>
                                 <input
                                     v-model="form.base_price"
                                     type="number"
                                     step="0.01"
                                     min="0"
                                     required
-                                    class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-xl"
+                                    class="w-full pl-9 pr-4 py-3 border border-line rounded-card"
                                 />
                             </div>
                             <p v-if="form.errors.base_price" class="text-red-600 text-sm mt-1">{{ form.errors.base_price }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-800 mb-1.5">Wholesale price (₱)</label>
+                            <label class="block text-sm font-semibold text-ink mb-1.5">Wholesale price (₱)</label>
                             <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft">₱</span>
                                 <input
                                     v-model="form.wholesale_price"
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-xl"
+                                    class="w-full pl-9 pr-4 py-3 border border-line rounded-card"
                                 />
                             </div>
                         </div>
                         <div v-if="form.wholesale_price" class="sm:col-span-2">
-                            <label class="block text-sm font-semibold text-gray-800 mb-1.5">Minimum wholesale quantity</label>
+                            <label class="block text-sm font-semibold text-ink mb-1.5">Minimum wholesale quantity</label>
                             <input
                                 v-model="form.wholesale_min_qty"
                                 type="number"
                                 min="1"
-                                class="w-full max-w-xs px-4 py-3 border border-gray-300 rounded-xl"
+                                class="w-full max-w-xs px-4 py-3 border border-line rounded-card"
                             />
                         </div>
                     </div>
                 </section>
 
                 <!-- Variations -->
-                <section class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
+                <section class="rounded-card border border-line bg-white shadow-sm p-6 sm:p-8">
                     <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                         <div>
-                            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500">Variations</h2>
-                            <p class="text-sm text-gray-600 mt-1">Optional — e.g. color, size. Price adjustment adds to retail / wholesale.</p>
+                            <h2 class="text-xs font-bold   text-ink-soft">Variations</h2>
+                            <p class="text-sm text-ink-soft mt-1">Optional — e.g. color, size. Price adjustment adds to retail / wholesale.</p>
                         </div>
                         <button
                             type="button"
                             @click="addVariation"
-                            class="text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50"
+                            class="text-sm font-semibold text-brand hover:text-brand-dark px-3 py-1.5 rounded-control border border-brand-soft bg-brand-tint"
                         >
                             + Add option
                         </button>
                     </div>
-                    <p v-if="!variations.length" class="text-sm text-gray-500 italic">No variations — sold as a single option.</p>
-                    <div v-for="(row, idx) in variations" :key="idx" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <p v-if="!variations.length" class="text-sm text-ink-soft italic">No variations — sold as a single option.</p>
+                    <div v-for="(row, idx) in variations" :key="idx" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4 p-4 rounded-card bg-mist border border-line">
                         <div class="md:col-span-3">
-                            <label class="text-xs font-medium text-gray-600">Option name</label>
-                            <input v-model="row.option_name" placeholder="Color" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm" />
+                            <label class="text-xs font-medium text-ink-soft">Option name</label>
+                            <input v-model="row.option_name" placeholder="Color" class="mt-1 w-full px-3 py-2 border rounded-control text-sm" />
                         </div>
                         <div class="md:col-span-3">
-                            <label class="text-xs font-medium text-gray-600">Value</label>
-                            <input v-model="row.option_value" placeholder="Blue" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm" />
+                            <label class="text-xs font-medium text-ink-soft">Value</label>
+                            <input v-model="row.option_value" placeholder="Blue" class="mt-1 w-full px-3 py-2 border rounded-control text-sm" />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="text-xs font-medium text-gray-600">Price ± ₱</label>
-                            <input v-model.number="row.price_adjustment" type="number" step="0.01" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm" />
+                            <label class="text-xs font-medium text-ink-soft">Price ± ₱</label>
+                            <input v-model.number="row.price_adjustment" type="number" step="0.01" class="mt-1 w-full px-3 py-2 border rounded-control text-sm" />
                         </div>
                         <div class="md:col-span-3">
-                            <label class="text-xs font-medium text-gray-600">Variation SKU (optional)</label>
-                            <input v-model="row.sku" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm font-mono" />
+                            <label class="text-xs font-medium text-ink-soft">Variation SKU (optional)</label>
+                            <input v-model="row.sku" class="mt-1 w-full px-3 py-2 border rounded-control text-sm font-mono" />
                         </div>
                         <div class="md:col-span-1 flex items-end justify-end">
-                            <button type="button" @click="removeVariation(idx)" class="text-red-600 p-2 hover:bg-red-50 rounded-lg" title="Remove">✕</button>
+                            <button type="button" @click="removeVariation(idx)" class="text-red-600 p-2 hover:bg-red-50 rounded-control" title="Remove">✕</button>
                         </div>
                     </div>
                 </section>
@@ -243,13 +243,13 @@
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="flex-1 bg-blue-600 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-blue-700 shadow-md disabled:opacity-50 transition"
+                        class="flex-1 bg-brand text-white px-6 py-3.5 rounded-card font-bold hover:bg-brand-dark shadow-md disabled:opacity-50 transition"
                     >
                         {{ form.processing ? 'Creating…' : 'Create product' }}
                     </button>
                     <Link
                         href="/owner/products"
-                        class="px-6 py-3.5 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 text-center"
+                        class="px-6 py-3.5 border-2 border-line rounded-card font-semibold text-ink hover:bg-mist text-center"
                     >
                         Cancel
                     </Link>
