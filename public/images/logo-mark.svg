@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <title>MedEquip</title>
+  <defs>
+    <path id="p" d="M24 25.5C17 19.5 17.4 9.5 24 3.5C30.6 9.5 31 19.5 24 25.5Z"/>
+    <path id="s" d="M24 24.5C19.6 20.2 19.8 13.6 24 8.6C28.2 13.6 28.4 20.2 24 24.5Z"/>
+  </defs>
+  <g fill="#0B6E6B" fill-opacity=".38">
+    <use href="#s" transform="rotate(45 24 24)"/>
+    <use href="#s" transform="rotate(135 24 24)"/>
+    <use href="#s" transform="rotate(225 24 24)"/>
+    <use href="#s" transform="rotate(315 24 24)"/>
+  </g>
+  <g fill="#0B6E6B">
+    <use href="#p"/>
+    <use href="#p" transform="rotate(90 24 24)"/>
+    <use href="#p" transform="rotate(180 24 24)"/>
+    <use href="#p" transform="rotate(270 24 24)"/>
+  </g>
+</svg>

@@ -1,9 +1,8 @@
 <template>
-    <div 
-        :class="[statusClasses, 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold capitalize border shadow-sm backdrop-blur-sm']"
+    <div
+        :class="[statusClasses, 'inline-flex items-center gap-1.5 rounded-control border px-2 py-0.5 text-sm font-medium capitalize']"
     >
-        <!-- Dynamic bullet indicator -->
-        <span class="w-1.5 h-1.5 rounded-full bg-current opacity-75 mr-0.5"></span>
+        <span class="h-1.5 w-1.5 rounded-full bg-current opacity-70" aria-hidden="true"></span>
         {{ displayText }}
     </div>
 </template>
@@ -22,59 +21,70 @@ const props = defineProps({
     }
 });
 
+// One small set of tones shared by every status type.
+const tones = {
+    waiting: 'border-amber-200 bg-amber-50 text-amber-900',
+    active: 'border-[#B9C7DA] bg-[#F1F5FA] text-seal',
+    good: 'border-brand-soft bg-brand-tint text-brand-dark',
+    done: 'border-brand bg-brand text-white',
+    bad: 'border-red-200 bg-red-50 text-red-900',
+    neutral: 'border-line bg-mist text-ink-soft',
+};
+
 const statusClasses = computed(() => {
     const status = props.status.toLowerCase();
-    
+
     // Order status colors
     if (props.type === 'order') {
         const colors = {
-            'pending': 'bg-yellow-100 text-yellow-800',
-            'approved': 'bg-blue-100 text-blue-800',
-            'processing': 'bg-blue-100 text-blue-800',
-            'packed': 'bg-purple-100 text-purple-800',
-            'ready_for_pickup': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-            'shipped': 'bg-indigo-100 text-indigo-800',
-            'delivered': 'bg-green-100 text-green-800',
-            'rejected': 'bg-red-100 text-red-800',
-            'cancelled': 'bg-red-100 text-red-800'
+            pending: tones.waiting,
+            approved: tones.active,
+            processing: tones.active,
+            packed: tones.good,
+            ready_for_pickup: tones.good,
+            shipped: tones.active,
+            delivered: tones.done,
+            completed: tones.done,
+            rejected: tones.bad,
+            cancelled: tones.bad,
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || tones.neutral;
     }
-    
+
     // Invoice status colors
     if (props.type === 'invoice') {
         const colors = {
-            'unpaid': 'bg-yellow-100 text-yellow-800',
-            'partial': 'bg-orange-100 text-orange-800',
-            'paid': 'bg-green-100 text-green-800',
-            'overdue': 'bg-red-100 text-red-800'
+            unpaid: tones.waiting,
+            partial: tones.waiting,
+            paid: tones.done,
+            overdue: tones.bad,
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || tones.neutral;
     }
-    
+
     // Delivery status colors
     if (props.type === 'delivery') {
         const colors = {
-            'pending': 'bg-gray-100 text-gray-800',
-            'scheduled': 'bg-blue-100 text-blue-800',
-            'in_transit': 'bg-indigo-100 text-indigo-800',
-            'delivered': 'bg-green-100 text-green-800',
-            'failed': 'bg-red-100 text-red-800'
+            pending: tones.neutral,
+            scheduled: tones.active,
+            in_transit: tones.active,
+            delivered: tones.done,
+            failed: tones.bad,
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || tones.neutral;
     }
-    
+
     // Payment status colors
     if (props.type === 'payment') {
         const colors = {
-            'pending': 'bg-yellow-100 text-yellow-800',
-            'verified': 'bg-green-100 text-green-800',
-            'rejected': 'bg-red-100 text-red-800'
+            pending: tones.waiting,
+            verified: tones.done,
+            rejected: tones.bad,
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || tones.neutral;
     }
-    
-    return 'bg-gray-100 text-gray-800';
+
+    return tones.neutral;
 });
 
 const displayText = computed(() => {

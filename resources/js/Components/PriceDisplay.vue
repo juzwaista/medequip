@@ -30,24 +30,24 @@ const formattedAmount = computed(() => {
 });
 
 const amountClass = computed(() => {
-    const classes = [];
+    const classes = ['tabular-nums'];
     
     // Size classes
     if (props.size === 'small') {
         classes.push('text-sm');
     } else if (props.size === 'large') {
-        classes.push('text-2xl', 'font-bold');
+        classes.push('text-2xl', 'font-semibold', 'tracking-tight');
     } else {
         classes.push('text-base', 'font-semibold');
     }
     
     // Color classes
     if (props.color === 'blue') {
-        classes.push('text-blue-600');
+        classes.push('text-brand');
     } else if (props.color === 'green') {
-        classes.push('text-green-600');
+        classes.push('text-brand');
     } else {
-        classes.push('text-gray-900');
+        classes.push('text-ink');
     }
     
     return classes.join(' ');
